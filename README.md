@@ -125,4 +125,9 @@ configs/          Example configuration files
 
 ## License
 
-Apache License 2.0. See [LICENSE](LICENSE).
+NetVantage uses a split licensing model:
+
+- **Core** (server, agent, built-in modules): [Business Source License 1.1](LICENSE) -- free for personal, home-lab, and non-competing production use. Converts to Apache 2.0 after 4 years.
+- **Plugin SDK** (`pkg/plugin/`, `pkg/roles/`, `pkg/models/`, `api/proto/`): [Apache License 2.0](pkg/plugin/LICENSE) -- build plugins and integrations with no restrictions.
+
+See [LICENSING.md](LICENSING.md) for full details.
