@@ -123,6 +123,16 @@ configs/          Example configuration files
 - **Phase 3**: Remote access (SSH, RDP, HTTP proxy) + credential vault
 - **Phase 4**: MQTT/IoT + cross-platform agents + API integrations
 
+## Support the Project
+
+NetVantage is **free for personal and home use forever**. If you find it useful and want to support continued development:
+
+- [GitHub Sponsors](https://github.com/sponsors/HerbHall)
+- [Ko-fi](https://ko-fi.com/netvantage)
+- [Buy Me a Coffee](https://buymeacoffee.com/netvantage)
+
+Financial supporters are recognized in [SUPPORTERS.md](SUPPORTERS.md) and the in-app About page. You can also contribute by [reporting bugs](https://github.com/HerbHall/netvantage/issues), [requesting features](https://github.com/HerbHall/netvantage/discussions), testing beta releases, or building plugins.
+
 ## License
 
 NetVantage uses a split licensing model:

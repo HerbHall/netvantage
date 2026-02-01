@@ -2,13 +2,25 @@
 
 ## Product Vision
 
-NetVantage is a modular, open-source network monitoring and management platform that provides unified device discovery, monitoring, remote access, credential management, and IoT awareness in a single self-hosted application.
+NetVantage is a modular, source-available network monitoring and management platform that provides unified device discovery, monitoring, remote access, credential management, and IoT awareness in a single self-hosted application.
+
+**Strategic Intent:** Free for personal and home use forever. Built to become a commercial product for business, MSP, and enterprise use. The codebase, documentation, community, and clean IP chain are the product -- designed from day one for acquisition readiness.
 
 **Target Users:** Home lab enthusiasts, prosumers, small business IT administrators, managed service providers (MSPs).
 
 **Core Value Proposition:** No existing source-available tool combines device discovery, monitoring, remote access, credential management, and IoT awareness in a single product. Free for home users, BSL 1.1 licensed core with Apache 2.0 plugin SDK for ecosystem growth.
 
-**Design Philosophy:** Users will forgive missing features but will not forgive a bad first experience. Time to First Value must be under 10 minutes: download, install, see your network.
+### Design Philosophy
+
+1. **Ease of use first.** You should not need a tech degree to operate NetVantage. The interface should be intuitive enough that a non-technical small business owner can understand their network health at a glance, while an experienced sysadmin can drill into the detail they need.
+
+2. **Sensible defaults, deep customization.** NetVantage ships fully preconfigured for rapid deployment -- install and go. But the true power lies in the ability to configure and customize every aspect of the system: dashboards, alerts, scan schedules, notification channels, plugins, and themes. The defaults get you running; customization makes it yours.
+
+3. **Plugin-powered extensibility.** The plugin architecture is not an afterthought -- it is the architecture. Every major feature is a plugin. Users and third-party developers can replace, extend, or supplement any module. The system is designed to be shaped by its users, not constrained by its authors.
+
+4. **Stability and security are non-negotiable.** These are not features that ship "later." Every release must be stable enough to trust with production infrastructure and secure enough to trust with network credentials. If a feature compromises stability or security, it does not ship.
+
+5. **Time to First Value under 10 minutes.** Users will forgive missing features but will not forgive a bad first experience. Download, install, see your network -- in minutes, not hours.
 
 ---
 
@@ -93,7 +105,11 @@ Dispatch (no deps, provides agent_management)
 
 ### Design Principles
 
-The plugin system follows the **Caddy/Grafana model**: a minimal core interface with optional interfaces detected via Go type assertions. Plugins declare their roles, dependencies, and capabilities in a manifest. The registry resolves dependencies via topological sort and provides a service locator for inter-plugin communication.
+The plugin system is not a bolt-on feature -- it **is** the architecture. Every major capability (discovery, monitoring, remote access, credentials, agent management) is implemented as a plugin. The core server is intentionally minimal: HTTP server, plugin registry, event bus, database, and configuration. Everything else is a plugin.
+
+This design serves two goals: **user customizability** (swap, disable, or extend any module without rebuilding) and **ecosystem growth** (third-party developers can build plugins using the Apache 2.0-licensed SDK with zero friction).
+
+The system follows the **Caddy/Grafana model**: a minimal core interface with optional interfaces detected via Go type assertions. Plugins declare their roles, dependencies, and capabilities in a manifest. The registry resolves dependencies via topological sort and provides a service locator for inter-plugin communication.
 
 ### Core Plugin Interface
 
@@ -411,7 +427,7 @@ Lightweight agent installed on monitored devices to report system metrics, accep
 - Service status monitoring
 - Log forwarding (opt-in)
 - Command execution (authorized commands only)
-- Auto-update (pull new versions from server)
+- Auto-update (see Auto-Update Mechanism below)
 
 ### Communication
 
@@ -439,13 +455,48 @@ Lightweight agent installed on monitored devices to report system metrics, accep
 | Android | Deferred | Passive monitoring only (ping, ARP, mDNS) |
 | IoT/Embedded | Phase 4 | Lightweight Go binary or MQTT-based |
 
+### Auto-Update Mechanism (Phase 2)
+
+Agent auto-update is a security-critical feature. The SolarWinds supply chain attack demonstrated the risk of compromised update channels.
+
+#### Update Flow
+
+1. Agent polls server for available updates during check-in (configurable: enabled/disabled, channel)
+2. Server responds with version info + signed manifest if update available
+3. Agent downloads binary from server, verifies Cosign signature against pinned public key
+4. Agent validates binary integrity (SHA-256 checksum from signed manifest)
+5. Agent installs update (platform-specific: replace binary, restart service)
+6. Agent reports new version on next check-in; server marks update as successful
+7. If agent fails to check in within expected window after update, server marks update as failed
+
+#### Controls
+
+- **Administrator approval:** Updates require explicit approval per version in the server UI before any agent receives them
+- **Staged rollout:** Configurable: update N% of agents, wait for health confirmation, then proceed (default: 10% canary, 24h wait)
+- **Version pinning:** Administrators can pin individual agents or agent groups to a specific version
+- **Update channels:** `stable` (default), `beta`, `pinned` (manual only)
+- **Rollback:** Agent retains previous binary. Automatic rollback if health check fails within 5 minutes of update
+- **Air-gapped support:** Manual update package (signed binary + manifest) for offline environments
+
 ### Security
 
 - Agent authenticates to server via enrollment token + mTLS certificate
 - Server issues per-agent certificates during enrollment
 - Commands require server-side authorization
-- Agent binary is open-source for user trust
+- Agent binary is source-available (BSL 1.1) for user trust and auditability
 - Per-agent rate limiting in gRPC interceptor
+- Update binaries signed with Cosign; agent verifies before applying
+
+### Agent-Server Version Compatibility
+
+| Agent Version | Server Version | Support Level |
+|---------------|---------------|---------------|
+| Same major+minor | Same major+minor | Full support |
+| Same major, older minor | Current | Supported (server backward-compatible within major) |
+| Older major (N-1) | Current | Degraded (basic check-in only, no new features) |
+| Newer than server | Any | Not supported (agent must not be newer than server) |
+
+**Rule:** Always upgrade the server first, then agents.
 
 ---
 
@@ -537,9 +588,11 @@ Lightweight agent installed on monitored devices to report system metrics, accep
 - **Error responses:** RFC 7807 Problem Details (`application/problem+json`)
 - **Pagination:** Cursor-based with `PaginatedResponse<T>` wrapper
 - **Versioning:** URL path versioning (`/api/v1/`)
-- **Rate limiting:** Per-IP using `golang.org/x/time/rate`
+- **Rate limiting:** Per-IP using `golang.org/x/time/rate`; per-tenant rate limiting in Phase 2
 - **Documentation:** OpenAPI 3.0 via `swaggo/swag` annotations
 - **Request tracing:** `X-Request-ID` header (generated if not provided)
+- **Idempotency:** `Idempotency-Key` header supported on POST endpoints (device creation, credential storage) for safe retries. Server stores key-to-response mapping for 24 hours.
+- **Conditional requests:** `ETag` + `If-None-Match` on GET endpoints for client-side cache validation. Reduces bandwidth for polling clients.
 
 ### Error Response Format
 
@@ -628,6 +681,14 @@ Base path: `/api/v1/`
 | `/gateway/ssh/{device_id}` | WebSocket | Gateway | SSH terminal session |
 | `/gateway/rdp/{device_id}` | WebSocket | Gateway | RDP session (via Guacamole) |
 | `/gateway/proxy/{device_id}` | ANY | Gateway | HTTP reverse proxy to device |
+
+### WebSocket Connection
+
+- **Endpoint:** `GET /ws/` (upgrades to WebSocket)
+- **Authentication:** JWT token sent in the first message after connection (not in URL query params, which leak in server logs and browser history)
+- **Protocol:** JSON messages with `{ "type": "...", "payload": { ... } }` envelope
+- **Reconnection:** Client implements exponential backoff (1s, 2s, 4s... max 30s) with jitter
+- **Heartbeat:** Server sends `ping` every 30s; client responds with `pong`. Connection closed after 3 missed pongs.
 
 ### WebSocket Events (Dashboard Real-Time)
 
@@ -721,6 +782,8 @@ Dark mode is the default. The palette uses forest greens and earth tones.
 
 ## Dashboard Architecture
 
+The dashboard is the primary interface for most users. It must be approachable enough for someone with no networking background to understand "is my network healthy?" while powerful enough for an experienced administrator to customize every aspect of their monitoring experience.
+
 ### Technology
 
 - **Framework:** React 18+ with TypeScript
@@ -733,13 +796,52 @@ Dark mode is the default. The palette uses forest greens and earth tones.
 - **Routing:** React Router v6+
 - **Dark Mode:** First-class support from day one (Tailwind dark: variant)
 
-### Key UX Principles (From Competitive Research)
+### Browser Support
+
+| Browser | Version | Support Level |
+|---------|---------|---------------|
+| Chrome / Edge | Last 2 major versions | Full support |
+| Firefox | Last 2 major versions | Full support |
+| Safari | Last 2 major versions | Full support |
+| Mobile Chrome/Safari | Last 2 major versions | Responsive support (triage-focused) |
+| Internet Explorer | Any | Not supported |
+
+### Accessibility
+
+Target: **WCAG 2.1 AA** compliance for all dashboard pages.
+
+- Semantic HTML elements (`nav`, `main`, `article`, `table`, etc.)
+- ARIA labels for interactive elements and icon-only buttons
+- Full keyboard navigation (tab order, focus indicators, skip links)
+- Color contrast: minimum 4.5:1 for normal text, 3:1 for large text
+- Status information conveyed by more than color alone (icons + labels + color)
+- Screen reader support for data tables and alert notifications
+- Reduced motion support (`prefers-reduced-motion` media query)
+
+### Error & Empty State Patterns
+
+Defined UX patterns for non-happy-path states:
+
+| State | Pattern | Example |
+|-------|---------|---------|
+| Empty (no data yet) | Illustration + explanation + CTA | "No devices discovered. Run your first scan." |
+| Loading | Skeleton placeholders (not spinners) | Shimmer cards matching final layout |
+| Error (API failure) | Inline error with retry button | "Failed to load devices. Retry" |
+| Connection lost | Toast notification + auto-reconnect | "Connection lost. Reconnecting..." |
+| Permission denied | Explanation + redirect or contact admin | "You need operator access to view credentials." |
+| No results (filtered) | Clear message + clear-filters action | "No devices match your filters. Clear filters" |
+
+### Key UX Principles
+
+Design for the non-technical user first, then layer in power-user capabilities. A small business owner should understand their network health at a glance. A sysadmin should be able to customize everything.
 
 1. **Wall of Green:** When everything is healthy, the dashboard is calm (forest green background, green-400 status dots). Problems (red/amber) visually pop against the positive baseline.
-2. **Information Density Gradient:** High-level status at top, progressive detail as you drill down.
-3. **Search as Primary Navigation:** Fast, always-visible search bar for devices, alerts, agents.
-4. **Contextual Actions:** When a device is in alert, offer immediate actions: acknowledge, connect, view history.
+2. **Information Density Gradient:** High-level status at top, progressive detail as you drill down. The default view is simple; complexity is opt-in.
+3. **Search as Primary Navigation:** Fast, always-visible search bar for devices, alerts, agents. Users shouldn't need to learn a menu hierarchy.
+4. **Contextual Actions:** When a device is in alert, offer immediate actions: acknowledge, connect, view history. Reduce clicks to resolution.
 5. **Time Range Controls:** Every graph has "1h / 6h / 24h / 7d / 30d / custom" selectors.
+6. **Customizable Everything:** Dashboard layouts, widget arrangement, alert thresholds, notification preferences, theme, and sidebar organization should all be user-configurable. Defaults are opinionated; users can override anything.
+7. **Progressive Disclosure:** Show simple controls by default, reveal advanced options behind "Advanced" toggles or settings pages. Never overwhelm a first-time user.
 
 ### Dashboard Pages
 
@@ -755,18 +857,19 @@ Dark mode is the default. The palette uses forest greens and earth tones.
 | Credentials | `/credentials` | Credential management (admin/operator only) |
 | Remote Sessions | `/sessions` | Active remote sessions, launch SSH/RDP |
 | Settings | `/settings` | Server config, user management, plugin management |
+| About | `/about` | Version info, license, Community Supporters, system diagnostics |
 
 ### First-Run Setup Wizard
 
-Guided flow triggered when no admin account exists:
+Guided flow triggered when no admin account exists. This is the single most important UX moment in the product -- it determines whether a user continues or abandons. Every step should feel obvious, with no jargon and no dead ends.
 
-1. **Welcome** -- Product overview, what you're about to set up
-2. **Create Admin Account** -- Username, email, password
-3. **Network Configuration** -- Auto-detect local subnets, allow editing, select scan methods
-4. **First Scan** -- Trigger initial network scan with live progress
-5. **Results** -- Show discovered devices, classification, invite user to explore
+1. **Welcome** -- Product overview, what you're about to set up. Friendly tone, not technical.
+2. **Create Admin Account** -- Username, email, password. Clear password requirements shown inline.
+3. **Network Configuration** -- Auto-detect local subnets, show them with plain-language descriptions ("Home network: 192.168.1.0/24 -- 254 possible devices"). Allow editing for power users, but defaults should just work.
+4. **First Scan** -- Trigger initial network scan with live progress. Show devices appearing in real-time as they're discovered. This is the "wow" moment.
+5. **Results** -- Show discovered devices with auto-classification (router, desktop, phone, IoT, etc.). Invite user to explore. Offer guided next steps ("Set up monitoring", "Add credentials for remote access").
 
-Goal: Under 5 minutes from first launch to seeing your network.
+Goal: Under 5 minutes from first launch to seeing your network. Zero configuration required for the default experience.
 
 ### Mobile Responsiveness
 
@@ -998,6 +1101,10 @@ Usage: `netvantage --profile monitoring-only` or copy profile as starting config
 
 ### Configuration
 
+Every setting has a sensible default. A zero-configuration deployment (just run the binary) works out of the box with all modules enabled, SQLite storage, and automatic network detection. Advanced users can customize every aspect via YAML config, environment variables, CLI flags, or the web UI settings page.
+
+**Configuration priority (highest wins):** CLI flags > environment variables > config file > built-in defaults.
+
 ```yaml
 server:
   host: "0.0.0.0"
@@ -1100,12 +1207,21 @@ Environment variable override prefix: `NV_` (e.g., `NV_SERVER_PORT=9090`, `NV_MO
 - [ ] Scan trigger with real-time progress (WebSocket)
 - [ ] Dark mode support
 - [ ] Settings page (server config, user profile)
+- [ ] About page with version info, license, and Community Supporters section
+
+#### Operations
+- [ ] Backup/restore CLI commands (`netvantage backup`, `netvantage restore`)
+- [ ] Data retention configuration with automated purge job
+- [ ] Security headers middleware (CSP, X-Frame-Options, HSTS, etc.)
+- [ ] Account lockout after failed login attempts
+- [ ] SECURITY.md with vulnerability disclosure process
 
 #### Testing & Quality
 - [ ] Plugin contract tests
 - [ ] API endpoint tests (httptest)
 - [ ] Repository tests (in-memory SQLite)
-- [ ] CI pipeline: test, lint, build
+- [ ] CI pipeline: GitHub Actions with lint (golangci-lint), test (race detector), build
+- [ ] GoReleaser configuration for cross-platform binary builds
 - [ ] OpenAPI spec generation (swaggo/swag)
 
 ### Phase 1b: Windows Scout Agent
@@ -1153,10 +1269,17 @@ Environment variable override prefix: `NV_` (e.g., `NV_SERVER_PORT=9090`, `NV_MO
 #### Infrastructure
 - [ ] PostgreSQL + TimescaleDB support (with hypertables for metrics)
 - [ ] Scout: Linux agent (x64, ARM64)
+- [ ] Agent auto-update with binary signing (Cosign) and staged rollout
 - [ ] `nvbuild` tool for custom binaries with third-party modules
 - [ ] OpenTelemetry tracing
 - [ ] Plugin developer SDK and documentation
 - [ ] Dashboard: monitoring views, alert management, metric graphs
+- [ ] MFA/TOTP authentication support
+- [ ] SBOM generation (Syft) and SLSA provenance for releases
+- [ ] Cosign signing for Docker images
+- [ ] govulncheck + Trivy in CI pipeline
+- [ ] IPv6 scanning and agent communication support
+- [ ] Per-tenant rate limiting
 
 ### Phase 3: Remote Access + Credential Vault
 
@@ -1244,7 +1367,11 @@ Time to First Value < 10 minutes     (Uptime Kuma, PRTG model)
 
 ### Strategic Intent
 
-Build a well-documented, architecturally clean, community-supported platform that is attractive for acquisition. The codebase, documentation, and community are the product -- not just the software.
+**Free for personal and home use forever.** This is a firm commitment, not a marketing tactic. Home lab enthusiasts, students, and hobbyists will always have full access to every feature at no cost. This community is the foundation of adoption, feedback, and evangelism.
+
+**Commercial for business use.** Organizations using NetVantage in a professional capacity (MSPs, enterprises, commercial IT operations) are the revenue target. Commercial tiers add multi-user, multi-tenant, SSO, RBAC, audit logging, and priority support -- features businesses need that home users typically don't.
+
+**Built for acquisition.** The codebase, documentation, community, and clean IP chain are the product -- not just the software. Every architectural decision, license choice, and documentation effort is made with the awareness that this project is designed to be attractive for acquisition by a larger platform company.
 
 ### Licensing & Intellectual Property
 
@@ -1318,14 +1445,57 @@ d:\NetVantage\
 
 ### Pricing Model: Hybrid (No Device Limits)
 
-All tiers have **unlimited devices**. Pricing based on features, not scale.
+All tiers have **unlimited devices and unlimited customization**. Pricing based on team/business features, not scale or functionality. A home user with 500 devices gets the same core capabilities as an enterprise with 5,000.
 
-| Tier | Price | Features |
-|------|-------|----------|
-| **Community** | Free forever | Discovery, monitoring, basic alerts, remote access, credential vault, single user |
-| **Team** | $9/month | + Multi-user (up to 5), OIDC/SSO, scheduled reports, email support |
-| **Professional** | $29/month | + Multi-tenant (up to 10 sites), RBAC, audit logging, API access, priority support |
-| **Enterprise** | $99/month | + Unlimited tenants, custom branding, dedicated support, SLA |
+| Tier | Price | Target | Features |
+|------|-------|--------|----------|
+| **Community** | Free forever | Home, personal, educational | All modules, all plugins, unlimited devices, single user, full customization, community support |
+| **Team** | $9/month | Small business, teams | + Multi-user (up to 5), OIDC/SSO, scheduled reports, email support |
+| **Professional** | $29/month | MSPs, mid-size orgs | + Multi-tenant (up to 10 sites), RBAC, audit logging, API access, priority support |
+| **Enterprise** | $99/month | Large organizations | + Unlimited tenants, custom branding, dedicated support, SLA |
+
+**Principle:** The free tier is never crippled. It includes every module, every plugin, and every customization option. Paid tiers add collaboration and business operations features (multi-user, multi-tenant, SSO, audit trails) that are genuinely unnecessary for a solo home user.
+
+### Community Contributions
+
+Free and home users are the foundation of the project. Their contributions are valued and recognized.
+
+#### Non-Financial Contributions
+
+| Contribution | Channel | Recognition |
+|-------------|---------|-------------|
+| Bug reports | GitHub Issues (templated) | Contributor credit in release notes |
+| Feature requests | GitHub Discussions | Acknowledgment if implemented |
+| Beta testing | Opt-in beta channel | Early access + tester recognition |
+| Documentation | Pull requests | Contributor credit + CLA on file |
+| Plugin development | Apache 2.0 SDK | Listed in plugin directory |
+| Community support | GitHub Discussions | Community helper recognition |
+
+#### Voluntary Financial Support
+
+Three platforms, zero obligation. All support is voluntary and does not unlock additional features -- the free tier is always complete.
+
+| Platform | Type | Link |
+|----------|------|------|
+| **GitHub Sponsors** | Recurring or one-time | github.com/sponsors/HerbHall |
+| **Ko-fi** | Recurring or one-time | ko-fi.com/netvantage |
+| **Buy Me a Coffee** | One-time or membership | buymeacoffee.com/netvantage |
+
+Configured via `.github/FUNDING.yml` for GitHub's native "Sponsor" button integration.
+
+#### Supporter Recognition
+
+Financial supporters are recognized in the product and repository:
+
+| Tier | Threshold | Recognition |
+|------|-----------|-------------|
+| **Supporter** | $5+/mo or $25+ one-time | Name in `SUPPORTERS.md` + in-app About page "Community Supporters" section |
+| **Backer** | $25+/mo or $100+ one-time | Above + name on project website |
+| **Champion** | $100+/mo or $500+ one-time | Above + logo/link on README and website |
+
+**In-app recognition:** The dashboard About/Settings page includes a "Community Supporters" tab displaying supporter names. This is a visible, permanent acknowledgment of community investment. Supporters list is maintained in `SUPPORTERS.md` and bundled with each release.
+
+**Signals to acquirers:** A named list of financial supporters demonstrates genuine community investment beyond GitHub stars and download counts.
 
 ### Acquisition Readiness Checklist
 
@@ -1341,7 +1511,223 @@ All tiers have **unlimited devices**. Pricing based on features, not scale.
 
 ---
 
+## System & Network Requirements
+
+### Minimum Hardware
+
+| Tier | Devices | CPU | RAM | Disk | Notes |
+|------|---------|-----|-----|------|-------|
+| **Small** | < 100 | 1 vCPU | 1 GB | 10 GB | Home lab, small office |
+| **Medium** | 100–500 | 2 vCPU | 2 GB | 25 GB | Small business, single site |
+| **Large** | 500–1,000 | 4 vCPU | 4 GB | 50 GB | MSP, multi-site |
+| **Enterprise** | 1,000+ | 4+ vCPU | 8+ GB | 100+ GB | Requires PostgreSQL + TimescaleDB (Phase 2) |
+
+Disk estimates assume default data retention policies. SNMP polling and high-frequency metrics increase storage requirements.
+
+### Supported Server Platforms
+
+| Platform | Architecture | Phase | Notes |
+|----------|-------------|-------|-------|
+| Linux (Debian/Ubuntu, RHEL/Fedora, Alpine) | x64, ARM64 | 1 | Primary target |
+| Windows Server 2019+ | x64 | 1 | Native binary |
+| Docker | x64, ARM64 | 1 | Official images, multi-arch manifest |
+| macOS | ARM64 (Apple Silicon) | 2 | Development/testing use |
+
+### Port & Protocol Matrix
+
+| Port | Protocol | Direction | Component | Purpose | Required |
+|------|----------|-----------|-----------|---------|----------|
+| 8080 | TCP/HTTP(S) | Inbound | Server | Web UI + REST API | Yes |
+| 9090 | TCP/gRPC | Inbound | Server | Scout agent communication (mTLS) | If agents used |
+| 4822 | TCP | Internal | Guacamole | RDP/VNC gateway | If Gateway module enabled |
+| 161 | UDP/SNMP | Outbound | Server | SNMP polling | If SNMP scanning enabled |
+| 162 | UDP/SNMP | Inbound | Server | SNMP traps | If SNMP traps enabled |
+| -- | ICMP | Outbound | Server | Ping sweep | If ICMP scanning enabled |
+| 5353 | UDP/mDNS | Outbound | Server | mDNS discovery | If mDNS scanning enabled |
+| 1900 | UDP/SSDP | Outbound | Server | UPnP/SSDP discovery | If UPnP scanning enabled |
+| 1883/8883 | TCP/MQTT | Outbound | Server | MQTT broker communication | If MQTT enabled |
+
+### Reverse Proxy Deployment
+
+NetVantage supports operation behind a reverse proxy (nginx, Traefik, Caddy). Requirements:
+- WebSocket upgrade support for real-time dashboard updates (`/ws/` path)
+- gRPC passthrough or gRPC-Web translation for Scout agent communication on port 9090
+- `X-Forwarded-For`, `X-Forwarded-Proto` headers for accurate client IP logging
+- Configurable `--base-path` flag for non-root deployments (e.g., `/netvantage/`)
+
+### Network Considerations
+
+- **IPv6:** Phase 1 is IPv4-only. IPv6 scanning and agent communication targeted for Phase 2.
+- **Time synchronization:** NTP is strongly recommended. mTLS certificate validation and metric accuracy depend on synchronized clocks. Server logs a warning at startup if clock skew > 5 seconds from an NTP check.
+- **DNS:** Server needs DNS resolution for hostname lookups during discovery. Configurable DNS server override for environments with split DNS.
+
+---
+
+## Operations & Maintenance
+
+### Backup & Restore
+
+#### What to Back Up
+
+| Component | Location | Method |
+|-----------|----------|--------|
+| Database | `data/netvantage.db` | SQLite online backup API (safe during operation) |
+| Configuration | `config.yaml` + env vars | File copy |
+| TLS certificates | `data/certs/` | File copy (CA key, server cert, agent certs) |
+| OUI database | Embedded in binary | Not needed (re-embedded on upgrade) |
+| Vault master key | Not on disk (derived from passphrase) | User must retain passphrase |
+
+#### Backup Commands
+
+```bash
+netvantage backup --output /path/to/backup.tar.gz    # Full backup (DB + config + certs)
+netvantage restore --input /path/to/backup.tar.gz     # Restore to current data dir
+netvantage backup --db-only --output /path/to/db.bak  # Database-only backup
+```
+
+- Online backup: safe to run while server is operating (uses SQLite backup API)
+- Restore to different host: supported (for disaster recovery / migration)
+- Automated backups: configurable schedule in `config.yaml` with retention count
+
+#### Backup Configuration
+
+```yaml
+backup:
+  enabled: false
+  schedule: "0 2 * * *"      # Cron expression (daily at 2 AM)
+  retention_count: 7          # Keep last N backups
+  output_dir: "./data/backups"
+```
+
+### Data Retention
+
+Configurable per data type with automated purge. Defaults balance storage with useful history.
+
+| Data Type | Default Retention | Configurable | Purge Method |
+|-----------|------------------|--------------|--------------|
+| Raw device metrics | 7 days | Yes | Automated daily purge |
+| Scan results | 30 days | Yes | Automated daily purge |
+| Alerts / events | 180 days | Yes | Automated daily purge |
+| Audit logs | 1 year | Yes | Automated daily purge |
+| Agent check-in records | 7 days | Yes | Automated daily purge |
+| Aggregated metrics (Phase 2) | 1 year | Yes | TimescaleDB retention policy |
+| Device records | Never (manual delete) | No | User-initiated |
+
+Configuration:
+
+```yaml
+retention:
+  metrics_days: 7
+  scans_days: 30
+  alerts_days: 180
+  audit_days: 365
+  checkins_days: 7
+  purge_schedule: "0 3 * * *"  # Daily at 3 AM
+```
+
+### Database Maintenance
+
+- **SQLite WAL checkpointing:** Automatic on server shutdown; configurable periodic checkpoint during operation
+- **SQLite VACUUM:** Manual via CLI command `netvantage db vacuum`; not automatic (can be slow on large databases)
+- **Database size monitoring:** Exposed as Prometheus metric `netvantage_db_size_bytes`
+
+### Upgrade Strategy
+
+#### Server Upgrades
+
+- Replace binary + restart. Database schema migrations run automatically on startup.
+- Migrations are forward-only (no automatic rollback). Take a backup before upgrading.
+- Server logs applied migrations at startup for auditability.
+- Upgrade path: any version within the same major version can upgrade directly to the latest. Major version upgrades may require intermediate steps (documented in release notes).
+
+#### Agent-Server Version Compatibility
+
+| Agent Version | Server Version | Compatibility |
+|---------------|---------------|---------------|
+| v1.x | v1.x | Full compatibility within major version |
+| v1.x | v2.x | Backward compatible (server supports old agents for 1 major version) |
+| v2.x | v1.x | Not supported (agent cannot be newer than server) |
+
+Rule: **agents must be the same or older major version as the server.** Upgrade the server first, then agents.
+
+### Self-Monitoring
+
+The server monitors its own health and exposes metrics:
+
+| Metric | Type | Description |
+|--------|------|-------------|
+| `netvantage_db_size_bytes` | Gauge | Database file size |
+| `netvantage_db_query_queue_depth` | Gauge | Pending database queries |
+| `netvantage_event_bus_queue_depth` | Gauge | Pending async events |
+| `netvantage_goroutine_count` | Gauge | Active goroutines |
+| `netvantage_disk_free_bytes` | Gauge | Free disk space on data directory |
+| `netvantage_uptime_seconds` | Gauge | Server uptime |
+
+Self-monitoring alerts (built-in, always active):
+- Disk space < 10% free on data directory
+- Database size approaching configured limit
+- Event bus queue depth sustained > 1,000
+
+---
+
+## Release & Distribution
+
+### CI/CD Pipeline (GitHub Actions)
+
+| Trigger | Workflow | Steps |
+|---------|----------|-------|
+| Every PR | `ci.yml` | Lint (golangci-lint), test (race detector), build snapshot, license check |
+| Push to `main` | `ci.yml` | Same as PR + integration tests |
+| Tag `v*` | `release.yml` | Full release: GoReleaser, Docker build+push, SBOM, signing, changelog |
+
+### Build Tooling
+
+- **GoReleaser:** Cross-platform binary builds from tagged releases
+- **Targets:** `linux/amd64`, `linux/arm64`, `windows/amd64`, `darwin/arm64`
+- **Snapshot builds:** GoReleaser `--snapshot` on PRs for build verification
+
+### Release Artifacts
+
+| Artifact | Format | Signed | Description |
+|----------|--------|--------|-------------|
+| Server binaries | tar.gz / zip | Cosign | Per-platform server binaries |
+| Agent binaries | tar.gz / zip | Cosign | Per-platform Scout binaries |
+| Docker images | OCI | Cosign | Multi-arch manifest, GitHub Container Registry |
+| Checksums | SHA256 | Cosign | `checksums.txt` with detached signature |
+| SBOM | SPDX JSON | Cosign | Syft-generated software bill of materials |
+| Changelog | Markdown | -- | Auto-generated from conventional commits |
+| SLSA Provenance | JSON (intoto) | -- | Build provenance attestation (Phase 2) |
+
+### Supply Chain Security
+
+- **Binary signing:** Cosign keyless signing (Sigstore) for all release binaries and Docker images
+- **SBOM:** Generated by Syft at build time, attached to GitHub Release and Docker image
+- **Vulnerability scanning:** `govulncheck` for Go dependencies, Trivy for Docker images, run in CI on every PR
+- **Dependency audit:** `go-licenses` checks for incompatible licenses on every PR
+- **Reproducible builds:** Go's deterministic compilation with pinned toolchain version
+
+### Versioning
+
+- **Semantic Versioning** (semver): `MAJOR.MINOR.PATCH`
+- **Breaking changes:** Major version bump (plugin API changes, config format changes, database schema requiring data migration)
+- **Features:** Minor version bump
+- **Bug fixes:** Patch version bump
+- **Pre-release:** `v1.0.0-rc.1`, `v1.0.0-beta.1` for testing releases
+- **Changelog:** Auto-generated from conventional commit messages (`feat:`, `fix:`, `refactor:`, etc.)
+
+---
+
 ## Non-Functional Requirements
+
+The ordering below is intentional. **Stability and security come first** -- before performance, before features, before convenience. A monitoring tool that is itself unstable or insecure is worse than no monitoring tool at all.
+
+### Stability
+
+- The server must run unattended for months without intervention, memory leaks, or degradation.
+- Plugin failures must be isolated -- a crashing plugin must never take down the server or other plugins.
+- Database corruption must be prevented through proper WAL mode, checkpointing, and backup capabilities.
+- All background operations (scan jobs, metrics collection, event processing) must have timeouts and circuit breakers.
+- Graceful degradation over hard failure: if a subsystem is unhealthy, the rest of the system continues operating.
 
 ### Performance
 
@@ -1354,15 +1740,38 @@ All tiers have **unlimited devices**. Pricing based on features, not scale.
 
 ### Security
 
+#### Transport & Encryption
 - All agent communication encrypted (mTLS)
 - Credentials encrypted at rest (AES-256-GCM envelope encryption)
+- TLS 1.2+ enforced for all external connections (HTTPS, gRPC)
+
+#### Authentication & Access Control
 - No default credentials (first-run wizard enforces account creation)
 - API authentication required (JWT tokens)
+- Password policy: minimum 12 characters, checked against breached password list (HaveIBeenPwned k-anonymity API, optional)
+- Account lockout: progressive delay after failed login attempts (5 failures = 15 minute lockout)
+- Session management: concurrent session limit per user (configurable, default: 5)
+- MFA/TOTP: planned for Phase 2 (TOTP at minimum, WebAuthn stretch goal)
+
+#### Web Security
 - CORS properly configured (same-origin in production, configurable for dev)
+- CSRF protection: SameSite=Strict cookies + custom `X-Requested-With` header validation
+- Security headers served by Go HTTP server:
+  - `Content-Security-Policy` (restrictive CSP for the SPA)
+  - `X-Frame-Options: DENY`
+  - `X-Content-Type-Options: nosniff`
+  - `Strict-Transport-Security` (when TLS enabled)
+  - `Referrer-Policy: strict-origin-when-cross-origin`
+  - `Permissions-Policy` (disable unnecessary browser APIs)
 - Input validation at all API boundaries
 - Rate limiting on all endpoints
+
+#### Audit & Compliance
 - Credential access audit logging
+- Secrets hygiene: credentials must never appear in logs, error messages, or API responses
 - OWASP Top 10 awareness in all development
+- Vulnerability disclosure process documented in SECURITY.md
+- **Compliance alignment:** Designed with SOC 2 Type II control categories in mind (access control, encryption, audit logging, change management). Not claiming certification, but signaling security maturity to evaluators and acquirers.
 
 ### Deployment
 
@@ -1374,12 +1783,15 @@ All tiers have **unlimited devices**. Pricing based on features, not scale.
 
 ### Reliability
 
+See also: **Stability** (above) for the foundational stability requirements.
+
 - Graceful shutdown on SIGTERM/SIGINT with per-plugin timeout
 - Automatic agent reconnection with exponential backoff
-- Database migrations via embedded SQL (per-plugin, tracked)
+- Database migrations via embedded SQL (per-plugin, tracked, forward-only)
 - Liveness and readiness health check endpoints
 - Plugin graceful degradation (optional plugin failure doesn't crash server)
 - SQLite WAL mode for concurrent read/write access
+- Automatic WAL checkpointing to prevent unbounded WAL growth
 
 ### Observability
 
