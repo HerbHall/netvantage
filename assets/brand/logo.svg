@@ -1,0 +1,42 @@
+<svg viewBox="0 0 80 80" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- Outer monitoring pulse ring -->
+  <circle cx="40" cy="40" r="38" stroke="rgba(74,222,128,0.12)" stroke-width="1" fill="none" />
+  <circle cx="40" cy="40" r="32" stroke="rgba(74,222,128,0.07)" stroke-width="0.75" fill="none" stroke-dasharray="4 3" />
+
+  <!-- Connection lines forming the N shape -->
+  <line x1="20" y1="62" x2="20" y2="18" stroke="rgba(74,222,128,0.35)" stroke-width="2" />
+  <line x1="20" y1="18" x2="60" y2="62" stroke="rgba(196,167,125,0.4)" stroke-width="2" />
+  <line x1="60" y1="62" x2="60" y2="18" stroke="rgba(74,222,128,0.35)" stroke-width="2" />
+
+  <!-- Secondary discovery links -->
+  <line x1="20" y1="40" x2="60" y2="18" stroke="rgba(74,222,128,0.1)" stroke-width="1" />
+  <line x1="20" y1="62" x2="60" y2="40" stroke="rgba(74,222,128,0.1)" stroke-width="1" />
+  <line x1="40" y1="30" x2="60" y2="40" stroke="rgba(156,163,137,0.12)" stroke-width="0.75" />
+
+  <!-- Primary nodes (N vertices) -->
+  <circle cx="20" cy="62" r="5.5" fill="#1a2e1c" stroke="#4ade80" stroke-width="1.5" />
+  <circle cx="20" cy="62" r="2.5" fill="#4ade80" />
+  <circle cx="20" cy="18" r="5.5" fill="#1a2e1c" stroke="#4ade80" stroke-width="1.5" />
+  <circle cx="20" cy="18" r="2.5" fill="#4ade80" />
+  <circle cx="60" cy="62" r="5.5" fill="#1a2e1c" stroke="#4ade80" stroke-width="1.5" />
+  <circle cx="60" cy="62" r="2.5" fill="#4ade80" />
+  <circle cx="60" cy="18" r="5.5" fill="#1a2e1c" stroke="#4ade80" stroke-width="1.5" />
+  <circle cx="60" cy="18" r="2.5" fill="#4ade80" />
+
+  <!-- Midpoint nodes (monitored devices) -->
+  <circle cx="20" cy="40" r="3.5" fill="#1a2e1c" stroke="#c4a77d" stroke-width="1.25" />
+  <circle cx="20" cy="40" r="1.5" fill="#c4a77d" />
+  <circle cx="40" cy="40" r="4" fill="#1a2e1c" stroke="#4ade80" stroke-width="1.25" />
+  <circle cx="40" cy="40" r="2" fill="#4ade80" />
+  <circle cx="60" cy="40" r="3.5" fill="#1a2e1c" stroke="#c4a77d" stroke-width="1.25" />
+  <circle cx="60" cy="40" r="1.5" fill="#c4a77d" />
+
+  <!-- Satellite nodes -->
+  <circle cx="30" cy="29" r="2.5" fill="#1a2e1c" stroke="rgba(156,163,137,0.5)" stroke-width="1" />
+  <circle cx="30" cy="29" r="1" fill="#9ca389" />
+  <circle cx="50" cy="51" r="2.5" fill="#1a2e1c" stroke="rgba(156,163,137,0.5)" stroke-width="1" />
+  <circle cx="50" cy="51" r="1" fill="#9ca389" />
+
+  <!-- Center pulse glow -->
+  <circle cx="40" cy="40" r="8" fill="none" stroke="rgba(74,222,128,0.15)" stroke-width="0.75" />
+</svg>

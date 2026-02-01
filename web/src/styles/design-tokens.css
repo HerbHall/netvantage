@@ -1,0 +1,222 @@
+/*
+ * NetVantage Design System Tokens
+ *
+ * Palette: forest greens + earth tones (amber, sage, warm cream)
+ * Derived from brand identity: network topology nodes and connections.
+ *
+ * Usage with Tailwind: these map to tailwind.config.ts `theme.extend.colors`.
+ * Usage without Tailwind: reference as var(--nv-color-*) in CSS.
+ */
+
+:root {
+  /* ------------------------------------------------------------------ */
+  /* Brand Colors                                                       */
+  /* ------------------------------------------------------------------ */
+
+  /* Primary green -- status "healthy", primary actions, accent */
+  --nv-green-50:  #f0fdf4;
+  --nv-green-100: #dcfce7;
+  --nv-green-200: #bbf7d0;
+  --nv-green-300: #86efac;
+  --nv-green-400: #4ade80;  /* Primary brand accent */
+  --nv-green-500: #22c55e;
+  --nv-green-600: #16a34a;
+  --nv-green-700: #15803d;
+  --nv-green-800: #166534;
+  --nv-green-900: #14532d;
+  --nv-green-950: #052e16;
+
+  /* Earth / amber -- secondary accent, warm highlights, monitored devices */
+  --nv-earth-50:  #fdf8f0;
+  --nv-earth-100: #f5edd8;
+  --nv-earth-200: #e8d5b0;
+  --nv-earth-300: #d4b87e;
+  --nv-earth-400: #c4a77d;  /* Secondary brand accent */
+  --nv-earth-500: #a3845a;
+  --nv-earth-600: #92734e;
+  --nv-earth-700: #7a5f3f;
+  --nv-earth-800: #654d34;
+  --nv-earth-900: #4a3826;
+  --nv-earth-950: #2d2118;
+
+  /* Sage -- muted text, tertiary elements, satellite nodes */
+  --nv-sage-50:  #f5f5f0;
+  --nv-sage-100: #e8e8df;
+  --nv-sage-200: #d4d4c8;
+  --nv-sage-300: #b8c4a0;
+  --nv-sage-400: #9ca389;  /* Tertiary accent */
+  --nv-sage-500: #7d856e;
+  --nv-sage-600: #6b7a56;
+  --nv-sage-700: #5c6650;
+  --nv-sage-800: #4a5240;
+  --nv-sage-900: #3a4032;
+  --nv-sage-950: #252922;
+
+  /* Forest -- dark backgrounds */
+  --nv-forest-50:  #f0f5f1;
+  --nv-forest-100: #d6e4d8;
+  --nv-forest-200: #a8c4ad;
+  --nv-forest-300: #6a9972;
+  --nv-forest-400: #3d7245;
+  --nv-forest-500: #2a5630;
+  --nv-forest-600: #1f4024;
+  --nv-forest-700: #1a2e1c;  /* Card / elevated surface */
+  --nv-forest-800: #162414;  /* Default background */
+  --nv-forest-900: #0f1a10;  /* Deepest background */
+  --nv-forest-950: #0c1a0e;  /* True dark */
+
+  /* Status colors */
+  --nv-status-online:   #4ade80;
+  --nv-status-degraded: #c4a77d;
+  --nv-status-offline:  #ef4444;
+  --nv-status-unknown:  #9ca389;
+
+  /* ------------------------------------------------------------------ */
+  /* Semantic Tokens (Dark Mode -- default)                             */
+  /* ------------------------------------------------------------------ */
+
+  /* Backgrounds */
+  --nv-bg-root:       var(--nv-forest-950);
+  --nv-bg-surface:    var(--nv-forest-900);
+  --nv-bg-card:       var(--nv-forest-700);
+  --nv-bg-elevated:   #1f3320;
+  --nv-bg-hover:      rgba(74, 222, 128, 0.06);
+  --nv-bg-active:     rgba(74, 222, 128, 0.10);
+  --nv-bg-selected:   rgba(74, 222, 128, 0.08);
+
+  /* Borders */
+  --nv-border-subtle:  rgba(74, 222, 128, 0.08);
+  --nv-border-default: rgba(74, 222, 128, 0.12);
+  --nv-border-strong:  rgba(74, 222, 128, 0.20);
+  --nv-border-focus:   var(--nv-green-400);
+
+  /* Text */
+  --nv-text-primary:   #f5f0e8;  /* Warm cream white */
+  --nv-text-secondary: var(--nv-sage-400);
+  --nv-text-muted:     var(--nv-sage-700);
+  --nv-text-accent:    var(--nv-green-400);
+  --nv-text-warm:      var(--nv-earth-400);
+  --nv-text-inverse:   var(--nv-forest-950);
+
+  /* Interactive elements */
+  --nv-btn-primary-bg:    var(--nv-green-600);
+  --nv-btn-primary-hover: var(--nv-green-500);
+  --nv-btn-primary-text:  #ffffff;
+  --nv-btn-secondary-bg:    transparent;
+  --nv-btn-secondary-border: var(--nv-border-default);
+  --nv-btn-secondary-hover:  var(--nv-bg-hover);
+  --nv-btn-secondary-text:   var(--nv-text-primary);
+  --nv-btn-danger-bg:    #991b1b;
+  --nv-btn-danger-hover: #b91c1c;
+  --nv-btn-danger-text:  #fecaca;
+
+  /* Inputs */
+  --nv-input-bg:      var(--nv-forest-900);
+  --nv-input-border:  var(--nv-border-default);
+  --nv-input-focus:   var(--nv-green-400);
+  --nv-input-text:    var(--nv-text-primary);
+  --nv-input-placeholder: var(--nv-sage-700);
+
+  /* Sidebar / navigation */
+  --nv-sidebar-bg:       var(--nv-forest-950);
+  --nv-sidebar-item:     var(--nv-sage-400);
+  --nv-sidebar-active:   var(--nv-green-400);
+  --nv-sidebar-active-bg: rgba(74, 222, 128, 0.08);
+
+  /* Charts and data visualization */
+  --nv-chart-green:  var(--nv-green-400);
+  --nv-chart-amber:  var(--nv-earth-400);
+  --nv-chart-sage:   var(--nv-sage-400);
+  --nv-chart-red:    #ef4444;
+  --nv-chart-blue:   #60a5fa;
+  --nv-chart-grid:   rgba(74, 222, 128, 0.06);
+
+  /* Topology map */
+  --nv-topo-node-online:    var(--nv-green-400);
+  --nv-topo-node-degraded:  var(--nv-earth-400);
+  --nv-topo-node-offline:   #ef4444;
+  --nv-topo-node-unknown:   var(--nv-sage-400);
+  --nv-topo-link-default:   rgba(74, 222, 128, 0.15);
+  --nv-topo-link-active:    rgba(74, 222, 128, 0.35);
+  --nv-topo-link-saturated: rgba(196, 167, 125, 0.4);
+
+  /* Shadows */
+  --nv-shadow-sm:  0 1px 2px rgba(0, 0, 0, 0.3);
+  --nv-shadow-md:  0 4px 6px rgba(0, 0, 0, 0.25);
+  --nv-shadow-lg:  0 10px 25px rgba(0, 0, 0, 0.3);
+  --nv-shadow-glow: 0 0 20px rgba(74, 222, 128, 0.15);
+
+  /* ------------------------------------------------------------------ */
+  /* Typography                                                         */
+  /* ------------------------------------------------------------------ */
+  --nv-font-sans: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Inter', Helvetica, Arial, sans-serif;
+  --nv-font-mono: 'JetBrains Mono', 'Fira Code', 'Cascadia Code', 'Consolas', monospace;
+
+  --nv-text-xs:   0.75rem;   /* 12px */
+  --nv-text-sm:   0.875rem;  /* 14px */
+  --nv-text-base: 1rem;      /* 16px */
+  --nv-text-lg:   1.125rem;  /* 18px */
+  --nv-text-xl:   1.25rem;   /* 20px */
+  --nv-text-2xl:  1.5rem;    /* 24px */
+  --nv-text-3xl:  1.875rem;  /* 30px */
+
+  /* ------------------------------------------------------------------ */
+  /* Spacing & Radius                                                   */
+  /* ------------------------------------------------------------------ */
+  --nv-radius-sm:  4px;
+  --nv-radius-md:  8px;
+  --nv-radius-lg:  12px;
+  --nv-radius-xl:  16px;
+
+  /* ------------------------------------------------------------------ */
+  /* Transitions                                                        */
+  /* ------------------------------------------------------------------ */
+  --nv-transition-fast:   150ms ease;
+  --nv-transition-normal: 250ms ease;
+  --nv-transition-slow:   350ms ease;
+}
+
+/* -------------------------------------------------------------------- */
+/* Light Mode                                                           */
+/* -------------------------------------------------------------------- */
+[data-theme="light"] {
+  --nv-bg-root:       #f5f5f0;
+  --nv-bg-surface:    #eeede6;
+  --nv-bg-card:       #ffffff;
+  --nv-bg-elevated:   #ffffff;
+  --nv-bg-hover:      rgba(22, 101, 52, 0.04);
+  --nv-bg-active:     rgba(22, 101, 52, 0.08);
+  --nv-bg-selected:   rgba(22, 101, 52, 0.06);
+
+  --nv-border-subtle:  rgba(22, 101, 52, 0.06);
+  --nv-border-default: rgba(22, 101, 52, 0.12);
+  --nv-border-strong:  rgba(22, 101, 52, 0.20);
+  --nv-border-focus:   var(--nv-green-600);
+
+  --nv-text-primary:   #1a2e1c;
+  --nv-text-secondary: var(--nv-sage-600);
+  --nv-text-muted:     var(--nv-sage-400);
+  --nv-text-accent:    var(--nv-green-600);
+  --nv-text-warm:      var(--nv-earth-600);
+  --nv-text-inverse:   #f5f0e8;
+
+  --nv-btn-primary-bg:    var(--nv-green-600);
+  --nv-btn-primary-hover: var(--nv-green-700);
+  --nv-btn-primary-text:  #ffffff;
+
+  --nv-input-bg:      #ffffff;
+  --nv-input-border:  var(--nv-border-default);
+  --nv-input-focus:   var(--nv-green-600);
+  --nv-input-text:    var(--nv-text-primary);
+  --nv-input-placeholder: var(--nv-sage-400);
+
+  --nv-sidebar-bg:       #eeede6;
+  --nv-sidebar-item:     var(--nv-sage-600);
+  --nv-sidebar-active:   var(--nv-green-700);
+  --nv-sidebar-active-bg: rgba(22, 101, 52, 0.08);
+
+  --nv-shadow-sm:  0 1px 2px rgba(0, 0, 0, 0.05);
+  --nv-shadow-md:  0 4px 6px rgba(0, 0, 0, 0.07);
+  --nv-shadow-lg:  0 10px 25px rgba(0, 0, 0, 0.1);
+  --nv-shadow-glow: 0 0 20px rgba(22, 101, 52, 0.1);
+}
