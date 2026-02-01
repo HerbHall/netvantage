@@ -1,0 +1,28 @@
+# NetVantage Server Configuration
+
+server:
+  host: "0.0.0.0"
+  port: 8080
+  data_dir: "./data"
+
+logging:
+  level: "info"    # debug, info, warn, error
+  format: "json"   # json, console
+
+# Enabled plugins (all enabled by default)
+plugins:
+  recon:
+    enabled: true
+  pulse:
+    enabled: true
+  dispatch:
+    enabled: true
+  vault:
+    enabled: true
+  gateway:
+    enabled: true
+
+# Database configuration
+database:
+  driver: "sqlite"
+  dsn: "./data/netvantage.db"

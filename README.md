@@ -1,0 +1,128 @@
+# NetVantage
+
+Modular, self-hosted network monitoring and management platform.
+
+NetVantage provides unified device discovery, monitoring, remote access, credential management, and IoT awareness in a single application.
+
+## Architecture
+
+```
+                    +------------------+
+                    |    Dashboard     |
+                    | (React + TS)     |
+                    +--------+---------+
+                             |
+                    REST / WebSocket
+                             |
++----------+       +---------+---------+       +----------+
+|  Scout   | gRPC  |   NetVantage      |       | Network  |
+|  Agent   +------>+   Server          +------>+ Devices  |
+|          |       |                   | ICMP/  | (SNMP,   |
++----------+       | +------+ +------+ | SNMP/  |  mDNS,   |
+                   | |Recon | |Pulse | | ARP/   |  UPnP)   |
+                   | +------+ +------+ | mDNS   +----------+
+                   | |Dispatch|Vault | |
+                   | +------+ +------+ |
+                   | |Gateway|        |
+                   | +------+         |
+                   +-------------------+
+```
+
+## Modules
+
+| Module | Description |
+|--------|-------------|
+| **Recon** | Network scanning and device discovery |
+| **Pulse** | Health monitoring, metrics, alerting |
+| **Dispatch** | Scout agent enrollment and management |
+| **Vault** | Encrypted credential storage |
+| **Gateway** | Browser-based remote access (SSH, RDP, HTTP proxy) |
+
+## Quick Start
+
+### Prerequisites
+
+- Go 1.25+
+- Make (optional)
+
+### Build
+
+```bash
+make build
+```
+
+### Run Server
+
+```bash
+# With defaults
+./bin/netvantage
+
+# With config file
+./bin/netvantage -config configs/netvantage.example.yaml
+```
+
+The server starts on `http://localhost:8080` by default.
+
+### Run Scout Agent
+
+```bash
+./bin/scout -server localhost:9090 -interval 30
+```
+
+### API
+
+```bash
+# Health check
+curl http://localhost:8080/api/v1/health
+
+# List plugins
+curl http://localhost:8080/api/v1/plugins
+```
+
+## Development
+
+```bash
+# Run tests
+make test
+
+# Run linter
+make lint
+
+# Clean build artifacts
+make clean
+```
+
+## Project Structure
+
+```
+cmd/
+  netvantage/     Server entry point
+  scout/          Agent entry point
+internal/
+  server/         HTTP server and configuration
+  plugin/         Plugin interface and registry
+  recon/          Network discovery module
+  pulse/          Monitoring module
+  dispatch/       Agent management module
+  vault/          Credential management module
+  gateway/        Remote access module
+  scout/          Agent core logic
+pkg/
+  models/         Shared data types
+api/
+  proto/v1/       gRPC service definitions
+web/              React dashboard (Phase 2)
+configs/          Example configuration files
+```
+
+## Roadmap
+
+- **Phase 1**: Server + dashboard + agentless scanning
+- **Phase 1b**: Windows Scout agent
+- **Phase 2**: SNMP, mDNS, UPnP discovery + monitoring + Linux agent
+- **Phase 3**: Remote access (SSH, RDP, HTTP proxy) + credential vault
+- **Phase 4**: MQTT/IoT + cross-platform agents + API integrations
+
+## License
+
+Apache License 2.0. See [LICENSE](LICENSE).

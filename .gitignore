@@ -1,0 +1,50 @@
+# Go binaries
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+/bin/
+/netvantage
+/scout
+
+# Go test binary
+*.test
+
+# Go coverage
+*.out
+coverage.html
+
+# Go vendor (if used)
+/vendor/
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Environment
+.env
+.env.local
+.env.*.local
+
+# Data directory
+/data/
+
+# Node.js (web frontend)
+web/node_modules/
+web/dist/
+web/.env
+
+# Generated protobuf
+api/proto/v1/*.pb.go
+
+# Build output
+/dist/
