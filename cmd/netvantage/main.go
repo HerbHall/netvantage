@@ -113,7 +113,10 @@ func main() {
 	if addr == ":" {
 		addr = "0.0.0.0:8080"
 	}
-	srv := server.New(addr, reg, logger)
+	readyCheck := server.ReadinessChecker(func(ctx context.Context) error {
+		return db.DB().PingContext(ctx)
+	})
+	srv := server.New(addr, reg, logger, readyCheck)
 
 	// Start server in background
 	go func() {

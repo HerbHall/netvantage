@@ -81,14 +81,14 @@
 - [ ] Metrics collection format: uniform `(timestamp, device_id, metric_name, value, tags)` for analytics consumption
 
 #### Server & API
-- [ ] HTTP server with core routes
-- [ ] RFC 7807 error responses
-- [ ] Request ID middleware
-- [ ] Structured request logging middleware
-- [ ] Prometheus metrics at `/metrics`
-- [ ] Liveness (`/healthz`) and readiness (`/readyz`) endpoints
-- [ ] Per-IP rate limiting
-- [ ] Configuration via YAML + environment variables
+- [x] HTTP server with core routes
+- [x] RFC 7807 error responses
+- [x] Request ID middleware
+- [x] Structured request logging middleware
+- [x] Prometheus metrics at `/metrics`
+- [x] Liveness (`/healthz`) and readiness (`/readyz`) endpoints
+- [x] Per-IP rate limiting
+- [x] Configuration via YAML + environment variables
 - [ ] Configurable Zap logger factory
 
 #### Authentication
@@ -124,7 +124,7 @@
 #### Operations
 - [ ] Backup/restore CLI commands (`netvantage backup`, `netvantage restore`)
 - [ ] Data retention configuration with automated purge job
-- [ ] Security headers middleware (CSP, X-Frame-Options, HSTS, etc.)
+- [x] Security headers middleware (CSP, X-Frame-Options, HSTS, etc.)
 - [ ] Account lockout after failed login attempts
 - [ ] SECURITY.md with vulnerability disclosure process
 
@@ -135,8 +135,8 @@
 - [ ] Plugin isolation tests: panic recovery in Init, Start, Stop, and HTTP handlers
 - [x] Plugin lifecycle tests: full Init → Start → Stop cycle, dependency ordering, cascade disable
 - [x] Plugin API version validation tests: too old, too new, exact match, backward-compatible range
-- [ ] API endpoint tests: `httptest.NewRecorder()` for all routes (status codes, content types, RFC 7807 errors)
-- [ ] Security middleware tests: auth enforcement, security headers, CORS, CSRF, rate limiting (429)
+- [x] API endpoint tests: `httptest.NewRecorder()` for all routes (status codes, content types, RFC 7807 errors)
+- [x] Security middleware tests: auth enforcement, security headers, CORS, CSRF, rate limiting (429)
 - [ ] Input validation tests: malformed JSON, oversized payloads, SQL injection, XSS, path traversal
 - [ ] Secrets hygiene tests: verify credentials never appear in log output or error responses
 - [ ] Repository tests: in-memory SQLite CRUD, edge cases, transactions, constraint violations
@@ -144,7 +144,7 @@
 - [x] Configuration tests: defaults, env overrides, YAML overrides, invalid values, `config_version` validation
 - [ ] Version compatibility tests: Plugin API, agent proto, config version, database schema version
 - [ ] Graceful shutdown tests: SIGTERM/SIGINT handling, per-plugin timeout, connection draining
-- [ ] Health endpoint tests: `/healthz`, `/readyz`, per-plugin health status
+- [x] Health endpoint tests: `/healthz`, `/readyz`, per-plugin health status
 - [ ] Fuzz tests: API input fuzzing, configuration fuzzing (Go `testing.F`)
 - [ ] Performance baselines: benchmark key operations, memory profile at 0/50 devices, startup time
 - [ ] E2E browser tests: first-run wizard, device list, scan trigger, login/logout (Playwright, headless)

@@ -9,6 +9,7 @@ import (
 
 	"github.com/HerbHall/netvantage/internal/version"
 	"github.com/HerbHall/netvantage/pkg/plugin"
+	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"go.uber.org/zap"
 )
 
@@ -19,39 +20,62 @@ type PluginSource interface {
 	All() []plugin.Plugin
 }
 
-// Server is the main NetVantage server.
+// ReadinessChecker verifies that the server is ready to serve traffic.
+// Returns nil if ready, an error describing why not otherwise.
+type ReadinessChecker func(ctx context.Context) error
+
+// Server is the main NetVantage HTTP server.
 type Server struct {
 	httpServer *http.Server
 	plugins    PluginSource
 	logger     *zap.Logger
 	mux        *http.ServeMux
+	ready      ReadinessChecker
 }
 
-// New creates a new Server instance.
-func New(addr string, plugins PluginSource, logger *zap.Logger) *Server {
+// New creates a new Server with middleware and routes.
+func New(addr string, plugins PluginSource, logger *zap.Logger, ready ReadinessChecker) *Server {
 	mux := http.NewServeMux()
 
 	s := &Server{
-		httpServer: &http.Server{
-			Addr:         addr,
-			Handler:      mux,
-			ReadTimeout:  15 * time.Second,
-			WriteTimeout: 15 * time.Second,
-			IdleTimeout:  60 * time.Second,
-		},
 		plugins: plugins,
 		logger:  logger,
 		mux:     mux,
+		ready:   ready,
 	}
 
-	s.registerCoreRoutes()
+	s.registerRoutes()
 	s.mountPluginRoutes()
+
+	// Middleware chain: outermost listed first.
+	handler := Chain(mux,
+		RecoveryMiddleware(logger),
+		RequestIDMiddleware,
+		LoggingMiddleware(logger),
+		SecurityHeadersMiddleware,
+		VersionHeaderMiddleware,
+		RateLimitMiddleware(100, 200, []string{"/healthz", "/readyz", "/metrics"}),
+	)
+
+	s.httpServer = &http.Server{
+		Addr:         addr,
+		Handler:      handler,
+		ReadTimeout:  15 * time.Second,
+		WriteTimeout: 15 * time.Second,
+		IdleTimeout:  60 * time.Second,
+	}
 
 	return s
 }
 
-// registerCoreRoutes sets up routes that are always available.
-func (s *Server) registerCoreRoutes() {
+// registerRoutes sets up all core routes.
+func (s *Server) registerRoutes() {
+	// Unversioned operational endpoints.
+	s.mux.HandleFunc("GET /healthz", s.handleHealthz)
+	s.mux.HandleFunc("GET /readyz", s.handleReadyz)
+	s.mux.Handle("GET /metrics", promhttp.Handler())
+
+	// Versioned API endpoints.
 	s.mux.HandleFunc("GET /api/v1/health", s.handleHealth)
 	s.mux.HandleFunc("GET /api/v1/plugins", s.handlePlugins)
 }
@@ -86,10 +110,33 @@ func (s *Server) Shutdown(ctx context.Context) error {
 	return s.httpServer.Shutdown(ctx)
 }
 
-// handleHealth returns the server health status.
-func (s *Server) handleHealth(w http.ResponseWriter, r *http.Request) {
+// handleHealthz is a liveness probe -- returns 200 if the process is running.
+func (s *Server) handleHealthz(w http.ResponseWriter, _ *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
-	w.Header().Set("X-NetVantage-Version", version.Short())
+	_ = json.NewEncoder(w).Encode(map[string]string{"status": "alive"})
+}
+
+// handleReadyz checks readiness -- returns 200 if the server can serve traffic.
+func (s *Server) handleReadyz(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
+
+	if s.ready != nil {
+		if err := s.ready(r.Context()); err != nil {
+			w.WriteHeader(http.StatusServiceUnavailable)
+			_ = json.NewEncoder(w).Encode(map[string]string{
+				"status": "not ready",
+				"error":  err.Error(),
+			})
+			return
+		}
+	}
+
+	_ = json.NewEncoder(w).Encode(map[string]string{"status": "ready"})
+}
+
+// handleHealth returns detailed health information (versioned API endpoint).
+func (s *Server) handleHealth(w http.ResponseWriter, _ *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
 	_ = json.NewEncoder(w).Encode(map[string]interface{}{
 		"status":  "ok",
 		"service": "netvantage",
@@ -98,7 +145,7 @@ func (s *Server) handleHealth(w http.ResponseWriter, r *http.Request) {
 }
 
 // handlePlugins returns the list of registered plugins.
-func (s *Server) handlePlugins(w http.ResponseWriter, r *http.Request) {
+func (s *Server) handlePlugins(w http.ResponseWriter, _ *http.Request) {
 	plugins := s.plugins.All()
 	type pluginResponse struct {
 		Name        string `json:"name"`
@@ -115,6 +162,5 @@ func (s *Server) handlePlugins(w http.ResponseWriter, r *http.Request) {
 		})
 	}
 	w.Header().Set("Content-Type", "application/json")
-	w.Header().Set("X-NetVantage-Version", version.Short())
 	_ = json.NewEncoder(w).Encode(info)
 }
