@@ -1,6 +1,7 @@
 # NetVantage
 
 [![Go Report Card](https://goreportcard.com/badge/github.com/HerbHall/netvantage)](https://goreportcard.com/report/github.com/HerbHall/netvantage)
+[![codecov](https://codecov.io/gh/HerbHall/netvantage/branch/main/graph/badge.svg)](https://codecov.io/gh/HerbHall/netvantage)
 
 Modular, self-hosted network monitoring and management platform.
 
