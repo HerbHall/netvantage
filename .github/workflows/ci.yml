@@ -151,5 +151,6 @@ jobs:
           ALLOWED+=,BSD-3-Clause,ISC,MPL-2.0
           go-licenses check ./... \
             --allowed_licenses="${ALLOWED}" \
+            --ignore github.com/HerbHall/netvantage \
             || (echo "ERROR: Incompatible license" \
                 && exit 1)
