@@ -5,49 +5,56 @@ import (
 	"encoding/json"
 	"net/http"
 
-	"github.com/HerbHall/netvantage/internal/plugin"
-	"github.com/spf13/viper"
+	"github.com/HerbHall/netvantage/pkg/plugin"
 	"go.uber.org/zap"
 )
 
-// Plugin implements the Gateway remote access module.
-type Plugin struct {
+// Module implements the Gateway remote access plugin.
+type Module struct {
 	logger *zap.Logger
-	config *viper.Viper
+	config plugin.Config
 }
 
 // New creates a new Gateway plugin instance.
-func New() *Plugin {
-	return &Plugin{}
+func New() *Module {
+	return &Module{}
 }
 
-func (p *Plugin) Name() string    { return "gateway" }
-func (p *Plugin) Version() string { return "0.1.0" }
-
-func (p *Plugin) Init(config *viper.Viper, logger *zap.Logger) error {
-	p.config = config
-	p.logger = logger
-	p.logger.Info("gateway module initialized")
-	return nil
-}
-
-func (p *Plugin) Start(ctx context.Context) error {
-	p.logger.Info("gateway module started")
-	return nil
-}
-
-func (p *Plugin) Stop() error {
-	p.logger.Info("gateway module stopped")
-	return nil
-}
-
-func (p *Plugin) Routes() []plugin.Route {
-	return []plugin.Route{
-		{Method: "GET", Path: "/sessions", Handler: p.handleListSessions},
+func (m *Module) Info() plugin.PluginInfo {
+	return plugin.PluginInfo{
+		Name:        "gateway",
+		Version:     "0.1.0",
+		Description: "Remote access via Apache Guacamole",
+		Roles:       []string{"remote_access"},
+		APIVersion:  plugin.APIVersionCurrent,
 	}
 }
 
-func (p *Plugin) handleListSessions(w http.ResponseWriter, r *http.Request) {
+func (m *Module) Init(ctx context.Context, deps plugin.Dependencies) error {
+	m.config = deps.Config
+	m.logger = deps.Logger
+	m.logger.Info("gateway module initialized")
+	return nil
+}
+
+func (m *Module) Start(ctx context.Context) error {
+	m.logger.Info("gateway module started")
+	return nil
+}
+
+func (m *Module) Stop(ctx context.Context) error {
+	m.logger.Info("gateway module stopped")
+	return nil
+}
+
+// Routes implements plugin.HTTPProvider.
+func (m *Module) Routes() []plugin.Route {
+	return []plugin.Route{
+		{Method: "GET", Path: "/sessions", Handler: m.handleListSessions},
+	}
+}
+
+func (m *Module) handleListSessions(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode([]any{})
 }

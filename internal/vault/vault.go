@@ -5,55 +5,62 @@ import (
 	"encoding/json"
 	"net/http"
 
-	"github.com/HerbHall/netvantage/internal/plugin"
-	"github.com/spf13/viper"
+	"github.com/HerbHall/netvantage/pkg/plugin"
 	"go.uber.org/zap"
 )
 
-// Plugin implements the Vault credential management module.
-type Plugin struct {
+// Module implements the Vault credential management plugin.
+type Module struct {
 	logger *zap.Logger
-	config *viper.Viper
+	config plugin.Config
 }
 
 // New creates a new Vault plugin instance.
-func New() *Plugin {
-	return &Plugin{}
+func New() *Module {
+	return &Module{}
 }
 
-func (p *Plugin) Name() string    { return "vault" }
-func (p *Plugin) Version() string { return "0.1.0" }
-
-func (p *Plugin) Init(config *viper.Viper, logger *zap.Logger) error {
-	p.config = config
-	p.logger = logger
-	p.logger.Info("vault module initialized")
-	return nil
-}
-
-func (p *Plugin) Start(ctx context.Context) error {
-	p.logger.Info("vault module started")
-	return nil
-}
-
-func (p *Plugin) Stop() error {
-	p.logger.Info("vault module stopped")
-	return nil
-}
-
-func (p *Plugin) Routes() []plugin.Route {
-	return []plugin.Route{
-		{Method: "GET", Path: "/credentials", Handler: p.handleListCredentials},
-		{Method: "POST", Path: "/credentials", Handler: p.handleCreateCredential},
+func (m *Module) Info() plugin.PluginInfo {
+	return plugin.PluginInfo{
+		Name:        "vault",
+		Version:     "0.1.0",
+		Description: "Credential storage and management",
+		Roles:       []string{"credential_store"},
+		APIVersion:  plugin.APIVersionCurrent,
 	}
 }
 
-func (p *Plugin) handleListCredentials(w http.ResponseWriter, r *http.Request) {
+func (m *Module) Init(ctx context.Context, deps plugin.Dependencies) error {
+	m.config = deps.Config
+	m.logger = deps.Logger
+	m.logger.Info("vault module initialized")
+	return nil
+}
+
+func (m *Module) Start(ctx context.Context) error {
+	m.logger.Info("vault module started")
+	return nil
+}
+
+func (m *Module) Stop(ctx context.Context) error {
+	m.logger.Info("vault module stopped")
+	return nil
+}
+
+// Routes implements plugin.HTTPProvider.
+func (m *Module) Routes() []plugin.Route {
+	return []plugin.Route{
+		{Method: "GET", Path: "/credentials", Handler: m.handleListCredentials},
+		{Method: "POST", Path: "/credentials", Handler: m.handleCreateCredential},
+	}
+}
+
+func (m *Module) handleListCredentials(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode([]any{})
 }
 
-func (p *Plugin) handleCreateCredential(w http.ResponseWriter, r *http.Request) {
+func (m *Module) handleCreateCredential(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusNotImplemented)
 	json.NewEncoder(w).Encode(map[string]string{

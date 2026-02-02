@@ -1,5 +1,7 @@
 # NetVantage
 
+[![Go Report Card](https://goreportcard.com/badge/github.com/HerbHall/netvantage)](https://goreportcard.com/report/github.com/HerbHall/netvantage)
+
 Modular, self-hosted network monitoring and management platform.
 
 NetVantage provides unified device discovery, monitoring, remote access, credential management, and IoT awareness in a single application.
@@ -99,8 +101,11 @@ cmd/
   netvantage/     Server entry point
   scout/          Agent entry point
 internal/
+  config/         Viper-backed Config implementation
+  event/          In-memory EventBus
+  registry/       Plugin lifecycle and dependency resolution
   server/         HTTP server and configuration
-  plugin/         Plugin interface and registry
+  version/        Build-time version injection
   recon/          Network discovery module
   pulse/          Monitoring module
   dispatch/       Agent management module
@@ -108,11 +113,14 @@ internal/
   gateway/        Remote access module
   scout/          Agent core logic
 pkg/
+  plugin/         Public plugin SDK (Apache 2.0)
   models/         Shared data types
 api/
   proto/v1/       gRPC service definitions
-web/              React dashboard (Phase 2)
-configs/          Example configuration files
+docs/
+  adr/            Architecture Decision Records
+  guides/         Developer guides
+  requirements/   Requirement specifications
 ```
 
 ## Roadmap

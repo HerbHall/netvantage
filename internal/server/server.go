@@ -7,20 +7,21 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/HerbHall/netvantage/internal/plugin"
+	"github.com/HerbHall/netvantage/internal/registry"
+	"github.com/HerbHall/netvantage/internal/version"
 	"go.uber.org/zap"
 )
 
 // Server is the main NetVantage server.
 type Server struct {
 	httpServer *http.Server
-	registry   *plugin.Registry
+	registry   *registry.Registry
 	logger     *zap.Logger
 	mux        *http.ServeMux
 }
 
 // New creates a new Server instance.
-func New(addr string, registry *plugin.Registry, logger *zap.Logger) *Server {
+func New(addr string, reg *registry.Registry, logger *zap.Logger) *Server {
 	mux := http.NewServeMux()
 
 	s := &Server{
@@ -31,7 +32,7 @@ func New(addr string, registry *plugin.Registry, logger *zap.Logger) *Server {
 			WriteTimeout: 15 * time.Second,
 			IdleTimeout:  60 * time.Second,
 		},
-		registry: registry,
+		registry: reg,
 		logger:   logger,
 		mux:      mux,
 	}
@@ -81,26 +82,32 @@ func (s *Server) Shutdown(ctx context.Context) error {
 // handleHealth returns the server health status.
 func (s *Server) handleHealth(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(map[string]string{
+	w.Header().Set("X-NetVantage-Version", version.Short())
+	json.NewEncoder(w).Encode(map[string]interface{}{
 		"status":  "ok",
 		"service": "netvantage",
+		"version": version.Map(),
 	})
 }
 
 // handlePlugins returns the list of registered plugins.
 func (s *Server) handlePlugins(w http.ResponseWriter, r *http.Request) {
 	plugins := s.registry.All()
-	type pluginInfo struct {
-		Name    string `json:"name"`
-		Version string `json:"version"`
+	type pluginResponse struct {
+		Name        string `json:"name"`
+		Version     string `json:"version"`
+		Description string `json:"description"`
 	}
-	info := make([]pluginInfo, 0, len(plugins))
+	info := make([]pluginResponse, 0, len(plugins))
 	for _, p := range plugins {
-		info = append(info, pluginInfo{
-			Name:    p.Name(),
-			Version: p.Version(),
+		pi := p.Info()
+		info = append(info, pluginResponse{
+			Name:        pi.Name,
+			Version:     pi.Version,
+			Description: pi.Description,
 		})
 	}
 	w.Header().Set("Content-Type", "application/json")
+	w.Header().Set("X-NetVantage-Version", version.Short())
 	json.NewEncoder(w).Encode(info)
 }

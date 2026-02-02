@@ -1,11 +1,20 @@
-.PHONY: build build-server build-scout test lint run-server run-scout proto clean license-check
+.PHONY: build build-server build-scout test test-race test-coverage lint run-server run-scout proto clean license-check
 
 # Binary names
 SERVER_BIN=netvantage
 SCOUT_BIN=scout
 
+# Version injection
+VERSION ?= $(shell git describe --tags --always --dirty 2>/dev/null || echo "dev")
+COMMIT  ?= $(shell git rev-parse --short HEAD 2>/dev/null || echo "unknown")
+DATE    ?= $(shell date -u +"%Y-%m-%dT%H:%M:%SZ" 2>/dev/null || echo "unknown")
+VERSION_PKG = github.com/HerbHall/netvantage/internal/version
+
 # Build flags
-LDFLAGS=-ldflags "-s -w"
+LDFLAGS=-ldflags "-s -w \
+	-X $(VERSION_PKG).Version=$(VERSION) \
+	-X $(VERSION_PKG).GitCommit=$(COMMIT) \
+	-X $(VERSION_PKG).BuildDate=$(DATE)"
 
 build: build-server build-scout
 
@@ -17,6 +26,13 @@ build-scout:
 
 test:
 	go test ./...
+
+test-race:
+	go test -race ./...
+
+test-coverage:
+	go test -race -coverprofile=coverage.out -covermode=atomic ./...
+	go tool cover -func=coverage.out
 
 lint:
 	go vet ./...

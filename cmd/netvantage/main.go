@@ -3,24 +3,35 @@ package main
 import (
 	"context"
 	"flag"
+	"fmt"
 	"os"
 	"os/signal"
 	"syscall"
 	"time"
 
+	"github.com/HerbHall/netvantage/internal/config"
 	"github.com/HerbHall/netvantage/internal/dispatch"
+	"github.com/HerbHall/netvantage/internal/event"
 	"github.com/HerbHall/netvantage/internal/gateway"
-	"github.com/HerbHall/netvantage/internal/plugin"
 	"github.com/HerbHall/netvantage/internal/pulse"
 	"github.com/HerbHall/netvantage/internal/recon"
+	"github.com/HerbHall/netvantage/internal/registry"
 	"github.com/HerbHall/netvantage/internal/server"
 	"github.com/HerbHall/netvantage/internal/vault"
+	"github.com/HerbHall/netvantage/internal/version"
+	"github.com/HerbHall/netvantage/pkg/plugin"
 	"go.uber.org/zap"
 )
 
 func main() {
 	configPath := flag.String("config", "", "path to configuration file")
+	showVersion := flag.Bool("version", false, "print version information and exit")
 	flag.Parse()
+
+	if *showVersion {
+		fmt.Println(version.Info())
+		os.Exit(0)
+	}
 
 	// Initialize logger
 	logger, err := zap.NewProduction()
@@ -29,50 +40,67 @@ func main() {
 	}
 	defer logger.Sync()
 
-	logger.Info("NetVantage server starting")
+	logger.Info("NetVantage server starting", zap.String("version", version.Short()))
 
 	// Load configuration
-	config, err := server.LoadConfig(*configPath)
+	viperCfg, err := server.LoadConfig(*configPath)
 	if err != nil {
 		logger.Fatal("failed to load configuration", zap.Error(err))
 	}
+	cfg := config.New(viperCfg)
+
+	// Create shared services
+	bus := event.NewBus(logger.Named("event"))
 
 	// Create plugin registry
-	registry := plugin.NewRegistry(logger)
+	reg := registry.New(logger.Named("registry"))
 
 	// Register all plugins (compile-time composition)
-	plugins := []plugin.Plugin{
+	modules := []plugin.Plugin{
 		recon.New(),
 		pulse.New(),
 		dispatch.New(),
 		vault.New(),
 		gateway.New(),
 	}
-	for _, p := range plugins {
-		if err := registry.Register(p); err != nil {
+	for _, m := range modules {
+		if err := reg.Register(m); err != nil {
 			logger.Fatal("failed to register plugin", zap.Error(err))
 		}
 	}
 
-	// Initialize all plugins
-	if err := registry.InitAll(config); err != nil {
+	// Validate dependency graph and API versions
+	if err := reg.Validate(); err != nil {
+		logger.Fatal("plugin validation failed", zap.Error(err))
+	}
+
+	// Initialize all plugins with dependencies
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
+	if err := reg.InitAll(ctx, func(name string) plugin.Dependencies {
+		pluginCfg := cfg.Sub("plugins." + name)
+		return plugin.Dependencies{
+			Config:  pluginCfg,
+			Logger:  logger.Named(name),
+			Bus:     bus,
+			Plugins: reg,
+		}
+	}); err != nil {
 		logger.Fatal("failed to initialize plugins", zap.Error(err))
 	}
 
 	// Start plugins
-	ctx, cancel := context.WithCancel(context.Background())
-	defer cancel()
-
-	if err := registry.StartAll(ctx); err != nil {
+	if err := reg.StartAll(ctx); err != nil {
 		logger.Fatal("failed to start plugins", zap.Error(err))
 	}
 
 	// Create and start HTTP server
-	addr := config.GetString("server.host") + ":" + config.GetString("server.port")
+	addr := viperCfg.GetString("server.host") + ":" + viperCfg.GetString("server.port")
 	if addr == ":" {
 		addr = "0.0.0.0:8080"
 	}
-	srv := server.New(addr, registry, logger)
+	srv := server.New(addr, reg, logger)
 
 	// Start server in background
 	go func() {
@@ -94,7 +122,7 @@ func main() {
 	shutdownCtx, shutdownCancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer shutdownCancel()
 
-	registry.StopAll()
+	reg.StopAll(shutdownCtx)
 
 	if err := srv.Shutdown(shutdownCtx); err != nil {
 		logger.Error("server shutdown error", zap.Error(err))
