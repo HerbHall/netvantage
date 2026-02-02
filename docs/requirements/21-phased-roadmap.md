@@ -34,7 +34,7 @@
 - [x] GitHub Actions: license check workflow
 - [x] GitHub Actions: CLA check workflow (CLA Assistant or custom)
 - [x] Dependabot: configure for Go modules and GitHub Actions
-- [ ] Pre-commit hooks: gofmt, go vet, license header check
+- [x] Pre-commit hooks: gofmt, go vet, license header check (lefthook)
 
 #### Development Environment
 - [ ] Document development setup in `docs/guides/contributing.md`
@@ -51,32 +51,32 @@
 - [x] Issue templates: bug, feature, plugin idea (`.github/ISSUE_TEMPLATE/`)
 
 #### Metrics Baseline
-- [ ] Register repository on Go Report Card
-- [ ] Configure Codecov for coverage tracking
-- [ ] Document badge URLs for README (CI, coverage, Go Report Card, license, release)
+- [x] Register repository on Go Report Card
+- [x] Configure Codecov for coverage tracking
+- [x] Document badge URLs for README (CI, coverage, Go Report Card, license, release)
 
 ### Phase 1: Foundation (Server + Dashboard + Discovery + Topology)
 
 **Goal:** Functional web-based network scanner with topology visualization. Validate architecture. Time to First Value under 10 minutes.
 
 #### Pre-Phase Tooling Research
-- [ ] Evaluate and configure golangci-lint (15+ linters, project-specific `.golangci-lint.yml`)
+- [x] Evaluate and configure golangci-lint (15+ linters, project-specific `.golangci.yml`)
 - [ ] Establish test framework patterns: table-driven tests, testify assertions, testcontainers for integration
-- [ ] Set up Codecov integration for coverage tracking in CI
-- [ ] Register repository on Go Report Card
-- [ ] Configure GitHub Actions workflows: build, test, lint, license-check
-- [ ] Configure Dependabot for Go modules and GitHub Actions
-- [ ] Set up pre-commit hooks: gofmt, go vet, license header check
+- [x] Set up Codecov integration for coverage tracking in CI
+- [x] Register repository on Go Report Card
+- [x] Configure GitHub Actions workflows: build, test, lint, license-check
+- [x] Configure Dependabot for Go modules and GitHub Actions
+- [x] Set up pre-commit hooks: gofmt, go vet, license header check (lefthook)
 - [ ] Evaluate and document React + TypeScript toolchain for dashboard (Vite, ESLint, Prettier)
 
 #### Architecture & Infrastructure
-- [ ] Redesigned plugin system: `PluginInfo`, `Dependencies`, optional interfaces
-- [ ] Config abstraction wrapping Viper
-- [ ] Event bus (synchronous default with PublishAsync for slow consumers like analytics)
+- [x] Redesigned plugin system: `PluginInfo`, `Dependencies`, optional interfaces
+- [x] Config abstraction wrapping Viper
+- [x] Event bus (synchronous default with PublishAsync for slow consumers like analytics)
 - [ ] Role interfaces in `pkg/roles/` (including `AnalyticsProvider` interface -- definition only, no implementation)
-- [ ] Plugin registry with topological sort, graceful degradation
-- [ ] Store interface + SQLite implementation (modernc.org/sqlite, pure Go)
-- [ ] Per-plugin database migrations (reserve `analytics_` table prefix for Phase 2 Insight plugin)
+- [x] Plugin registry with topological sort, graceful degradation
+- [x] Store interface + SQLite implementation (modernc.org/sqlite, pure Go)
+- [x] Per-plugin database migrations (reserve `analytics_` table prefix for Phase 2 Insight plugin)
 - [ ] Repository interfaces in `internal/services/`
 - [ ] Metrics collection format: uniform `(timestamp, device_id, metric_name, value, tags)` for analytics consumption
 
@@ -131,34 +131,34 @@
 #### Testing & Quality
 - [ ] Test infrastructure: `internal/testutil/` with mocks, fixtures, helpers, mock clock
 - [ ] Test infrastructure: `testdata/` directory with SNMP fixtures, test configs, migration snapshots
-- [ ] Plugin contract tests: table-driven tests for `Plugin` interface and all optional interfaces
+- [x] Plugin contract tests: table-driven tests for `Plugin` interface and all optional interfaces
 - [ ] Plugin isolation tests: panic recovery in Init, Start, Stop, and HTTP handlers
-- [ ] Plugin lifecycle tests: full Init → Start → Stop cycle, dependency ordering, cascade disable
-- [ ] Plugin API version validation tests: too old, too new, exact match, backward-compatible range
+- [x] Plugin lifecycle tests: full Init → Start → Stop cycle, dependency ordering, cascade disable
+- [x] Plugin API version validation tests: too old, too new, exact match, backward-compatible range
 - [ ] API endpoint tests: `httptest.NewRecorder()` for all routes (status codes, content types, RFC 7807 errors)
 - [ ] Security middleware tests: auth enforcement, security headers, CORS, CSRF, rate limiting (429)
 - [ ] Input validation tests: malformed JSON, oversized payloads, SQL injection, XSS, path traversal
 - [ ] Secrets hygiene tests: verify credentials never appear in log output or error responses
 - [ ] Repository tests: in-memory SQLite CRUD, edge cases, transactions, constraint violations
-- [ ] Database migration tests: fresh install, sequential upgrade, per-plugin isolation, idempotent check
-- [ ] Configuration tests: defaults, env overrides, YAML overrides, invalid values, `config_version` validation
+- [x] Database migration tests: fresh install, sequential upgrade, per-plugin isolation, idempotent check
+- [x] Configuration tests: defaults, env overrides, YAML overrides, invalid values, `config_version` validation
 - [ ] Version compatibility tests: Plugin API, agent proto, config version, database schema version
 - [ ] Graceful shutdown tests: SIGTERM/SIGINT handling, per-plugin timeout, connection draining
 - [ ] Health endpoint tests: `/healthz`, `/readyz`, per-plugin health status
 - [ ] Fuzz tests: API input fuzzing, configuration fuzzing (Go `testing.F`)
 - [ ] Performance baselines: benchmark key operations, memory profile at 0/50 devices, startup time
 - [ ] E2E browser tests: first-run wizard, device list, scan trigger, login/logout (Playwright, headless)
-- [ ] CI pipeline: GitHub Actions `ci.yml` with golangci-lint, `go test -race`, build, coverage report, license check
+- [x] CI pipeline: GitHub Actions `ci.yml` with golangci-lint, `go test -race`, build, coverage report, license check
 - [ ] CI coverage enforcement: fail PR if any package drops below minimum coverage target
-- [ ] `.golangci-lint.yml`: errcheck, gosec, gocritic, staticcheck, bodyclose, noctx, sqlclosecheck
+- [x] `.golangci-lint.yml`: errcheck, gosec, gocritic, staticcheck, bodyclose, noctx, sqlclosecheck
 - [ ] GoReleaser configuration for cross-platform binary builds
-- [ ] Cross-platform CI: build verification for `linux/amd64`, `linux/arm64`, `windows/amd64`, `darwin/arm64`
+- [x] Cross-platform CI: build verification for `linux/amd64`, `linux/arm64`, `windows/amd64`, `darwin/arm64`
 - [ ] OpenAPI spec generation (swaggo/swag)
 
 #### Metrics & Measurement Infrastructure
-- [ ] Codecov integration: GitHub Action uploads coverage report, badge in README, PR comments with coverage diff
-- [ ] Go Report Card: register project at goreportcard.com, add badge to README
-- [ ] GitHub Dependabot: enable automated dependency vulnerability alerts
+- [x] Codecov integration: GitHub Action uploads coverage report, badge in README, PR comments with coverage diff
+- [x] Go Report Card: register project at goreportcard.com, add badge to README
+- [x] GitHub Dependabot: enable automated dependency vulnerability alerts
 - [ ] GitHub Insights: establish baseline tracking cadence (weekly traffic review)
 - [ ] Release download tracking: GoReleaser generates checksums, GitHub Releases API provides download counts
 - [ ] Docker image pull count tracking: publish to GitHub Container Registry (GHCR) or Docker Hub

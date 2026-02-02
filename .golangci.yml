@@ -1,0 +1,44 @@
+run:
+  timeout: 5m
+
+linters:
+  enable:
+    - errcheck
+    - gosec
+    - gocritic
+    - govet
+    - staticcheck
+    - ineffassign
+    - unused
+    - misspell
+    - bodyclose
+    - noctx
+    - sqlclosecheck
+    - durationcheck
+    - exhaustive
+    - nilerr
+    - prealloc
+
+linters-settings:
+  gosec:
+    excludes:
+      - G104  # Unhandled errors on deferred Close -- acceptable in tests
+  gocritic:
+    enabled-tags:
+      - diagnostic
+      - style
+      - performance
+    disabled-checks:
+      - hugeParam  # We pass structs by value intentionally in some places
+  exhaustive:
+    default-signifies-exhaustive: true
+
+issues:
+  exclude-rules:
+    - path: _test\.go
+      linters:
+        - gosec
+        - errcheck
+    - path: cmd/
+      linters:
+        - noctx  # CLI entry points don't always need request context

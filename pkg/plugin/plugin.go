@@ -5,6 +5,7 @@ package plugin
 
 import (
 	"context"
+	"database/sql"
 	"net/http"
 	"time"
 
@@ -47,10 +48,11 @@ type PluginInfo struct {
 // Dependencies provides controlled access to shared services.
 // Injected by the registry during Init.
 type Dependencies struct {
-	Config  Config      // Scoped to this plugin's config section
-	Logger  *zap.Logger // Named logger for this plugin
-	Bus     EventBus    // Event publish/subscribe for inter-plugin communication
-	Plugins PluginResolver
+	Config  Config         // Scoped to this plugin's config section
+	Logger  *zap.Logger    // Named logger for this plugin
+	Store   Store          // Database access with per-plugin migrations
+	Bus     EventBus       // Event publish/subscribe for inter-plugin communication
+	Plugins PluginResolver // Resolve other plugins by name or role
 }
 
 // Route represents an HTTP route exposed by a plugin.
@@ -77,6 +79,28 @@ type Config interface {
 	GetDuration(key string) time.Duration
 	IsSet(key string) bool
 	Sub(key string) Config
+}
+
+// Store provides database access for plugins. Each plugin gets a shared
+// connection but owns its own tables (prefixed with plugin name).
+type Store interface {
+	// DB returns the underlying *sql.DB for direct queries.
+	DB() *sql.DB
+
+	// Tx executes fn within a database transaction. The transaction is
+	// committed if fn returns nil, rolled back otherwise.
+	Tx(ctx context.Context, fn func(tx *sql.Tx) error) error
+
+	// Migrate runs pending migrations for the named plugin. Migrations
+	// are tracked in a shared _migrations table and applied in order.
+	Migrate(ctx context.Context, pluginName string, migrations []Migration) error
+}
+
+// Migration represents a single schema migration step.
+type Migration struct {
+	Version     int                    // Sequential version number (1, 2, 3, ...)
+	Description string                 // Human-readable description
+	Up          func(tx *sql.Tx) error // Forward migration function
 }
 
 // Publisher sends events to the bus. Use this thin interface in code

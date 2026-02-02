@@ -17,6 +17,7 @@ import (
 	"github.com/HerbHall/netvantage/internal/recon"
 	"github.com/HerbHall/netvantage/internal/registry"
 	"github.com/HerbHall/netvantage/internal/server"
+	"github.com/HerbHall/netvantage/internal/store"
 	"github.com/HerbHall/netvantage/internal/vault"
 	"github.com/HerbHall/netvantage/internal/version"
 	"github.com/HerbHall/netvantage/pkg/plugin"
@@ -48,6 +49,17 @@ func main() {
 		logger.Fatal("failed to load configuration", zap.Error(err))
 	}
 	cfg := config.New(viperCfg)
+
+	// Open database
+	dbPath := viperCfg.GetString("database.path")
+	if dbPath == "" {
+		dbPath = "netvantage.db"
+	}
+	db, err := store.New(dbPath)
+	if err != nil {
+		logger.Fatal("failed to open database", zap.Error(err))
+	}
+	defer db.Close()
 
 	// Create shared services
 	bus := event.NewBus(logger.Named("event"))
@@ -83,6 +95,7 @@ func main() {
 		return plugin.Dependencies{
 			Config:  pluginCfg,
 			Logger:  logger.Named(name),
+			Store:   db,
 			Bus:     bus,
 			Plugins: reg,
 		}
