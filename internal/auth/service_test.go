@@ -274,3 +274,119 @@ func TestDeleteUser_NotFound(t *testing.T) {
 		t.Errorf("DeleteUser err = %v, want ErrUserNotFound", err)
 	}
 }
+
+func TestLogin_AccountLockout(t *testing.T) {
+	us, _, svc := testEnv(t)
+	ctx := context.Background()
+
+	_, _ = svc.Setup(ctx, "admin", "admin@example.com", "securepassword")
+
+	// Fail DefaultMaxFailedAttempts times to trigger lockout.
+	for i := 0; i < DefaultMaxFailedAttempts; i++ {
+		_, err := svc.Login(ctx, "admin", "wrongpassword")
+		if err != ErrInvalidCredentials {
+			t.Fatalf("attempt %d: err = %v, want ErrInvalidCredentials", i+1, err)
+		}
+	}
+
+	// Next login attempt (even with correct password) should be locked.
+	_, err := svc.Login(ctx, "admin", "securepassword")
+	if err != ErrAccountLocked {
+		t.Errorf("Login after lockout: err = %v, want ErrAccountLocked", err)
+	}
+
+	// Verify the user record reflects the lockout.
+	user, _ := us.GetUserByUsername(ctx, "admin")
+	if user.FailedLoginAttempts < DefaultMaxFailedAttempts {
+		t.Errorf("FailedLoginAttempts = %d, want >= %d", user.FailedLoginAttempts, DefaultMaxFailedAttempts)
+	}
+	if user.LockedUntil == nil {
+		t.Fatal("expected LockedUntil to be set")
+	}
+	if user.LockedUntil.Before(time.Now()) {
+		t.Error("expected LockedUntil to be in the future")
+	}
+}
+
+func TestLogin_LockoutExpires(t *testing.T) {
+	us, _, svc := testEnv(t)
+	ctx := context.Background()
+
+	_, _ = svc.Setup(ctx, "admin", "admin@example.com", "securepassword")
+
+	// Lock the account by failing enough times.
+	for i := 0; i < DefaultMaxFailedAttempts; i++ {
+		_, _ = svc.Login(ctx, "admin", "wrongpassword")
+	}
+
+	// Verify locked.
+	_, err := svc.Login(ctx, "admin", "securepassword")
+	if err != ErrAccountLocked {
+		t.Fatalf("expected ErrAccountLocked, got %v", err)
+	}
+
+	// Simulate lockout expiry by setting locked_until to the past.
+	user, _ := us.GetUserByUsername(ctx, "admin")
+	past := time.Now().Add(-1 * time.Minute)
+	_ = us.LockAccount(ctx, user.ID, past)
+	// Also clear the failed attempts so the user can log in fresh.
+	_ = us.ClearFailedLogins(ctx, user.ID)
+
+	// Login should succeed now.
+	pair, err := svc.Login(ctx, "admin", "securepassword")
+	if err != nil {
+		t.Fatalf("Login after lockout expired: %v", err)
+	}
+	if pair.AccessToken == "" {
+		t.Error("expected non-empty access token after lockout expired")
+	}
+}
+
+func TestLogin_ClearsFailedAttemptsOnSuccess(t *testing.T) {
+	us, _, svc := testEnv(t)
+	ctx := context.Background()
+
+	_, _ = svc.Setup(ctx, "admin", "admin@example.com", "securepassword")
+
+	// Fail a few times (but not enough to lock).
+	for i := 0; i < DefaultMaxFailedAttempts-1; i++ {
+		_, _ = svc.Login(ctx, "admin", "wrongpassword")
+	}
+
+	// Verify failed attempts are recorded.
+	user, _ := us.GetUserByUsername(ctx, "admin")
+	if user.FailedLoginAttempts == 0 {
+		t.Fatal("expected non-zero FailedLoginAttempts before successful login")
+	}
+
+	// Successful login should clear the counter.
+	_, err := svc.Login(ctx, "admin", "securepassword")
+	if err != nil {
+		t.Fatalf("Login: %v", err)
+	}
+
+	user, _ = us.GetUserByUsername(ctx, "admin")
+	if user.FailedLoginAttempts != 0 {
+		t.Errorf("FailedLoginAttempts = %d after successful login, want 0", user.FailedLoginAttempts)
+	}
+}
+
+func TestLogin_LockoutPreventsCorrectPassword(t *testing.T) {
+	_, _, svc := testEnv(t)
+	ctx := context.Background()
+
+	_, _ = svc.Setup(ctx, "admin", "admin@example.com", "securepassword")
+
+	// Lock the account.
+	for i := 0; i < DefaultMaxFailedAttempts; i++ {
+		_, _ = svc.Login(ctx, "admin", "wrongpassword")
+	}
+
+	// Repeated correct password attempts should all fail with ErrAccountLocked.
+	for i := 0; i < 3; i++ {
+		_, err := svc.Login(ctx, "admin", "securepassword")
+		if err != ErrAccountLocked {
+			t.Errorf("attempt %d with correct password: err = %v, want ErrAccountLocked", i+1, err)
+		}
+	}
+}

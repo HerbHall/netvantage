@@ -15,10 +15,18 @@ import (
 var (
 	ErrInvalidCredentials = errors.New("invalid username or password")
 	ErrUserDisabled       = errors.New("user account is disabled")
+	ErrAccountLocked      = errors.New("account is locked due to too many failed login attempts")
 	ErrUserExists         = errors.New("username or email already exists")
 	ErrSetupComplete      = errors.New("setup already completed")
 	ErrInvalidToken       = errors.New("invalid or expired token")
 	ErrUserNotFound       = errors.New("user not found")
+)
+
+const (
+	// DefaultMaxFailedAttempts is the number of failed logins before lockout.
+	DefaultMaxFailedAttempts = 5
+	// DefaultLockoutDuration is how long an account stays locked.
+	DefaultLockoutDuration = 15 * time.Minute
 )
 
 // TokenPair contains an access token and refresh token.
@@ -63,8 +71,23 @@ func (s *Service) Login(ctx context.Context, username, password string) (*TokenP
 		return nil, ErrUserDisabled
 	}
 
+	// Check if account is locked.
+	if user.LockedUntil != nil && user.LockedUntil.After(time.Now()) {
+		s.logger.Warn("login attempt on locked account",
+			zap.String("username", username),
+			zap.Time("locked_until", *user.LockedUntil),
+		)
+		return nil, ErrAccountLocked
+	}
+
 	if !CheckPassword(user.PasswordHash, password) {
+		s.handleFailedLogin(ctx, user)
 		return nil, ErrInvalidCredentials
+	}
+
+	// Successful login -- clear any failed attempts.
+	if user.FailedLoginAttempts > 0 {
+		_ = s.store.ClearFailedLogins(ctx, user.ID)
 	}
 
 	pair, err := s.issueTokenPair(ctx, user)
@@ -75,6 +98,28 @@ func (s *Service) Login(ctx context.Context, username, password string) (*TokenP
 	_ = s.store.UpdateLastLogin(ctx, user.ID)
 	s.logger.Info("user logged in", zap.String("username", username), zap.String("user_id", user.ID))
 	return pair, nil
+}
+
+func (s *Service) handleFailedLogin(ctx context.Context, user *User) {
+	attempts, err := s.store.RecordFailedLogin(ctx, user.ID)
+	if err != nil {
+		s.logger.Error("failed to record failed login", zap.Error(err))
+		return
+	}
+
+	if attempts >= DefaultMaxFailedAttempts {
+		lockedUntil := time.Now().Add(DefaultLockoutDuration)
+		if err := s.store.LockAccount(ctx, user.ID, lockedUntil); err != nil {
+			s.logger.Error("failed to lock account", zap.Error(err))
+			return
+		}
+		s.logger.Warn("account locked due to failed login attempts",
+			zap.String("username", user.Username),
+			zap.String("user_id", user.ID),
+			zap.Int("attempts", attempts),
+			zap.Time("locked_until", lockedUntil),
+		)
+	}
 }
 
 // Setup creates the initial admin account. Only works when no users exist.
