@@ -33,6 +33,12 @@ func LoadConfig(configPath string) (*viper.Viper, error) {
 
 	// Plugin defaults
 	v.SetDefault("plugins.recon.enabled", true)
+	v.SetDefault("plugins.recon.scan_timeout", "5m")
+	v.SetDefault("plugins.recon.ping_timeout", "2s")
+	v.SetDefault("plugins.recon.ping_count", 3)
+	v.SetDefault("plugins.recon.concurrency", 64)
+	v.SetDefault("plugins.recon.arp_enabled", true)
+	v.SetDefault("plugins.recon.device_lost_after", "24h")
 	v.SetDefault("plugins.pulse.enabled", true)
 	v.SetDefault("plugins.dispatch.enabled", true)
 	v.SetDefault("plugins.vault.enabled", true)
