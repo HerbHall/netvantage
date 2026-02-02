@@ -282,7 +282,7 @@ func TestHandleListUsers_NonAdminForbidden(t *testing.T) {
 	_, mux := setupHandlerEnv(t)
 
 	// Inject viewer claims.
-	req := httptest.NewRequest("GET", "/api/v1/users", nil)
+	req := httptest.NewRequest("GET", "/api/v1/users", http.NoBody)
 	claims := &Claims{UserID: "test", Username: "viewer", Role: "viewer"}
 	ctx := context.WithValue(req.Context(), authUserKey{}, claims)
 	req = req.WithContext(ctx)

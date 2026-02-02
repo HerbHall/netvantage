@@ -17,7 +17,7 @@ func TestAuthMiddleware_SkipsNonAPIPath(t *testing.T) {
 		w.WriteHeader(http.StatusOK)
 	}))
 
-	req := httptest.NewRequest("GET", "/healthz", nil)
+	req := httptest.NewRequest("GET", "/healthz", http.NoBody)
 	w := httptest.NewRecorder()
 	handler.ServeHTTP(w, req)
 
@@ -45,7 +45,7 @@ func TestAuthMiddleware_SkipsPublicPaths(t *testing.T) {
 				called = true
 			}))
 
-			req := httptest.NewRequest("POST", path, nil)
+			req := httptest.NewRequest("POST", path, http.NoBody)
 			w := httptest.NewRecorder()
 			handler.ServeHTTP(w, req)
 

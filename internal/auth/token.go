@@ -75,7 +75,7 @@ func (s *TokenService) ValidateAccessToken(tokenString string) (*Claims, error) 
 
 // GenerateRefreshToken creates a cryptographically random refresh token
 // and returns both the raw token (sent to client) and its SHA-256 hash (stored in DB).
-func (s *TokenService) GenerateRefreshToken() (raw string, hash string, expiresAt time.Time, err error) {
+func (s *TokenService) GenerateRefreshToken() (raw, hash string, expiresAt time.Time, err error) {
 	b := make([]byte, 32)
 	if _, err := rand.Read(b); err != nil {
 		return "", "", time.Time{}, fmt.Errorf("generate refresh token: %w", err)
