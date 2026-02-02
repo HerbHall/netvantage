@@ -65,7 +65,7 @@ func TestAuthMiddleware_RejectsNoHeader(t *testing.T) {
 		called = true
 	}))
 
-	req := httptest.NewRequest("GET", "/api/v1/plugins", nil)
+	req := httptest.NewRequest("GET", "/api/v1/plugins", http.NoBody)
 	w := httptest.NewRecorder()
 	handler.ServeHTTP(w, req)
 
@@ -85,7 +85,7 @@ func TestAuthMiddleware_RejectsBadToken(t *testing.T) {
 		t.Error("handler should not be called")
 	}))
 
-	req := httptest.NewRequest("GET", "/api/v1/plugins", nil)
+	req := httptest.NewRequest("GET", "/api/v1/plugins", http.NoBody)
 	req.Header.Set("Authorization", "Bearer invalid.jwt.token")
 	w := httptest.NewRecorder()
 	handler.ServeHTTP(w, req)
@@ -111,7 +111,7 @@ func TestAuthMiddleware_AcceptsValidToken(t *testing.T) {
 		w.WriteHeader(http.StatusOK)
 	}))
 
-	req := httptest.NewRequest("GET", "/api/v1/plugins", nil)
+	req := httptest.NewRequest("GET", "/api/v1/plugins", http.NoBody)
 	req.Header.Set("Authorization", "Bearer "+token)
 	w := httptest.NewRecorder()
 	handler.ServeHTTP(w, req)
@@ -138,7 +138,7 @@ func TestAuthMiddleware_RejectsNonBearerScheme(t *testing.T) {
 		t.Error("handler should not be called")
 	}))
 
-	req := httptest.NewRequest("GET", "/api/v1/plugins", nil)
+	req := httptest.NewRequest("GET", "/api/v1/plugins", http.NoBody)
 	req.Header.Set("Authorization", "Basic dXNlcjpwYXNz")
 	w := httptest.NewRecorder()
 	handler.ServeHTTP(w, req)
@@ -149,7 +149,7 @@ func TestAuthMiddleware_RejectsNonBearerScheme(t *testing.T) {
 }
 
 func TestUserFromContext_Nil(t *testing.T) {
-	req := httptest.NewRequest("GET", "/", nil)
+	req := httptest.NewRequest("GET", "/", http.NoBody)
 	claims := UserFromContext(req.Context())
 	if claims != nil {
 		t.Error("expected nil claims for empty context")
