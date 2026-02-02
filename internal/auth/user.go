@@ -25,16 +25,18 @@ var ValidRoles = map[Role]bool{
 
 // User represents a NetVantage user account.
 type User struct {
-	ID           string    `json:"id"`
-	Username     string    `json:"username"`
-	Email        string    `json:"email"`
-	PasswordHash string    `json:"-"` // Never serialized
-	Role         Role      `json:"role"`
-	AuthProvider string    `json:"auth_provider"`
-	OIDCSubject  string    `json:"oidc_subject,omitempty"`
-	CreatedAt    time.Time `json:"created_at"`
-	LastLogin    time.Time `json:"last_login,omitempty"`
-	Disabled     bool      `json:"disabled"`
+	ID                  string     `json:"id"`
+	Username            string     `json:"username"`
+	Email               string     `json:"email"`
+	PasswordHash        string     `json:"-"` // Never serialized
+	Role                Role       `json:"role"`
+	AuthProvider        string     `json:"auth_provider"`
+	OIDCSubject         string     `json:"oidc_subject,omitempty"`
+	CreatedAt           time.Time  `json:"created_at"`
+	LastLogin           time.Time  `json:"last_login,omitempty"`
+	Disabled            bool       `json:"disabled"`
+	FailedLoginAttempts int        `json:"-"`
+	LockedUntil         *time.Time `json:"locked_until,omitempty"`
 }
 
 // HashPassword creates a bcrypt hash of the given password.

@@ -38,23 +38,20 @@ func (s *UserStore) CreateUser(ctx context.Context, u *User) error {
 
 // GetUserByID returns a user by ID.
 func (s *UserStore) GetUserByID(ctx context.Context, id string) (*User, error) {
-	return s.scanUser(s.db.QueryRowContext(ctx, `
-		SELECT id, username, email, password_hash, role, auth_provider, oidc_subject, created_at, last_login, disabled
-		FROM auth_users WHERE id = ?`, id))
+	return s.scanUser(s.db.QueryRowContext(ctx,
+		`SELECT `+userColumns+` FROM auth_users WHERE id = ?`, id))
 }
 
 // GetUserByUsername returns a user by username.
 func (s *UserStore) GetUserByUsername(ctx context.Context, username string) (*User, error) {
-	return s.scanUser(s.db.QueryRowContext(ctx, `
-		SELECT id, username, email, password_hash, role, auth_provider, oidc_subject, created_at, last_login, disabled
-		FROM auth_users WHERE username = ?`, username))
+	return s.scanUser(s.db.QueryRowContext(ctx,
+		`SELECT `+userColumns+` FROM auth_users WHERE username = ?`, username))
 }
 
 // ListUsers returns all users.
 func (s *UserStore) ListUsers(ctx context.Context) ([]User, error) {
-	rows, err := s.db.QueryContext(ctx, `
-		SELECT id, username, email, password_hash, role, auth_provider, oidc_subject, created_at, last_login, disabled
-		FROM auth_users ORDER BY created_at`)
+	rows, err := s.db.QueryContext(ctx,
+		`SELECT `+userColumns+` FROM auth_users ORDER BY created_at`)
 	if err != nil {
 		return nil, fmt.Errorf("list users: %w", err)
 	}
@@ -168,15 +165,50 @@ type RefreshToken struct {
 	Revoked   bool
 }
 
+// RecordFailedLogin increments the failed attempt counter and returns the new count.
+func (s *UserStore) RecordFailedLogin(ctx context.Context, userID string) (attempts int, err error) {
+	_, err = s.db.ExecContext(ctx,
+		`UPDATE auth_users SET failed_login_attempts = failed_login_attempts + 1 WHERE id = ?`,
+		userID)
+	if err != nil {
+		return 0, fmt.Errorf("record failed login: %w", err)
+	}
+	err = s.db.QueryRowContext(ctx,
+		`SELECT failed_login_attempts FROM auth_users WHERE id = ?`, userID).Scan(&attempts)
+	return attempts, err
+}
+
+// LockAccount sets the locked_until timestamp for a user.
+func (s *UserStore) LockAccount(ctx context.Context, userID string, lockedUntil time.Time) error {
+	_, err := s.db.ExecContext(ctx,
+		`UPDATE auth_users SET locked_until = ? WHERE id = ?`,
+		lockedUntil, userID)
+	return err
+}
+
+// ClearFailedLogins resets the failed attempt counter and unlocks the account.
+func (s *UserStore) ClearFailedLogins(ctx context.Context, userID string) error {
+	_, err := s.db.ExecContext(ctx,
+		`UPDATE auth_users SET failed_login_attempts = 0, locked_until = NULL WHERE id = ?`,
+		userID)
+	return err
+}
+
+// userColumns is the shared SELECT column list for user queries.
+const userColumns = `id, username, email, password_hash, role, auth_provider, oidc_subject,
+	created_at, last_login, disabled, failed_login_attempts, locked_until`
+
 func (s *UserStore) scanUser(row *sql.Row) (*User, error) {
 	var u User
 	var role string
 	var lastLogin sql.NullTime
+	var lockedUntil sql.NullTime
 	var passwordHash sql.NullString
 	var oidcSubject sql.NullString
 
 	err := row.Scan(&u.ID, &u.Username, &u.Email, &passwordHash, &role,
-		&u.AuthProvider, &oidcSubject, &u.CreatedAt, &lastLogin, &u.Disabled)
+		&u.AuthProvider, &oidcSubject, &u.CreatedAt, &lastLogin, &u.Disabled,
+		&u.FailedLoginAttempts, &lockedUntil)
 	if err != nil {
 		return nil, err
 	}
@@ -189,6 +221,9 @@ func (s *UserStore) scanUser(row *sql.Row) (*User, error) {
 	}
 	if oidcSubject.Valid {
 		u.OIDCSubject = oidcSubject.String
+	}
+	if lockedUntil.Valid {
+		u.LockedUntil = &lockedUntil.Time
 	}
 	return &u, nil
 }
@@ -197,11 +232,13 @@ func (s *UserStore) scanUserRow(rows *sql.Rows) (*User, error) {
 	var u User
 	var role string
 	var lastLogin sql.NullTime
+	var lockedUntil sql.NullTime
 	var passwordHash sql.NullString
 	var oidcSubject sql.NullString
 
 	err := rows.Scan(&u.ID, &u.Username, &u.Email, &passwordHash, &role,
-		&u.AuthProvider, &oidcSubject, &u.CreatedAt, &lastLogin, &u.Disabled)
+		&u.AuthProvider, &oidcSubject, &u.CreatedAt, &lastLogin, &u.Disabled,
+		&u.FailedLoginAttempts, &lockedUntil)
 	if err != nil {
 		return nil, err
 	}
@@ -214,6 +251,9 @@ func (s *UserStore) scanUserRow(rows *sql.Rows) (*User, error) {
 	}
 	if oidcSubject.Valid {
 		u.OIDCSubject = oidcSubject.String
+	}
+	if lockedUntil.Valid {
+		u.LockedUntil = &lockedUntil.Time
 	}
 	return &u, nil
 }
@@ -257,6 +297,18 @@ var migrations = []plugin.Migration{
 				return err
 			}
 			_, err = tx.Exec(`CREATE INDEX idx_refresh_tokens_user ON auth_refresh_tokens(user_id)`)
+			return err
+		},
+	},
+	{
+		Version:     3,
+		Description: "add account lockout columns",
+		Up: func(tx *sql.Tx) error {
+			_, err := tx.Exec(`ALTER TABLE auth_users ADD COLUMN failed_login_attempts INTEGER NOT NULL DEFAULT 0`)
+			if err != nil {
+				return err
+			}
+			_, err = tx.Exec(`ALTER TABLE auth_users ADD COLUMN locked_until DATETIME`)
 			return err
 		},
 	},
