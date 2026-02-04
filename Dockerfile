@@ -36,8 +36,8 @@ RUN go mod download
 # Copy source code
 COPY . .
 
-# Copy built frontend assets from previous stage
-COPY --from=frontend-builder /build/web/dist ./web/dist
+# Copy built frontend assets to where Go embed expects them
+COPY --from=frontend-builder /build/web/dist ./internal/dashboard/dist
 
 # Build arguments for version injection
 ARG VERSION=dev

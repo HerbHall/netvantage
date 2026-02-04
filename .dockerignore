@@ -13,8 +13,9 @@
 bin/
 dist/
 
-# Node modules (we'll install fresh in the container)
+# Node modules and build output (we'll build fresh in the container)
 web/node_modules/
+web/dist/
 
 # Test files and coverage
 coverage/

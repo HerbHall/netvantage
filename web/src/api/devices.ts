@@ -10,10 +10,10 @@ export async function getTopology(): Promise<TopologyGraph> {
 
 /**
  * Trigger a new network scan.
- * @param targetCidr Optional CIDR range to scan (defaults to local subnet)
+ * @param subnet CIDR range to scan (defaults to 192.168.1.0/24)
  */
-export async function triggerScan(targetCidr?: string): Promise<Scan> {
-  return api.post<Scan>('/recon/scan', targetCidr ? { target_cidr: targetCidr } : undefined)
+export async function triggerScan(subnet = '192.168.1.0/24'): Promise<Scan> {
+  return api.post<Scan>('/recon/scan', { subnet })
 }
 
 /**
