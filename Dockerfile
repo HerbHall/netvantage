@@ -6,15 +6,18 @@
 # ============================================================================
 FROM node:22-alpine AS frontend-builder
 
+# Enable corepack for pnpm
+RUN corepack enable && corepack prepare pnpm@latest --activate
+
 WORKDIR /build/web
 
 # Install dependencies first (cacheable layer)
-COPY web/package*.json ./
-RUN npm ci
+COPY web/package.json web/pnpm-lock.yaml ./
+RUN pnpm install --frozen-lockfile
 
 # Copy frontend source and build
 COPY web/ ./
-RUN npm run build
+RUN pnpm run build
 
 # ============================================================================
 # Stage 2: Build Go binary
