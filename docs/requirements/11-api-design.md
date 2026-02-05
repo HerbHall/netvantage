@@ -12,7 +12,7 @@
   - **Additive changes** (new fields in responses, new optional query parameters, new endpoints) are NOT breaking and do NOT require a new API version.
   - **Breaking changes** (removing/renaming fields, changing response structure, removing endpoints, changing authentication) require a new API version.
   - **Deprecation timeline:** When `/api/v2/` is introduced, `/api/v1/` continues to work for a minimum of **6 months** (two minor release cycles). Deprecated API versions return a `Sunset` header (RFC 8594) and a `Deprecation` header on every response.
-  - **Version response header:** All API responses include `X-NetVantage-Version: {server_version}` (e.g., `X-NetVantage-Version: 1.3.2`). This enables clients to detect server version without a dedicated endpoint.
+  - **Version response header:** All API responses include `X-SubNetree-Version: {server_version}` (e.g., `X-SubNetree-Version: 1.3.2`). This enables clients to detect server version without a dedicated endpoint.
   - **Maximum concurrent API versions:** 2 (current + one prior). No more than two URL path versions served simultaneously.
   - **Health and metrics endpoints** (`/healthz`, `/readyz`, `/metrics`) are unversioned -- they are not part of the API contract.
 
@@ -26,7 +26,7 @@
 
 ```json
 {
-  "type": "https://netvantage.io/problems/not-found",
+  "type": "https://subnetree.io/problems/not-found",
   "title": "Not Found",
   "status": 404,
   "detail": "Device with ID 'abc-123' does not exist",
@@ -145,13 +145,13 @@ service ScoutService {
 
 **gRPC API Versioning Policy:**
 
-- **Proto package versioning:** Proto definitions live in `api/proto/v1/` with package `netvantage.v1`. A breaking change creates `api/proto/v2/` with package `netvantage.v2`.
+- **Proto package versioning:** Proto definitions live in `api/proto/v1/` with package `subnetree.v1`. A breaking change creates `api/proto/v2/` with package `subnetree.v2`.
 - **Breaking changes in gRPC** include: removing or renaming fields, changing field numbers, changing field types, removing RPC methods, changing streaming semantics (unary to streaming or vice versa).
 - **Non-breaking changes** include: adding new fields (proto3 handles unknown fields gracefully), adding new RPC methods, adding new enum values.
 - **Proto version integer:** Each proto package version has a corresponding integer (`proto_version`) sent in `CheckInRequest`. This enables version negotiation without parsing proto package names at runtime (see Agent-Server Version Compatibility).
 - **`buf breaking` enforcement:** The `buf` toolchain runs breaking-change detection in CI against the previous tagged release. Any breaking change fails the build unless the proto package version is incremented.
 - **Backward compatibility guarantee:** The server supports the current proto version and one version behind (N and N-1). This matches the agent-server compatibility rule.
-- **gRPC metadata:** The server sets `x-netvantage-version` in gRPC response metadata (trailing headers) for diagnostic purposes.
+- **gRPC metadata:** The server sets `x-subnetree-version` in gRPC response metadata (trailing headers) for diagnostic purposes.
 
 ### Rate Limits
 

@@ -81,11 +81,11 @@ These estimates guide the performance profile auto-selection and prerequisite ch
 
 ### Reverse Proxy Deployment
 
-NetVantage supports operation behind a reverse proxy (nginx, Traefik, Caddy). Requirements:
+SubNetree supports operation behind a reverse proxy (nginx, Traefik, Caddy). Requirements:
 - WebSocket upgrade support for real-time dashboard updates (`/ws/` path)
 - gRPC passthrough or gRPC-Web translation for Scout agent communication on port 9090
 - `X-Forwarded-For`, `X-Forwarded-Proto` headers for accurate client IP logging
-- Configurable `--base-path` flag for non-root deployments (e.g., `/netvantage/`)
+- Configurable `--base-path` flag for non-root deployments (e.g., `/subnetree/`)
 
 ### Network Considerations
 

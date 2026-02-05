@@ -4,7 +4,7 @@ package config
 import (
 	"time"
 
-	"github.com/HerbHall/netvantage/pkg/plugin"
+	"github.com/HerbHall/subnetree/pkg/plugin"
 	"github.com/spf13/viper"
 )
 

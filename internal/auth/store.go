@@ -6,7 +6,7 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/HerbHall/netvantage/pkg/plugin"
+	"github.com/HerbHall/subnetree/pkg/plugin"
 )
 
 // UserStore provides persistence for user accounts.

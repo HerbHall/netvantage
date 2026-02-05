@@ -2,7 +2,7 @@
 
 ### Overview
 
-The Tailscale plugin provides automatic device discovery and overlay network connectivity for users running Tailscale. It queries the Tailscale API to enumerate devices on the user's tailnet, enriching NetVantage's device inventory with Tailscale metadata (IP addresses, hostnames, tags, OS, online status). For distributed home labs and multi-site networks, Tailscale eliminates NAT traversal complexity -- devices are reachable by their stable 100.x.y.z addresses regardless of physical location.
+The Tailscale plugin provides automatic device discovery and overlay network connectivity for users running Tailscale. It queries the Tailscale API to enumerate devices on the user's tailnet, enriching SubNetree's device inventory with Tailscale metadata (IP addresses, hostnames, tags, OS, online status). For distributed home labs and multi-site networks, Tailscale eliminates NAT traversal complexity -- devices are reachable by their stable 100.x.y.z addresses regardless of physical location.
 
 **Licensing:** The Tailscale API client library (`tailscale-client-go-v2`) is MIT licensed. No copyleft or licensing conflicts with BSL 1.1.
 
@@ -18,7 +18,7 @@ The Tailscale plugin provides automatic device discovery and overlay network con
 | MagicDNS hostname resolution | Use Tailscale DNS names (e.g., `device.tailnet.ts.net`) for device identification | 2 |
 | Scout over Tailscale | Support Scout agent communication via Tailscale IPs (no port forwarding required) | 2 |
 | Connectivity preference | Prefer Tailscale IPs for monitoring/remote access when devices are on the tailnet | 3 |
-| Tailscale Funnel/Serve guidance | Documentation for exposing NetVantage dashboard via Tailscale Funnel | 1 (docs only) |
+| Tailscale Funnel/Serve guidance | Documentation for exposing SubNetree dashboard via Tailscale Funnel | 1 (docs only) |
 
 ### Authentication
 
@@ -31,7 +31,7 @@ API credentials are stored in the Vault module (encrypted at rest). The plugin n
 
 ### Device Merging
 
-Tailscale-discovered devices are merged with existing NetVantage device records using a match priority:
+Tailscale-discovered devices are merged with existing SubNetree device records using a match priority:
 
 1. **MAC address** -- exact match (most reliable)
 2. **Hostname** -- case-insensitive match

@@ -10,7 +10,7 @@ Accepted
 
 ## Context
 
-NetVantage has multiple versioned interfaces between components:
+SubNetree has multiple versioned interfaces between components:
 
 - **Plugin API:** Server ↔ built-in and third-party plugins
 - **Agent protocol:** Server ↔ Scout agents (gRPC)
@@ -43,13 +43,13 @@ Use integer-based versioning for protocol compatibility and SemVer strings for h
 **REST API:**
 - Path-based major version: `/api/v1/`, `/api/v2/`
 - Maximum 2 concurrent API versions
-- `X-NetVantage-Version` response header on all responses
+- `X-SubNetree-Version` response header on all responses
 - `Sunset` + `Deprecation` headers per RFC 8594 during deprecation
 
 **Configuration:**
 - `config_version` integer at YAML root
 - Server refuses to start if config version is newer than supported
-- `netvantage config migrate` CLI command for automatic migration
+- `subnetree config migrate` CLI command for automatic migration
 
 **Human-facing versions** (server binary, agent binary, SDK) use SemVer 2.0.0 strings injected at build time via ldflags.
 

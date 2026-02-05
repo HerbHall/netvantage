@@ -10,7 +10,7 @@ Accepted
 
 ## Context
 
-NetVantage's core value proposition is modularity -- every major capability (discovery, monitoring, remote access, credentials, agent management) should be replaceable and extensible. The architecture must:
+SubNetree's core value proposition is modularity -- every major capability (discovery, monitoring, remote access, credentials, agent management) should be replaceable and extensible. The architecture must:
 
 - Allow built-in modules to be replaced by third-party alternatives
 - Enable the community to build new capabilities without modifying core code
@@ -42,7 +42,7 @@ type Plugin interface {
 - `Reloadable` -- supports hot config reload
 - `AnalyticsProvider` -- provides AI/analytics capabilities (Phase 2+)
 
-**Plugin registration:** Compile-time in `cmd/netvantage/main.go`. The registry performs topological sort based on declared dependencies and validates Plugin API version compatibility.
+**Plugin registration:** Compile-time in `cmd/subnetree/main.go`. The registry performs topological sort based on declared dependencies and validates Plugin API version compatibility.
 
 **Phase 4 evolution:** Add HashiCorp go-plugin for process-isolated third-party plugins communicating over gRPC, while keeping built-in plugins in-process for performance.
 

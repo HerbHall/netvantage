@@ -103,12 +103,12 @@ jobs:
           CGO_ENABLED: '0'
           GOARCH: ${{ matrix.goarch }}
         run: |
-          VERSION_PKG=github.com/HerbHall/netvantage/internal/version
+          VERSION_PKG=github.com/HerbHall/subnetree/internal/version
           go build -v -ldflags "-s -w \
             -X ${VERSION_PKG}.Version=${{ github.ref_name }} \
             -X ${VERSION_PKG}.GitCommit=${GITHUB_SHA::7} \
             -X ${VERSION_PKG}.BuildDate=$(date -u +%Y-%m-%dT%H:%M:%SZ)" \
-            ./cmd/netvantage/...
+            ./cmd/subnetree/...
 
       - name: Build scout
         shell: bash
@@ -116,7 +116,7 @@ jobs:
           CGO_ENABLED: '0'
           GOARCH: ${{ matrix.goarch }}
         run: |
-          VERSION_PKG=github.com/HerbHall/netvantage/internal/version
+          VERSION_PKG=github.com/HerbHall/subnetree/internal/version
           go build -v -ldflags "-s -w \
             -X ${VERSION_PKG}.Version=${{ github.ref_name }} \
             -X ${VERSION_PKG}.GitCommit=${GITHUB_SHA::7} \

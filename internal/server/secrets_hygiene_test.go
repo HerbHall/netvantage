@@ -10,8 +10,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/HerbHall/netvantage/internal/auth"
-	"github.com/HerbHall/netvantage/internal/store"
+	"github.com/HerbHall/subnetree/internal/auth"
+	"github.com/HerbHall/subnetree/internal/store"
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
 	"go.uber.org/zap/zaptest/observer"

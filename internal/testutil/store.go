@@ -3,7 +3,7 @@ package testutil
 import (
 	"testing"
 
-	"github.com/HerbHall/netvantage/internal/store"
+	"github.com/HerbHall/subnetree/internal/store"
 )
 
 // NewStore creates an in-memory SQLiteStore for testing.

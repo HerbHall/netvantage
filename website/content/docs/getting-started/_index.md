@@ -3,7 +3,7 @@ title: Getting Started
 weight: 1
 ---
 
-Get NetVantage running in under 10 minutes.
+Get SubNetree running in under 10 minutes.
 
 ## Prerequisites
 
@@ -14,25 +14,25 @@ Get NetVantage running in under 10 minutes.
 ## Build from Source
 
 ```bash
-git clone https://github.com/HerbHall/netvantage.git
-cd netvantage
+git clone https://github.com/HerbHall/subnetree.git
+cd subnetree
 make build
 ```
 
 This produces two binaries in `bin/`:
-- `netvantage` -- the server
+- `subnetree` -- the server
 - `scout` -- the agent
 
 ## Run the Server
 
 ```bash
-./bin/netvantage
+./bin/subnetree
 ```
 
 Or with a custom configuration file:
 
 ```bash
-./bin/netvantage -config configs/netvantage.example.yaml
+./bin/subnetree -config configs/subnetree.example.yaml
 ```
 
 The server starts on `http://localhost:8080` by default.

@@ -222,7 +222,7 @@ Verify that upgrading from one version to another works without data loss or ser
 
 - **Binary upgrade:** Install version N, populate with test data (devices, metrics, alerts, credentials), replace binary with version N+1, restart, verify all data intact and accessible.
 - **Database migration upgrade:** Snapshot database at version N, run version N+1 migrations, verify schema correct and data preserved.
-- **Config migration:** Load version N config with version N+1 server, verify warning and `netvantage config migrate` produces valid config.
+- **Config migration:** Load version N config with version N+1 server, verify warning and `subnetree config migrate` produces valid config.
 - **Agent compatibility across upgrade:** Server at version N+1 accepts agents still at version N (within N-1 proto window).
 - **Rollback detection:** After upgrading server to N+1, starting the old version N binary detects the newer database and refuses to start (does not corrupt data).
 

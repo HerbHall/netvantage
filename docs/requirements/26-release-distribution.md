@@ -36,20 +36,20 @@
 
 ### Version Management
 
-All version strings follow **Semantic Versioning 2.0.0** (`MAJOR.MINOR.PATCH`) with optional pre-release suffixes. This section is the single source of truth for how versioning works across all NetVantage components. Component-specific enforcement rules are documented inline in the relevant sections (Plugin Lifecycle, Agent-Server Compatibility, REST API Standards, gRPC Services, Configuration).
+All version strings follow **Semantic Versioning 2.0.0** (`MAJOR.MINOR.PATCH`) with optional pre-release suffixes. This section is the single source of truth for how versioning works across all SubNetree components. Component-specific enforcement rules are documented inline in the relevant sections (Plugin Lifecycle, Agent-Server Compatibility, REST API Standards, gRPC Services, Configuration).
 
 #### Component Version Inventory
 
 | Component | Version Format | Where Defined | How Consumed |
 |-----------|---------------|---------------|--------------|
-| Server binary | SemVer (`1.3.2`) | Build-time ldflags | `--version` flag, `/api/v1/health`, `X-NetVantage-Version` header, logs |
+| Server binary | SemVer (`1.3.2`) | Build-time ldflags | `--version` flag, `/api/v1/health`, `X-SubNetree-Version` header, logs |
 | Scout agent binary | SemVer (`1.3.2`) | Build-time ldflags | `--version` flag, `CheckInRequest.agent_version`, logs |
 | Plugin API | Integer (`1`, `2`, ...) | `PluginAPIVersionCurrent` constant | `PluginInfo.APIVersion`, registry validation at startup |
 | Individual plugins | SemVer (`0.4.1`) | Build-time ldflags (per module) | `PluginInfo.Version`, `/api/v1/plugins` response |
 | REST API | Integer in URL path (`v1`) | URL prefix `/api/v1/` | Client requests, `Sunset`/`Deprecation` headers on deprecated versions |
-| gRPC API | Integer (`1`, `2`, ...) | Proto package (`netvantage.v1`) | `CheckInRequest.proto_version`, `buf breaking` CI check |
+| gRPC API | Integer (`1`, `2`, ...) | Proto package (`subnetree.v1`) | `CheckInRequest.proto_version`, `buf breaking` CI check |
 | Database schema | Integer per plugin (`1`, `2`, ...) | `_migrations` table | Automatic forward-only migration at startup |
-| Configuration format | Integer (`1`, `2`, ...) | `config_version` YAML field | Startup validation, `netvantage config migrate` CLI |
+| Configuration format | Integer (`1`, `2`, ...) | `config_version` YAML field | Startup validation, `subnetree config migrate` CLI |
 | Plugin SDK packages | SemVer via Go module | `pkg/plugin/`, `pkg/roles/`, `pkg/models/` | Go module versioning (same repo, tagged independently when needed) |
 
 #### SemVer Rules for Server and Agent
@@ -86,7 +86,7 @@ COMMIT    ?= $(shell git rev-parse --short HEAD)
 DATE      ?= $(shell date -u +%Y-%m-%dT%H:%M:%SZ)
 GOVERSION ?= $(shell go version | awk '{print $$3}')
 
-VERSION_PKG = github.com/HerbHall/netvantage/internal/version
+VERSION_PKG = github.com/HerbHall/subnetree/internal/version
 LDFLAGS = -ldflags "-s -w \
   -X $(VERSION_PKG).Version=$(VERSION) \
   -X $(VERSION_PKG).GitCommit=$(COMMIT) \
@@ -97,7 +97,7 @@ LDFLAGS = -ldflags "-s -w \
 **`--version` flag output** (both server and agent):
 
 ```
-netvantage version 1.3.2 (commit: a1b2c3d, built: 2025-07-15T14:30:00Z, go: go1.25.6)
+subnetree version 1.3.2 (commit: a1b2c3d, built: 2025-07-15T14:30:00Z, go: go1.25.6)
 ```
 
 **Plugin versions:** Each built-in plugin's `Version()` method returns `version.Version` (the server version), since built-in plugins ship with the server binary. Third-party plugins compiled separately inject their own version via their own build's ldflags.
@@ -106,7 +106,7 @@ netvantage version 1.3.2 (commit: a1b2c3d, built: 2025-07-15T14:30:00Z, go: go1.
 
 The Plugin SDK (`pkg/plugin/`, `pkg/roles/`, `pkg/models/`) is Apache 2.0 licensed and lives in the same Git repository as the BSL-licensed core. It versions as follows:
 
-- **Go module path:** `github.com/HerbHall/netvantage` (same module). SDK packages are importable as `github.com/HerbHall/netvantage/pkg/plugin`, etc.
+- **Go module path:** `github.com/HerbHall/subnetree` (same module). SDK packages are importable as `github.com/HerbHall/subnetree/pkg/plugin`, etc.
 - **Version coupling (Phase 1-2):** During early development, SDK packages version with the server. A server release `v1.3.2` means `pkg/plugin/` is also at `v1.3.2`. This is the standard Go monorepo pattern.
 - **Independent versioning (Phase 3+):** If the SDK needs to release independently (e.g., SDK bugfix without server release), split to a Go sub-module (`pkg/plugin/go.mod`). This is deferred until there is actual demand from third-party plugin developers.
 - **API stability promise:** Within a major version, the SDK's exported types and interfaces are backward compatible. New optional interfaces are additive. Removing or changing existing interfaces is a major version bump.
@@ -140,6 +140,6 @@ All version mismatches produce **explicit, actionable error messages**. No silen
 | Agent proto too old | Agent check-in (gRPC handler) | Check-in rejected (`VERSION_REJECTED`). Agent logs upgrade message. Server logs event. |
 | Agent proto too new | Agent check-in (gRPC handler) | Check-in rejected (`VERSION_REJECTED`). Agent logs downgrade/wait message. Server logs event. |
 | Config version too new | Server startup (config load) | Server refuses to start. Error with "upgrade server or downgrade config" message. |
-| Config version too old | Server startup (config load) | Server starts with warning. Suggests `netvantage config migrate`. |
+| Config version too old | Server startup (config load) | Server starts with warning. Suggests `subnetree config migrate`. |
 | REST API version removed | Client HTTP request | HTTP 410 Gone with `Sunset` header and message pointing to new API version. |
 | Database schema too new | Server startup (migration check) | Server refuses to start. "Database was created by a newer server version." |

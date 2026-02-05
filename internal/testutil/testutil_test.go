@@ -5,8 +5,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/HerbHall/netvantage/pkg/models"
-	"github.com/HerbHall/netvantage/pkg/plugin"
+	"github.com/HerbHall/subnetree/pkg/models"
+	"github.com/HerbHall/subnetree/pkg/plugin"
 )
 
 func TestLogger_NotNil(t *testing.T) {

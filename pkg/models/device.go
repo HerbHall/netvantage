@@ -41,7 +41,7 @@ const (
 	DiscoveryManual DiscoveryMethod = "manual"
 )
 
-// Device represents a network device tracked by NetVantage.
+// Device represents a network device tracked by SubNetree.
 type Device struct {
 	ID              string            `json:"id"`
 	Hostname        string            `json:"hostname"`

@@ -122,11 +122,11 @@
 - [ ] About page with version info, license, and Community Supporters section
 
 #### Documentation
-- [ ] Tailscale deployment guide: running NetVantage + Scout over Tailscale
+- [ ] Tailscale deployment guide: running SubNetree + Scout over Tailscale
 - [ ] Tailscale Funnel/Serve guide: exposing dashboard without port forwarding
 
 #### Operations
-- [ ] Backup/restore CLI commands (`netvantage backup`, `netvantage restore`)
+- [ ] Backup/restore CLI commands (`subnetree backup`, `subnetree restore`)
 - [ ] Data retention configuration with automated purge job
 - [x] Security headers middleware (CSP, X-Frame-Options, HSTS, etc.)
 - [x] Account lockout after failed login attempts
@@ -174,7 +174,7 @@
 - [ ] First tagged release: `v0.1.0-alpha` with pre-built binaries (GoReleaser) and GitHub Release notes
 - [ ] Dockerfile: multi-stage build (builder + distroless/alpine runtime), multi-arch (`linux/amd64`, `linux/arm64`)
 - [ ] docker-compose.yml: one-command deployment matching the spec in Deployment section
-- [ ] README: "Why NetVantage?" section -- value proposition, feature comparison table (discovery + monitoring + remote access + vault + IoT in one tool), clear differentiation from Zabbix/LibreNMS/Uptime Kuma
+- [ ] README: "Why SubNetree?" section -- value proposition, feature comparison table (discovery + monitoring + remote access + vault + IoT in one tool), clear differentiation from Zabbix/LibreNMS/Uptime Kuma
 - [ ] README: status badges (CI build, Go version, license, latest release, Docker pulls)
 - [ ] README: Docker quickstart section (`docker run` one-liner + docker-compose snippet)
 - [ ] README: screenshots/GIF of dashboard (blocked on dashboard implementation -- placeholder with architecture diagram until then)
@@ -341,7 +341,7 @@
 
 #### Homelab Platform Integrations
 
-NetVantage is a dashboard and aggregator, not a replacement for homelab tools. These integrations provide status-at-a-glance and quick-launch access to other platforms:
+SubNetree is a dashboard and aggregator, not a replacement for homelab tools. These integrations provide status-at-a-glance and quick-launch access to other platforms:
 
 - [ ] MQTT integration (Eclipse Paho) -- subscribe to status updates from IoT devices
 - [ ] Home Assistant integration -- pull entity states, display status tiles, quick-launch to HA dashboard

@@ -106,8 +106,8 @@ func TestVersionHeaderMiddleware(t *testing.T) {
 	w := httptest.NewRecorder()
 	handler.ServeHTTP(w, req)
 
-	if v := w.Header().Get("X-NetVantage-Version"); v == "" {
-		t.Error("expected X-NetVantage-Version header to be set")
+	if v := w.Header().Get("X-SubNetree-Version"); v == "" {
+		t.Error("expected X-SubNetree-Version header to be set")
 	}
 }
 

@@ -9,9 +9,9 @@ import (
 	"testing"
 	"time"
 
-	"github.com/HerbHall/netvantage/internal/recon"
-	"github.com/HerbHall/netvantage/pkg/plugin"
-	"github.com/HerbHall/netvantage/pkg/plugin/plugintest"
+	"github.com/HerbHall/subnetree/internal/recon"
+	"github.com/HerbHall/subnetree/pkg/plugin"
+	"github.com/HerbHall/subnetree/pkg/plugin/plugintest"
 	"go.uber.org/zap"
 )
 
@@ -55,8 +55,8 @@ func TestHandleEvent_DeliversWebhook(t *testing.T) {
 		if r.Header.Get("Content-Type") != "application/json" {
 			t.Errorf("Content-Type = %q, want application/json", r.Header.Get("Content-Type"))
 		}
-		if r.Header.Get("User-Agent") != "NetVantage-Webhook/0.1" {
-			t.Errorf("User-Agent = %q, want NetVantage-Webhook/0.1", r.Header.Get("User-Agent"))
+		if r.Header.Get("User-Agent") != "SubNetree-Webhook/0.1" {
+			t.Errorf("User-Agent = %q, want SubNetree-Webhook/0.1", r.Header.Get("User-Agent"))
 		}
 		var p WebhookPayload
 		if err := json.NewDecoder(r.Body).Decode(&p); err != nil {

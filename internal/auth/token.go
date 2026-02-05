@@ -42,7 +42,7 @@ func (s *TokenService) IssueAccessToken(user *User) (string, error) {
 			Subject:   user.ID,
 			IssuedAt:  jwt.NewNumericDate(now),
 			ExpiresAt: jwt.NewNumericDate(now.Add(s.accessTokenTTL)),
-			Issuer:    "netvantage",
+			Issuer:    "subnetree",
 		},
 		UserID:   user.ID,
 		Username: user.Username,

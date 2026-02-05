@@ -13,7 +13,7 @@
 - Optional external identity provider support (Google, Keycloak, Authentik, Azure AD)
 - Configured via YAML; disabled by default
 - Auto-create local user on first OIDC login
-- Map OIDC claims to NetVantage roles
+- Map OIDC claims to SubNetree roles
 
 ### Data Model: User
 

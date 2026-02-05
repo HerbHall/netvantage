@@ -4,7 +4,7 @@
 
 | Component | Name | Description |
 |-----------|------|-------------|
-| Server | **NetVantage** | Central application: HTTP API, plugin registry, data storage, web dashboard |
+| Server | **SubNetree** | Central application: HTTP API, plugin registry, data storage, web dashboard |
 | Agent | **Scout** | Lightweight Go agent installed on monitored devices |
 | Dashboard | *web/* | React + TypeScript SPA served by the server |
 
@@ -136,7 +136,7 @@ Every new `plugin.Plugin` implementation must call `plugintest.TestPluginContrac
 
 #### Manual Dependency Injection
 
-Dependencies are wired explicitly in `cmd/netvantage/main.go` using constructor injection. No DI frameworks, no service locators outside the plugin registry's `PluginResolver`.
+Dependencies are wired explicitly in `cmd/subnetree/main.go` using constructor injection. No DI frameworks, no service locators outside the plugin registry's `PluginResolver`.
 
 ```go
 // main.go: explicit construction, all dependencies visible
@@ -150,18 +150,18 @@ srv := server.New(addr, reg, logger)
 
 The codebase maps to hexagonal (ports and adapters) architecture:
 
-| Hexagonal Concept | NetVantage Location | Examples |
+| Hexagonal Concept | SubNetree Location | Examples |
 |-------------------|---------------------|----------|
 | **Ports** (interfaces) | `pkg/plugin/` | `Plugin`, `Config`, `EventBus`, `HTTPProvider` |
 | **Adapters** (implementations) | `internal/` | `config.ViperConfig`, `event.Bus`, `registry.Registry` |
 | **Domain** (business logic) | `internal/{module}/` | `recon.Module`, `pulse.Module`, `vault.Module` |
-| **Wiring** (composition root) | `cmd/netvantage/main.go` | Constructor calls, dependency injection |
+| **Wiring** (composition root) | `cmd/subnetree/main.go` | Constructor calls, dependency injection |
 
 `pkg/` is public and stable (Apache 2.0 licensed). `internal/` is private and free to change. This boundary is enforced by Go's visibility rules.
 
 ### Industry Pattern Alignment
 
-NetVantage's architecture deliberately aligns with established industry patterns. See [ADR-0006](../adr/0006-architecture-pattern-adoption.md) for the full decision record.
+SubNetree's architecture deliberately aligns with established industry patterns. See [ADR-0006](../adr/0006-architecture-pattern-adoption.md) for the full decision record.
 
 #### SOLID Principles (Code Level)
 
@@ -177,7 +177,7 @@ Every Go convention above maps to a SOLID principle:
 
 #### MACH Alignment (System Level)
 
-NetVantage exhibits all four MACH characteristics:
+SubNetree exhibits all four MACH characteristics:
 
 | MACH Pillar | Implementation | Notes |
 |-------------|----------------|-------|
@@ -186,13 +186,13 @@ NetVantage exhibits all four MACH characteristics:
 | **Cloud-native** | Go binary + Docker | Stateless server design, horizontal scaling ready, containerized deployment |
 | **Headless** | React SPA in `web/` | Dashboard is completely decoupled; consumes REST API like any other client |
 
-**Deviation from strict MACH:** We deploy as a single binary, not distributed microservices. This is intentional -- NetVantage targets home-lab and single-tenant deployments where operational simplicity outweighs distributed scaling benefits. The plugin boundaries maintain logical separation without physical distribution overhead.
+**Deviation from strict MACH:** We deploy as a single binary, not distributed microservices. This is intentional -- SubNetree targets home-lab and single-tenant deployments where operational simplicity outweighs distributed scaling benefits. The plugin boundaries maintain logical separation without physical distribution overhead.
 
 #### MOSA Principles (Strategic)
 
 MOSA (Modular Open Systems Approach) informs our SDK and ecosystem strategy:
 
-| MOSA Concept | NetVantage Application |
+| MOSA Concept | SubNetree Application |
 |--------------|------------------------|
 | **Modular design** | Plugins are severable -- can be replaced without core changes |
 | **Open standards** | REST (OpenAPI), gRPC (protobuf), JSON, YAML -- no proprietary formats |

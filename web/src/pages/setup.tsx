@@ -4,7 +4,7 @@ export function SetupPage() {
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Welcome to NetVantage</CardTitle>
+        <CardTitle>Welcome to SubNetree</CardTitle>
         <CardDescription>First-run setup wizard will be implemented in Issue #45.</CardDescription>
       </CardHeader>
       <CardContent>

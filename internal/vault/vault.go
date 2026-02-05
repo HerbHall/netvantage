@@ -5,7 +5,7 @@ import (
 	"encoding/json"
 	"net/http"
 
-	"github.com/HerbHall/netvantage/pkg/plugin"
+	"github.com/HerbHall/subnetree/pkg/plugin"
 	"go.uber.org/zap"
 )
 

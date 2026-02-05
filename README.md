@@ -1,16 +1,16 @@
-# NetVantage
+# SubNetree
 
-[![Go Report Card](https://goreportcard.com/badge/github.com/HerbHall/netvantage)](https://goreportcard.com/report/github.com/HerbHall/netvantage)
-[![codecov](https://codecov.io/gh/HerbHall/netvantage/branch/main/graph/badge.svg)](https://codecov.io/gh/HerbHall/netvantage)
+[![Go Report Card](https://goreportcard.com/badge/github.com/HerbHall/subnetree)](https://goreportcard.com/report/github.com/HerbHall/subnetree)
+[![codecov](https://codecov.io/gh/HerbHall/subnetree/branch/main/graph/badge.svg)](https://codecov.io/gh/HerbHall/subnetree)
 [![License](https://img.shields.io/badge/license-BSL%201.1-blue)](LICENSE)
 
-> **Alpha Status**: NetVantage is in active development. Core scanning and dashboard work, but expect rough edges. Contributions and feedback welcome!
+> **Alpha Status**: SubNetree is in active development. Core scanning and dashboard work, but expect rough edges. Contributions and feedback welcome!
 
-**Your homelab command center.** NetVantage discovers devices on your network, monitors their status, and gives you one-click access to everything -- without typing passwords a thousand times a day.
+**Your homelab command center.** SubNetree discovers devices on your network, monitors their status, and gives you one-click access to everything -- without typing passwords a thousand times a day.
 
-## Why NetVantage?
+## Why SubNetree?
 
-Homelabbers juggle dozens of tools: UnRAID for storage, Proxmox for VMs, Home Assistant for automation, plus routers, NAS boxes, and random IoT devices. NetVantage doesn't replace any of them -- it's your **dashboard and aggregator** that:
+Homelabbers juggle dozens of tools: UnRAID for storage, Proxmox for VMs, Home Assistant for automation, plus routers, NAS boxes, and random IoT devices. SubNetree doesn't replace any of them -- it's your **dashboard and aggregator** that:
 
 - **Discovers everything** on your LAN automatically (ARP, ICMP, mDNS, SNMP)
 - **Shows status at a glance** from multiple platforms in one place
@@ -20,11 +20,11 @@ Homelabbers juggle dozens of tools: UnRAID for storage, Proxmox for VMs, Home As
 ## Quick Start (Docker)
 
 ```bash
-docker run -d --name netvantage \
+docker run -d --name subnetree \
   -p 8080:8080 \
-  -v netvantage-data:/data \
+  -v subnetree-data:/data \
   --cap-add NET_RAW --cap-add NET_ADMIN \
-  ghcr.io/herbhall/netvantage:latest
+  ghcr.io/herbhall/subnetree:latest
 ```
 
 Open <http://localhost:8080> -- first-time setup will prompt you to create an admin account.
@@ -32,10 +32,10 @@ Open <http://localhost:8080> -- first-time setup will prompt you to create an ad
 For full network scanning capability on home networks:
 
 ```bash
-docker run -d --name netvantage \
+docker run -d --name subnetree \
   --network host \
-  -v netvantage-data:/data \
-  ghcr.io/herbhall/netvantage:latest
+  -v subnetree-data:/data \
+  ghcr.io/herbhall/subnetree:latest
 ```
 
 ### Docker Compose
@@ -43,20 +43,20 @@ docker run -d --name netvantage \
 ```yaml
 # docker-compose.yml
 services:
-  netvantage:
-    image: ghcr.io/herbhall/netvantage:latest
-    container_name: netvantage
+  subnetree:
+    image: ghcr.io/herbhall/subnetree:latest
+    container_name: subnetree
     restart: unless-stopped
     ports:
       - "8080:8080"
     volumes:
-      - netvantage-data:/data
+      - subnetree-data:/data
     cap_add:
       - NET_RAW
       - NET_ADMIN
 
 volumes:
-  netvantage-data:
+  subnetree-data:
 ```
 
 ```bash
@@ -94,7 +94,7 @@ docker-compose up -d
                     REST / WebSocket
                              |
 +----------+       +---------+---------+       +----------+
-|  Scout   | gRPC  |   NetVantage      |       | Network  |
+|  Scout   | gRPC  |   SubNetree      |       | Network  |
 |  Agent   +------>+   Server          +------>+ Devices  |
 |          |       |                   | ICMP/  | (SNMP,   |
 +----------+       | +------+ +------+ | SNMP/  |  mDNS,   |
@@ -140,10 +140,10 @@ cd web && npm ci && npm run build
 
 ```bash
 # Start server (serves dashboard at :8080)
-./bin/netvantage serve
+./bin/subnetree serve
 
 # With config file
-./bin/netvantage serve -config configs/netvantage.example.yaml
+./bin/subnetree serve -config configs/subnetree.example.yaml
 ```
 
 ### Development
@@ -163,7 +163,7 @@ make proto
 
 ```text
 cmd/
-  netvantage/     Server entry point
+  subnetree/     Server entry point
   scout/          Agent entry point
 internal/
   recon/          Network discovery module
@@ -189,17 +189,17 @@ api/
 
 ## Support the Project
 
-NetVantage is **free for personal, homelab, and non-competing production use**. If you find it useful:
+SubNetree is **free for personal, homelab, and non-competing production use**. If you find it useful:
 
 - [GitHub Sponsors](https://github.com/sponsors/HerbHall)
 - [Ko-fi](https://ko-fi.com/herbhall)
 - [Buy Me a Coffee](https://buymeacoffee.com/herbhall)
 
-You can also contribute by [reporting bugs](https://github.com/HerbHall/netvantage/issues), [requesting features](https://github.com/HerbHall/netvantage/discussions), testing alpha releases, or building plugins.
+You can also contribute by [reporting bugs](https://github.com/HerbHall/subnetree/issues), [requesting features](https://github.com/HerbHall/subnetree/discussions), testing alpha releases, or building plugins.
 
 ## License
 
-NetVantage uses a split licensing model:
+SubNetree uses a split licensing model:
 
 - **Core** (server, agent, built-in modules): [Business Source License 1.1](LICENSE) -- free for personal, homelab, educational, and non-competing production use. Converts to Apache 2.0 after 4 years.
 - **Plugin SDK** (`pkg/plugin/`, `pkg/roles/`, `pkg/models/`, `api/proto/`): [Apache License 2.0](pkg/plugin/LICENSE) -- build plugins and integrations with no restrictions.

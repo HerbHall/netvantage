@@ -6,9 +6,9 @@ import (
 	"testing"
 	"time"
 
-	"github.com/HerbHall/netvantage/internal/services"
-	"github.com/HerbHall/netvantage/internal/testutil"
-	"github.com/HerbHall/netvantage/pkg/models"
+	"github.com/HerbHall/subnetree/internal/services"
+	"github.com/HerbHall/subnetree/internal/testutil"
+	"github.com/HerbHall/subnetree/pkg/models"
 	"github.com/google/uuid"
 )
 

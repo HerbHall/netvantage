@@ -1,10 +1,10 @@
 syntax = "proto3";
 
-package netvantage.v1;
+package subnetree.v1;
 
-option go_package = "github.com/HerbHall/netvantage/api/proto/v1;scoutpb";
+option go_package = "github.com/HerbHall/subnetree/api/proto/v1;scoutpb";
 
-// ScoutService defines the communication between Scout agents and the NetVantage server.
+// ScoutService defines the communication between Scout agents and the SubNetree server.
 service ScoutService {
   // CheckIn sends a periodic heartbeat from agent to server.
   rpc CheckIn(CheckInRequest) returns (CheckInResponse);

@@ -1,44 +1,44 @@
-# NetVantage Trademark Guidelines
+# SubNetree Trademark Guidelines
 
-"NetVantage" and the NetVantage logo are trademarks of Herb Hall.
+"SubNetree" and the SubNetree logo are trademarks of Herb Hall.
 
 ## Permitted Uses
 
-You **may** use the "NetVantage" name to:
+You **may** use the "SubNetree" name to:
 
-- Refer to the NetVantage project in articles, blog posts, and documentation
-- State that your plugin or tool is "compatible with NetVantage" or
-  "built for NetVantage"
-- Describe your use of NetVantage in your infrastructure (e.g., "Monitored
-  by NetVantage")
+- Refer to the SubNetree project in articles, blog posts, and documentation
+- State that your plugin or tool is "compatible with SubNetree" or
+  "built for SubNetree"
+- Describe your use of SubNetree in your infrastructure (e.g., "Monitored
+  by SubNetree")
 
 ## Restricted Uses
 
-You **may not** use the "NetVantage" name to:
+You **may not** use the "SubNetree" name to:
 
-- Name a fork of NetVantage in a way that implies it is the official project
-  (e.g., "NetVantage Community Edition", "NetVantage Pro", "OpenNetVantage")
-- Imply endorsement by or affiliation with the NetVantage project without
+- Name a fork of SubNetree in a way that implies it is the official project
+  (e.g., "SubNetree Community Edition", "SubNetree Pro", "OpenSubNetree")
+- Imply endorsement by or affiliation with the SubNetree project without
   prior written permission
 - Use the name in a product name, company name, or domain name that could
-  cause confusion with the official NetVantage project
-- Use the NetVantage logo without permission
+  cause confusion with the official SubNetree project
+- Use the SubNetree logo without permission
 
 ## Forks
 
-If you fork NetVantage, you must choose a different name for your project.
-You may state that your project is "based on NetVantage" or "derived from
-NetVantage" for attribution purposes.
+If you fork SubNetree, you must choose a different name for your project.
+You may state that your project is "based on SubNetree" or "derived from
+SubNetree" for attribution purposes.
 
 ## Plugin and Integration Naming
 
-Plugins and integrations **may** use the "NetVantage" name in a descriptive
+Plugins and integrations **may** use the "SubNetree" name in a descriptive
 manner:
 
-- "Slack Notifier for NetVantage" (acceptable)
-- "NetVantage Slack Plugin" (acceptable)
-- "NetVantage Pro Notifications" (not acceptable -- implies official product)
+- "Slack Notifier for SubNetree" (acceptable)
+- "SubNetree Slack Plugin" (acceptable)
+- "SubNetree Pro Notifications" (not acceptable -- implies official product)
 
 ## Questions
 
-For trademark usage questions, contact: licensing@netvantage.io
+For trademark usage questions, contact: licensing@subnetree.com

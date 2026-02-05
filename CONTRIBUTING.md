@@ -1,12 +1,12 @@
-# Contributing to NetVantage
+# Contributing to SubNetree
 
-Thank you for your interest in contributing to NetVantage! This guide covers everything you need to get started.
+Thank you for your interest in contributing to SubNetree! This guide covers everything you need to get started.
 
 ## Contributor License Agreement (CLA)
 
 All contributors must sign our [CLA](.github/CLA.md) before their first PR can be merged. This is automated -- the CLA bot will prompt you on your first pull request.
 
-**Why a CLA?** NetVantage uses a split licensing model (BSL 1.1 + Apache 2.0). The CLA ensures we maintain a clean IP chain, which is essential for the project's long-term sustainability.
+**Why a CLA?** SubNetree uses a split licensing model (BSL 1.1 + Apache 2.0). The CLA ensures we maintain a clean IP chain, which is essential for the project's long-term sustainability.
 
 ## Getting Started
 
@@ -20,8 +20,8 @@ All contributors must sign our [CLA](.github/CLA.md) before their first PR can b
 
 ```bash
 # Fork and clone
-git clone https://github.com/YOUR_USERNAME/netvantage.git
-cd netvantage
+git clone https://github.com/YOUR_USERNAME/subnetree.git
+cd subnetree
 
 # Build
 make build
@@ -102,23 +102,23 @@ chore: update golangci-lint to v1.62
 
 ### Good First Issues
 
-Look for issues labeled [`good first issue`](https://github.com/HerbHall/netvantage/labels/good%20first%20issue) -- these are scoped, well-described tasks suitable for newcomers.
+Look for issues labeled [`good first issue`](https://github.com/HerbHall/subnetree/labels/good%20first%20issue) -- these are scoped, well-described tasks suitable for newcomers.
 
 ### Help Wanted
 
-Issues labeled [`help wanted`](https://github.com/HerbHall/netvantage/labels/help%20wanted) are larger tasks where maintainers welcome community contributions.
+Issues labeled [`help wanted`](https://github.com/HerbHall/subnetree/labels/help%20wanted) are larger tasks where maintainers welcome community contributions.
 
 ### Bug Reports
 
-Found a bug? [Open an issue](https://github.com/HerbHall/netvantage/issues/new?template=bug_report.md) with steps to reproduce.
+Found a bug? [Open an issue](https://github.com/HerbHall/subnetree/issues/new?template=bug_report.md) with steps to reproduce.
 
 ### Feature Requests
 
-Have an idea? Start a [discussion](https://github.com/HerbHall/netvantage/discussions) first -- we'll move it to an issue if it aligns with the roadmap.
+Have an idea? Start a [discussion](https://github.com/HerbHall/subnetree/discussions) first -- we'll move it to an issue if it aligns with the roadmap.
 
 ### Plugin Ideas
 
-Want to build a plugin? Check the [Plugin SDK documentation](pkg/plugin/) and open a [plugin idea issue](https://github.com/HerbHall/netvantage/issues/new?template=plugin_idea.md).
+Want to build a plugin? Check the [Plugin SDK documentation](pkg/plugin/) and open a [plugin idea issue](https://github.com/HerbHall/subnetree/issues/new?template=plugin_idea.md).
 
 ## Licensing
 
@@ -128,5 +128,5 @@ Want to build a plugin? Check the [Plugin SDK documentation](pkg/plugin/) and op
 
 ## Questions?
 
-- [GitHub Discussions](https://github.com/HerbHall/netvantage/discussions) for questions and ideas
-- [Issue Tracker](https://github.com/HerbHall/netvantage/issues) for bugs and feature requests
+- [GitHub Discussions](https://github.com/HerbHall/subnetree/discussions) for questions and ideas
+- [Issue Tracker](https://github.com/HerbHall/subnetree/issues) for bugs and feature requests

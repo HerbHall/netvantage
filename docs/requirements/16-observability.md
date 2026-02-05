@@ -23,21 +23,21 @@ Exposed at `GET /metrics` from day one.
 
 #### Metric Naming Convention
 
-`netvantage_{subsystem}_{metric}_{unit}` (e.g., `netvantage_http_request_duration_seconds`)
+`subnetree_{subsystem}_{metric}_{unit}` (e.g., `subnetree_http_request_duration_seconds`)
 
 #### Core Metrics
 
 | Metric | Type | Labels | Description |
 |--------|------|--------|-------------|
-| `netvantage_http_requests_total` | Counter | method, path, status_code | Total HTTP requests |
-| `netvantage_http_request_duration_seconds` | Histogram | method, path | Request latency |
-| `netvantage_recon_devices_total` | Gauge | status | Discovered devices by status |
-| `netvantage_recon_scans_total` | Counter | status | Network scans by outcome |
-| `netvantage_recon_scan_duration_seconds` | Histogram | -- | Scan duration |
-| `netvantage_dispatch_agents_connected` | Gauge | -- | Connected Scout agents |
-| `netvantage_dispatch_agent_checkins_total` | Counter | -- | Agent check-in RPCs |
-| `netvantage_vault_access_total` | Counter | action, success | Credential vault accesses |
-| `netvantage_db_query_duration_seconds` | Histogram | query | Database query latency |
+| `subnetree_http_requests_total` | Counter | method, path, status_code | Total HTTP requests |
+| `subnetree_http_request_duration_seconds` | Histogram | method, path | Request latency |
+| `subnetree_recon_devices_total` | Gauge | status | Discovered devices by status |
+| `subnetree_recon_scans_total` | Counter | status | Network scans by outcome |
+| `subnetree_recon_scan_duration_seconds` | Histogram | -- | Scan duration |
+| `subnetree_dispatch_agents_connected` | Gauge | -- | Connected Scout agents |
+| `subnetree_dispatch_agent_checkins_total` | Counter | -- | Agent check-in RPCs |
+| `subnetree_vault_access_total` | Counter | action, success | Credential vault accesses |
+| `subnetree_db_query_duration_seconds` | Histogram | query | Database query latency |
 
 ### Health Endpoints
 

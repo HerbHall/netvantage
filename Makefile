@@ -1,7 +1,7 @@
 .PHONY: build build-server build-scout build-dashboard dev-dashboard lint-dashboard test test-race test-coverage lint run-server run-scout proto clean license-check
 
 # Binary names
-SERVER_BIN=netvantage
+SERVER_BIN=subnetree
 SCOUT_BIN=scout
 
 # Frontend
@@ -12,7 +12,7 @@ WEB_DIR=web
 VERSION ?= $(shell git describe --tags --always --dirty 2>/dev/null || echo "dev")
 COMMIT  ?= $(shell git rev-parse --short HEAD 2>/dev/null || echo "unknown")
 DATE    ?= $(shell date -u +"%Y-%m-%dT%H:%M:%SZ" 2>/dev/null || echo "unknown")
-VERSION_PKG = github.com/HerbHall/netvantage/internal/version
+VERSION_PKG = github.com/HerbHall/subnetree/internal/version
 
 # Build flags
 LDFLAGS=-ldflags "-s -w \
@@ -24,7 +24,7 @@ LDFLAGS=-ldflags "-s -w \
 build: build-dashboard build-server build-scout
 
 build-server:
-	go build $(LDFLAGS) -o bin/$(SERVER_BIN) ./cmd/netvantage/
+	go build $(LDFLAGS) -o bin/$(SERVER_BIN) ./cmd/subnetree/
 
 build-scout:
 	go build $(LDFLAGS) -o bin/$(SCOUT_BIN) ./cmd/scout/

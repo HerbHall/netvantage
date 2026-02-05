@@ -5,7 +5,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/HerbHall/netvantage/internal/store"
+	"github.com/HerbHall/subnetree/internal/store"
 )
 
 // testEnv sets up an in-memory database with auth migrations and returns

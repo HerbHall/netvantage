@@ -1,5 +1,5 @@
 /*
- * NetVantage Brand Colors
+ * SubNetree Brand Colors
  * Forest greens + earth tones dark theme
  * See: docs/requirements/12-brand-identity.md
  */
@@ -10,7 +10,7 @@
   --primary-lightness: 45%;
 }
 
-/* Dark mode overrides for NetVantage forest green palette */
+/* Dark mode overrides for SubNetree forest green palette */
 html[class~="dark"] {
   --bg-primary: #0c1a0e;
   --bg-surface: #0f1a10;

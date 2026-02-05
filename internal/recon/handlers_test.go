@@ -8,8 +8,8 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/HerbHall/netvantage/internal/store"
-	"github.com/HerbHall/netvantage/pkg/models"
+	"github.com/HerbHall/subnetree/internal/store"
+	"github.com/HerbHall/subnetree/pkg/models"
 	"go.uber.org/zap"
 )
 

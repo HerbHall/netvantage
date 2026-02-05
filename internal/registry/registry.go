@@ -1,5 +1,5 @@
 // Package registry manages plugin lifecycle: registration, dependency resolution,
-// initialization, and shutdown of NetVantage plugins.
+// initialization, and shutdown of SubNetree plugins.
 package registry
 
 import (
@@ -7,7 +7,7 @@ import (
 	"fmt"
 	"sync"
 
-	"github.com/HerbHall/netvantage/pkg/plugin"
+	"github.com/HerbHall/subnetree/pkg/plugin"
 	"go.uber.org/zap"
 )
 

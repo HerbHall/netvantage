@@ -1,6 +1,6 @@
 # Architecture Decision Records
 
-This directory contains Architecture Decision Records (ADRs) for the NetVantage project. ADRs document significant architectural decisions, their context, and rationale.
+This directory contains Architecture Decision Records (ADRs) for the SubNetree project. ADRs document significant architectural decisions, their context, and rationale.
 
 ## Format
 

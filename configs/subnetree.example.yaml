@@ -1,0 +1,34 @@
+# SubNetree Server Configuration
+
+server:
+  host: "0.0.0.0"
+  port: 8080
+  data_dir: "./data"
+
+logging:
+  level: "info"    # debug, info, warn, error
+  format: "json"   # json, console
+
+# Enabled plugins (all enabled by default)
+plugins:
+  recon:
+    enabled: true
+    # scan_timeout: "5m"        # Maximum duration for a single scan
+    # ping_timeout: "2s"        # ICMP ping timeout per host
+    # ping_count: 3             # Number of ping attempts per host
+    # concurrency: 64           # Max concurrent ping probes
+    # arp_enabled: true         # Read ARP table for MAC addresses
+    # device_lost_after: "24h"  # Mark device offline after this duration
+  pulse:
+    enabled: true
+  dispatch:
+    enabled: true
+  vault:
+    enabled: true
+  gateway:
+    enabled: true
+
+# Database configuration
+database:
+  driver: "sqlite"
+  dsn: "./data/subnetree.db"

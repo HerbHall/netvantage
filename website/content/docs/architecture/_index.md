@@ -3,7 +3,7 @@ title: Architecture
 weight: 2
 ---
 
-NetVantage is a modular, self-hosted network monitoring platform built in Go with a React/TypeScript dashboard.
+SubNetree is a modular, self-hosted network monitoring platform built in Go with a React/TypeScript dashboard.
 
 ## System Overview
 
@@ -16,7 +16,7 @@ NetVantage is a modular, self-hosted network monitoring platform built in Go wit
                     REST / WebSocket
                              |
 +----------+       +---------+---------+       +----------+
-|  Scout   | gRPC  |   NetVantage      |       | Network  |
+|  Scout   | gRPC  |   SubNetree      |       | Network  |
 |  Agent   +------>+   Server (Go)     +------>+ Devices  |
 |          |       |                   | ICMP/  | (SNMP,   |
 +----------+       | +------+ +------+ | SNMP/  |  mDNS,   |
@@ -31,7 +31,7 @@ NetVantage is a modular, self-hosted network monitoring platform built in Go wit
 
 ## Components
 
-### NetVantage Server
+### SubNetree Server
 
 The core Go application. Hosts the REST API, serves the dashboard SPA, manages the plugin lifecycle, and coordinates all modules.
 
@@ -51,7 +51,7 @@ Lightweight agent deployed to endpoints. Connects to the server via gRPC and rep
 
 ## Plugin Architecture
 
-Every major feature in NetVantage is a plugin. The plugin system is inspired by [Caddy's module architecture](https://caddyserver.com/) (see [ADR-0003](https://github.com/HerbHall/netvantage/blob/main/docs/adr/0003-plugin-architecture-caddy-model.md)).
+Every major feature in SubNetree is a plugin. The plugin system is inspired by [Caddy's module architecture](https://caddyserver.com/) (see [ADR-0003](https://github.com/HerbHall/subnetree/blob/main/docs/adr/0003-plugin-architecture-caddy-model.md)).
 
 Plugins implement role interfaces defined in the SDK:
 
@@ -67,7 +67,7 @@ The Plugin SDK is licensed under **Apache 2.0** -- no restrictions on building a
 
 ## Database
 
-NetVantage uses SQLite as its primary database (see [ADR-0002](https://github.com/HerbHall/netvantage/blob/main/docs/adr/0002-sqlite-first-database.md)). Benefits:
+SubNetree uses SQLite as its primary database (see [ADR-0002](https://github.com/HerbHall/subnetree/blob/main/docs/adr/0002-sqlite-first-database.md)). Benefits:
 
 - Zero external dependencies -- no separate database server
 - Single-file backup and restore
@@ -78,18 +78,18 @@ NetVantage uses SQLite as its primary database (see [ADR-0002](https://github.co
 
 - RESTful JSON API under `/api/v1/`
 - [RFC 7807](https://datatracker.ietf.org/doc/html/rfc7807) structured error responses
-- `X-NetVantage-Version` header on all responses
-- Integer-based protocol versioning (see [ADR-0004](https://github.com/HerbHall/netvantage/blob/main/docs/adr/0004-integer-protocol-versioning.md))
+- `X-SubNetree-Version` header on all responses
+- Integer-based protocol versioning (see [ADR-0004](https://github.com/HerbHall/subnetree/blob/main/docs/adr/0004-integer-protocol-versioning.md))
 
 ## Licensing Model
 
-Split licensing to balance open-source accessibility with commercial sustainability (see [ADR-0001](https://github.com/HerbHall/netvantage/blob/main/docs/adr/0001-split-licensing-model.md)):
+Split licensing to balance open-source accessibility with commercial sustainability (see [ADR-0001](https://github.com/HerbHall/subnetree/blob/main/docs/adr/0001-split-licensing-model.md)):
 
 - **Core** (server, agent, built-in modules): BSL 1.1 -- free for personal, home-lab, educational, and non-competing production use. Converts to Apache 2.0 after 4 years.
 - **Plugin SDK** (`pkg/plugin/`, `pkg/roles/`, `pkg/models/`, `api/proto/`): Apache 2.0 -- build plugins with no restrictions.
 
 ## Further Reading
 
-- [Requirements specifications](https://github.com/HerbHall/netvantage/tree/main/docs/requirements) -- 28 detailed requirement documents
-- [Architecture Decision Records](https://github.com/HerbHall/netvantage/tree/main/docs/adr) -- recorded architectural decisions
+- [Requirements specifications](https://github.com/HerbHall/subnetree/tree/main/docs/requirements) -- 28 detailed requirement documents
+- [Architecture Decision Records](https://github.com/HerbHall/subnetree/tree/main/docs/adr) -- recorded architectural decisions
 - [Development setup](/docs/contributing/development-setup) -- get the codebase running locally

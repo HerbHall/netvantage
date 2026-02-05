@@ -7,7 +7,7 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/HerbHall/netvantage/pkg/models"
+	"github.com/HerbHall/subnetree/pkg/models"
 	"github.com/google/uuid"
 )
 

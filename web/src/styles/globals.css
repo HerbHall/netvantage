@@ -5,7 +5,7 @@
 @tailwind utilities;
 
 @layer base {
-  /* Map shadcn/ui CSS variables to NetVantage design tokens (dark mode default) */
+  /* Map shadcn/ui CSS variables to SubNetree design tokens (dark mode default) */
   :root {
     --background: var(--nv-bg-root);
     --foreground: var(--nv-text-primary);

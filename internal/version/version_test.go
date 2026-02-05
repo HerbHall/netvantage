@@ -8,8 +8,8 @@ import (
 
 func TestInfo(t *testing.T) {
 	info := Info()
-	if !strings.Contains(info, "NetVantage") {
-		t.Errorf("Info() should contain 'NetVantage', got: %s", info)
+	if !strings.Contains(info, "SubNetree") {
+		t.Errorf("Info() should contain 'SubNetree', got: %s", info)
 	}
 	if !strings.Contains(info, runtime.Version()) {
 		t.Errorf("Info() should contain Go version, got: %s", info)

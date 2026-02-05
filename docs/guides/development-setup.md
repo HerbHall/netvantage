@@ -1,6 +1,6 @@
 # Development Setup Guide
 
-This guide walks through setting up a local development environment for NetVantage.
+This guide walks through setting up a local development environment for SubNetree.
 
 ## Prerequisites
 
@@ -19,20 +19,20 @@ go version
 ## Clone and Build
 
 ```bash
-git clone https://github.com/HerbHall/netvantage.git
-cd netvantage
+git clone https://github.com/HerbHall/subnetree.git
+cd subnetree
 make build
 ```
 
 This produces two binaries in `bin/`:
-- `netvantage` -- the server
+- `subnetree` -- the server
 - `scout` -- the lightweight agent
 
 ## Project Structure
 
 ```
 cmd/
-  netvantage/    # Server entry point
+  subnetree/    # Server entry point
   scout/         # Agent entry point
 internal/
   config/        # Viper-backed Config implementation
@@ -66,13 +66,13 @@ docs/
 make run-server
 
 # Or directly
-./bin/netvantage
+./bin/subnetree
 
 # With a config file
-./bin/netvantage --config ./configs/netvantage.yaml
+./bin/subnetree --config ./configs/subnetree.yaml
 
 # Print version
-./bin/netvantage --version
+./bin/subnetree --version
 ```
 
 ### Agent
@@ -87,10 +87,10 @@ make run-scout
 
 ## Configuration
 
-NetVantage uses [Viper](https://github.com/spf13/viper) for configuration. Sources (in priority order):
+SubNetree uses [Viper](https://github.com/spf13/viper) for configuration. Sources (in priority order):
 
 1. Environment variables with `NV_` prefix (e.g., `NV_SERVER_PORT=9090`)
-2. Config file (`netvantage.yaml` in current dir, `./configs/`, or `/etc/netvantage/`)
+2. Config file (`subnetree.yaml` in current dir, `./configs/`, or `/etc/subnetree/`)
 3. Built-in defaults
 
 Example config file:
@@ -139,7 +139,7 @@ make lint
 All plugins implement the `plugin.Plugin` interface from `pkg/plugin/`:
 
 ```go
-import "github.com/HerbHall/netvantage/pkg/plugin"
+import "github.com/HerbHall/subnetree/pkg/plugin"
 
 type MyPlugin struct{}
 
@@ -163,7 +163,7 @@ Optional interfaces (implement only what you need):
 - `plugin.Validator` -- validate config post-init
 - `plugin.Reloadable` -- support hot config reload
 
-Register plugins in `cmd/netvantage/main.go`.
+Register plugins in `cmd/subnetree/main.go`.
 
 ## Code Style
 

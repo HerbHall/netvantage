@@ -10,7 +10,7 @@ Accepted
 
 ## Context
 
-NetVantage needs a principled architectural foundation that:
+SubNetree needs a principled architectural foundation that:
 
 - Guides consistent decision-making across the codebase
 - Aligns with industry standards and best practices
@@ -35,7 +35,7 @@ Adopt **MACH + SOLID** as the primary architectural foundation, with **MOSA** pr
 
 SOLID principles govern all Go code:
 
-| Principle | NetVantage Implementation |
+| Principle | SubNetree Implementation |
 |-----------|---------------------------|
 | **Single Responsibility** | Each module has one purpose (Recon scans, Vault stores credentials) |
 | **Open/Closed** | `plugin.Plugin` interface allows extension without core modification |
@@ -47,7 +47,7 @@ SOLID principles govern all Go code:
 
 MACH characteristics guide system design:
 
-| Pillar | NetVantage Implementation |
+| Pillar | SubNetree Implementation |
 |--------|---------------------------|
 | **Microservices** | Plugins as independently lifecycle-managed modules |
 | **API-first** | All functionality exposed via REST/gRPC; `HTTPProvider`/`GRPCProvider` interfaces |
@@ -67,7 +67,7 @@ MOSA principles apply to SDK governance and plugin ecosystem:
 
 ### SOA: Limited Adoption
 
-Traditional SOA with ESB is not adopted. NetVantage's plugin pattern is simpler and more appropriate for single-tenant deployment. We retain SOA's principle of stable service contracts through API versioning.
+Traditional SOA with ESB is not adopted. SubNetree's plugin pattern is simpler and more appropriate for single-tenant deployment. We retain SOA's principle of stable service contracts through API versioning.
 
 ## Consequences
 
@@ -82,7 +82,7 @@ Traditional SOA with ESB is not adopted. NetVantage's plugin pattern is simpler 
 ### Negative
 
 - **Learning curve:** Contributors unfamiliar with these patterns need orientation
-- **Pattern tension:** Strict MACH implies distributed deployment; NetVantage is single-binary
+- **Pattern tension:** Strict MACH implies distributed deployment; SubNetree is single-binary
 - **Over-engineering risk:** Applying patterns dogmatically can add unnecessary complexity
 
 ### Neutral

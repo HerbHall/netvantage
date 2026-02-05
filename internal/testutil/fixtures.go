@@ -5,7 +5,7 @@ import (
 
 	"github.com/google/uuid"
 
-	"github.com/HerbHall/netvantage/pkg/models"
+	"github.com/HerbHall/subnetree/pkg/models"
 )
 
 // NewDevice returns a Device with sensible defaults, suitable for test fixtures.

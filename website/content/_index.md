@@ -1,9 +1,9 @@
 ---
-title: NetVantage
+title: SubNetree
 layout: hextra-home
 ---
 
-{{< hextra/hero-badge link="https://github.com/HerbHall/netvantage" >}}
+{{< hextra/hero-badge link="https://github.com/HerbHall/subnetree" >}}
   Open Source on GitHub
 {{< /hextra/hero-badge >}}
 
@@ -21,7 +21,7 @@ layout: hextra-home
 
 <div class="hx-mb-6">
 {{< hextra/hero-button text="Get Started" link="docs/getting-started" >}}
-{{< hextra/hero-button text="View on GitHub" link="https://github.com/HerbHall/netvantage" style="alt" >}}
+{{< hextra/hero-button text="View on GitHub" link="https://github.com/HerbHall/subnetree" style="alt" >}}
 </div>
 
 <div class="hx-mt-6"></div>
@@ -65,13 +65,13 @@ layout: hextra-home
 
 {{< architecture-diagram >}}
 
-## Why NetVantage?
+## Why SubNetree?
 
 <div class="hx-mt-4">
 
 No existing source-available tool combines device discovery, monitoring, remote access, credential management, and IoT awareness in a single product.
 
-**One tool instead of five.** Stop stitching together Zabbix for monitoring, Netbox for inventory, Guacamole for remote access, and a password manager for credentials. NetVantage does it all.
+**One tool instead of five.** Stop stitching together Zabbix for monitoring, Netbox for inventory, Guacamole for remote access, and a password manager for credentials. SubNetree does it all.
 
 **Free for personal use, forever.** Built for home labs, prosumers, and small business IT. The core is licensed under BSL 1.1, which converts to Apache 2.0 after 4 years. The plugin SDK is Apache 2.0 from day one.
 
@@ -87,7 +87,7 @@ No existing source-available tool combines device discovery, monitoring, remote 
 
 ## Support the Project
 
-NetVantage is free for personal, home-lab, and non-competing production use. If you find it useful and want to support continued development:
+SubNetree is free for personal, home-lab, and non-competing production use. If you find it useful and want to support continued development:
 
 <div class="sponsor-grid">
   <a href="https://github.com/sponsors/HerbHall" class="sponsor-card">
@@ -104,4 +104,4 @@ NetVantage is free for personal, home-lab, and non-competing production use. If 
   </a>
 </div>
 
-Financial supporters are recognized in [SUPPORTERS.md](https://github.com/HerbHall/netvantage/blob/main/SUPPORTERS.md) and the in-app About page.
+Financial supporters are recognized in [SUPPORTERS.md](https://github.com/HerbHall/subnetree/blob/main/SUPPORTERS.md) and the in-app About page.

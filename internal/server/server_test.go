@@ -15,7 +15,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/HerbHall/netvantage/pkg/plugin"
+	"github.com/HerbHall/subnetree/pkg/plugin"
 	"go.uber.org/zap"
 )
 
@@ -151,8 +151,8 @@ func TestHandleHealth(t *testing.T) {
 	if body["status"] != "ok" {
 		t.Errorf("status = %v, want %q", body["status"], "ok")
 	}
-	if body["service"] != "netvantage" {
-		t.Errorf("service = %v, want %q", body["service"], "netvantage")
+	if body["service"] != "subnetree" {
+		t.Errorf("service = %v, want %q", body["service"], "subnetree")
 	}
 	if body["version"] == nil {
 		t.Error("expected version field in response")
@@ -210,8 +210,8 @@ func TestMiddlewareChain_Integration(t *testing.T) {
 	srv.httpServer.Handler.ServeHTTP(w, req)
 
 	// Check that middleware headers are present.
-	if v := w.Header().Get("X-NetVantage-Version"); v == "" {
-		t.Error("expected X-NetVantage-Version header from middleware")
+	if v := w.Header().Get("X-SubNetree-Version"); v == "" {
+		t.Error("expected X-SubNetree-Version header from middleware")
 	}
 	if v := w.Header().Get("X-Request-ID"); v == "" {
 		t.Error("expected X-Request-ID header from middleware")

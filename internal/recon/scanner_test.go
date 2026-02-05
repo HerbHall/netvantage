@@ -7,9 +7,9 @@ import (
 	"testing"
 	"time"
 
-	"github.com/HerbHall/netvantage/internal/store"
-	"github.com/HerbHall/netvantage/pkg/models"
-	"github.com/HerbHall/netvantage/pkg/plugin"
+	"github.com/HerbHall/subnetree/internal/store"
+	"github.com/HerbHall/subnetree/pkg/models"
+	"github.com/HerbHall/subnetree/pkg/plugin"
 	"go.uber.org/zap"
 )
 

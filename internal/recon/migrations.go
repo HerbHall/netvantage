@@ -3,7 +3,7 @@ package recon
 import (
 	"database/sql"
 
-	"github.com/HerbHall/netvantage/pkg/plugin"
+	"github.com/HerbHall/subnetree/pkg/plugin"
 )
 
 // migrations returns the Recon module's database migrations.

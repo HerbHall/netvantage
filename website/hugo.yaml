@@ -1,6 +1,6 @@
-baseURL: https://netvantage.net/
+baseURL: https://subnetree.net/
 languageCode: en-us
-title: NetVantage
+title: SubNetree
 
 # Theme via Hugo Modules
 module:
@@ -27,7 +27,7 @@ menu:
       pageRef: /blog
       weight: 2
     - name: GitHub
-      url: https://github.com/HerbHall/netvantage
+      url: https://github.com/HerbHall/subnetree
       weight: 3
       params:
         icon: github
@@ -42,10 +42,10 @@ menu:
         type: separator
       weight: 1
     - name: GitHub Repository
-      url: https://github.com/HerbHall/netvantage
+      url: https://github.com/HerbHall/subnetree
       weight: 2
     - name: Report an Issue
-      url: https://github.com/HerbHall/netvantage/issues/new/choose
+      url: https://github.com/HerbHall/subnetree/issues/new/choose
       weight: 3
 
 params:
@@ -70,7 +70,7 @@ params:
 
   editURL:
     enable: true
-    base: https://github.com/HerbHall/netvantage/edit/main/website/content
+    base: https://github.com/HerbHall/subnetree/edit/main/website/content
 
   search:
     enable: true
@@ -86,4 +86,4 @@ params:
     list:
       displayTags: true
 
-copyright: "Copyright &copy; {year} Herb Hall. NetVantage is licensed under BSL 1.1."
+copyright: "Copyright &copy; {year} Herb Hall. SubNetree is licensed under BSL 1.1."

@@ -1,4 +1,4 @@
-module github.com/HerbHall/netvantage
+module github.com/HerbHall/subnetree
 
 go 1.25.6
 

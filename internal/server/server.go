@@ -7,8 +7,8 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/HerbHall/netvantage/internal/version"
-	"github.com/HerbHall/netvantage/pkg/plugin"
+	"github.com/HerbHall/subnetree/internal/version"
+	"github.com/HerbHall/subnetree/pkg/plugin"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"go.uber.org/zap"
 )
@@ -31,7 +31,7 @@ type RouteRegistrar interface {
 	Middleware() func(http.Handler) http.Handler
 }
 
-// Server is the main NetVantage HTTP server.
+// Server is the main SubNetree HTTP server.
 type Server struct {
 	httpServer *http.Server
 	plugins    PluginSource
@@ -161,7 +161,7 @@ func (s *Server) handleHealth(w http.ResponseWriter, _ *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	_ = json.NewEncoder(w).Encode(map[string]interface{}{
 		"status":  "ok",
-		"service": "netvantage",
+		"service": "subnetree",
 		"version": version.Map(),
 	})
 }

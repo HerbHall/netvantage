@@ -29,7 +29,7 @@ func LoadConfig(configPath string) (*viper.Viper, error) {
 	v.SetDefault("logging.level", "info")
 	v.SetDefault("logging.format", "json")
 	v.SetDefault("database.driver", "sqlite")
-	v.SetDefault("database.dsn", "./data/netvantage.db")
+	v.SetDefault("database.dsn", "./data/subnetree.db")
 
 	// Plugin defaults
 	v.SetDefault("plugins.recon.enabled", true)
@@ -50,11 +50,11 @@ func LoadConfig(configPath string) (*viper.Viper, error) {
 	if configPath != "" {
 		v.SetConfigFile(configPath)
 	} else {
-		v.SetConfigName("netvantage")
+		v.SetConfigName("subnetree")
 		v.SetConfigType("yaml")
 		v.AddConfigPath(".")
 		v.AddConfigPath("./configs")
-		v.AddConfigPath("/etc/netvantage")
+		v.AddConfigPath("/etc/subnetree")
 	}
 
 	// Environment variable support: NV_SERVER_PORT=9090
