@@ -6,7 +6,7 @@ import (
 	"fmt"
 	"sync"
 
-	"github.com/HerbHall/netvantage/pkg/plugin"
+	"github.com/HerbHall/subnetree/pkg/plugin"
 	_ "modernc.org/sqlite" // Pure-Go SQLite driver
 )
 

@@ -1,6 +1,6 @@
 ---
 name: Plugin Idea
-about: Suggest an idea for a NetVantage plugin
+about: Suggest an idea for a SubNetree plugin
 title: "[Plugin] "
 labels: plugin-idea, enhancement
 assignees: ''
@@ -20,7 +20,7 @@ Who would use this plugin and in what scenario?
 
 ## Integration Points
 
-Which NetVantage interfaces would it use?
+Which SubNetree interfaces would it use?
 - [ ] HTTPProvider (REST API routes)
 - [ ] GRPCProvider (gRPC services)
 - [ ] EventSubscriber (react to events)

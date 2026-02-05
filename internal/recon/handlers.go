@@ -6,7 +6,7 @@ import (
 	"net/http"
 	"strconv"
 
-	"github.com/HerbHall/netvantage/pkg/models"
+	"github.com/HerbHall/subnetree/pkg/models"
 	"github.com/google/uuid"
 	"go.uber.org/zap"
 )
@@ -23,7 +23,7 @@ func writeError(w http.ResponseWriter, status int, detail string) {
 	w.Header().Set("Content-Type", "application/problem+json")
 	w.WriteHeader(status)
 	_ = json.NewEncoder(w).Encode(map[string]any{
-		"type":   "https://netvantage.io/problems/" + http.StatusText(status),
+		"type":   "https://subnetree.com/problems/" + http.StatusText(status),
 		"title":  http.StatusText(status),
 		"status": status,
 		"detail": detail,

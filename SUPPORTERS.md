@@ -1,8 +1,8 @@
 # Community Supporters
 
-NetVantage is free for personal, home-lab, and non-competing production use forever. These individuals and organizations have chosen to voluntarily support the project's development. Their generosity helps fund continued development, infrastructure, and community growth.
+SubNetree is free for personal, home-lab, and non-competing production use forever. These individuals and organizations have chosen to voluntarily support the project's development. Their generosity helps fund continued development, infrastructure, and community growth.
 
-**Want to support NetVantage?**
+**Want to support SubNetree?**
 - [GitHub Sponsors](https://github.com/sponsors/HerbHall)
 - [Ko-fi](https://ko-fi.com/herbhall)
 - [Buy Me a Coffee](https://buymeacoffee.com/herbhall)
@@ -41,6 +41,6 @@ NetVantage is free for personal, home-lab, and non-competing production use fore
 
 ## Non-Financial Contributors
 
-NetVantage thrives because of community contributions beyond financial support. Bug reporters, feature requesters, beta testers, documentation authors, and plugin developers are all recognized in release notes and the project's contributor list.
+SubNetree thrives because of community contributions beyond financial support. Bug reporters, feature requesters, beta testers, documentation authors, and plugin developers are all recognized in release notes and the project's contributor list.
 
 See [Contributing Guide](CONTRIBUTING.md) for how to get involved.

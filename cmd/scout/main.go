@@ -7,12 +7,12 @@ import (
 	"os/signal"
 	"syscall"
 
-	"github.com/HerbHall/netvantage/internal/scout"
+	"github.com/HerbHall/subnetree/internal/scout"
 	"go.uber.org/zap"
 )
 
 func main() {
-	serverAddr := flag.String("server", "localhost:9090", "NetVantage server address")
+	serverAddr := flag.String("server", "localhost:9090", "SubNetree server address")
 	interval := flag.Int("interval", 30, "check-in interval in seconds")
 	flag.Parse()
 

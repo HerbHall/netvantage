@@ -2,7 +2,7 @@
 
 ### Target Market
 
-NetVantage targets **homelabbers and small business IT administrators** managing single-subnet networks (15–200 devices). The goal is not to compete with enterprise monitoring platforms, but to be the best "single pane of glass" for users who currently cobble together multiple tools or go without visibility entirely.
+SubNetree targets **homelabbers and small business IT administrators** managing single-subnet networks (15–200 devices). The goal is not to compete with enterprise monitoring platforms, but to be the best "single pane of glass" for users who currently cobble together multiple tools or go without visibility entirely.
 
 The backend architecture is designed for scalability and acquisition-readiness, but the current product focus is delighting smaller-scale users with an exceptional experience.
 
@@ -18,7 +18,7 @@ No existing source-available tool combines all five capabilities in a single sel
 
 ### Detailed Competitor Analysis
 
-| Tool | Strengths | Gaps vs NetVantage | AI/Analytics |
+| Tool | Strengths | Gaps vs SubNetree | AI/Analytics |
 |------|-----------|-------------------|-------------|
 | **Zabbix** | Powerful templates, distributed monitoring, huge community | Steep learning curve (6+ months), no remote access, no credentials, GPL license, users add Grafana for visualization | Static thresholds only; users bolt on external ML tools |
 | **LibreNMS** | Excellent auto-discovery, SNMP-focused, welcoming community | PHP/LAMP stack feels dated, no remote access, no credentials, slow with 800+ devices | Basic heuristic discovery; no anomaly detection |
@@ -32,7 +32,7 @@ No existing source-available tool combines all five capabilities in a single sel
 
 ### Positioning: Dashboard & Aggregator
 
-NetVantage is not trying to replace homelab staples like Home Assistant, UnRAID, or Proxmox. Instead, it serves as a **homelab command center** that:
+SubNetree is not trying to replace homelab staples like Home Assistant, UnRAID, or Proxmox. Instead, it serves as a **homelab command center** that:
 
 - Aggregates status from multiple platforms into a single dashboard
 - Provides quick-launch access to other tools' UIs
@@ -51,12 +51,12 @@ NetVantage is not trying to replace homelab staples like Home Assistant, UnRAID,
 - **MeshCentral** — Free RMM/remote access, but weak discovery and dated UI
 - **Heimdall / Homarr / Homepage** — Dashboard launchers, but no monitoring or discovery
 
-### When NOT to Use NetVantage
+### When NOT to Use SubNetree
 
 - **Large enterprises (100+ sites, 5,000+ devices)** — Use Zabbix, LibreNMS, or commercial tools like Datadog
 - **SNMP-only deep network monitoring** — LibreNMS or Observium are more mature for pure SNMP workflows
 - **Cloud-native / no on-prem** — Use Datadog, New Relic, or similar SaaS
-- **Pure IoT/home automation** — Home Assistant is better for smart home control; NetVantage is for network visibility
+- **Pure IoT/home automation** — Home Assistant is better for smart home control; SubNetree is for network visibility
 
 ### Adoption Formula (From Research)
 
@@ -74,11 +74,11 @@ Time to First Value < 10 minutes     (Uptime Kuma, PRTG model)
 
 **Critical adoption insight:** A project with no releases, no CI badge, no screenshots, and empty issues/discussions reads as abandoned or not-yet-started -- regardless of code quality. The pre-launch checklist in Community Engagement & Launch Strategy addresses this directly.
 
-**Analytics Differentiation:** No self-hosted / source-available monitoring tool offers built-in adaptive baselines, anomaly detection, or LLM integration. Enterprise SaaS tools (Datadog, Dynatrace) charge $15-30+/host/month for these capabilities. NetVantage delivers the same core algorithms (EWMA, Holt-Winters, topology-aware correlation) at zero additional cost in the free tier.
+**Analytics Differentiation:** No self-hosted / source-available monitoring tool offers built-in adaptive baselines, anomaly detection, or LLM integration. Enterprise SaaS tools (Datadog, Dynatrace) charge $15-30+/host/month for these capabilities. SubNetree delivers the same core algorithms (EWMA, Holt-Winters, topology-aware correlation) at zero additional cost in the free tier.
 
 ### User Segment Priorities (Current Focus)
 
-| Segment | Top Need | NetVantage Differentiator | Typical Hardware | Typical Devices |
+| Segment | Top Need | SubNetree Differentiator | Typical Hardware | Typical Devices |
 |---------|----------|--------------------------|-----------------|----------------|
 | **Home Lab (beginner)** | Simple visibility into all home devices | Auto-discovery + topology in 10 minutes | RPi 4/5, Docker on NAS | 15–30 (router, switch, AP, IoT, personal devices) |
 | **Home Lab (enthusiast)** | Single pane of glass replacing 3–5 separate tools | Discovery + monitoring + topology + remote access + credential vault | N100 mini PC, Proxmox VM, refurb enterprise micro | 50–200 (managed switches, VLANs, 20–50 containers, NAS, cameras, IoT) |

@@ -18,7 +18,7 @@ export function AppLayout() {
     <div className="flex min-h-screen">
       <aside className="hidden w-64 flex-col border-r border-[var(--nv-border-subtle)] bg-[var(--nv-sidebar-bg)] md:flex">
         <div className="border-b border-[var(--nv-border-subtle)] p-4">
-          <h1 className="text-lg font-semibold text-[var(--nv-green-400)]">NetVantage</h1>
+          <h1 className="text-lg font-semibold text-[var(--nv-green-400)]">SubNetree</h1>
         </div>
         <nav className="flex-1 space-y-1 p-3" aria-label="Main navigation">
           {navItems.map(({ to, label, icon: Icon }) => (

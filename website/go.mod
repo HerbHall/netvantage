@@ -1,4 +1,4 @@
-module github.com/HerbHall/netvantage/website
+module github.com/HerbHall/subnetree/website
 
 go 1.22.0
 

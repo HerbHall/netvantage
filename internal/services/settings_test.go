@@ -4,8 +4,8 @@ import (
 	"context"
 	"testing"
 
-	"github.com/HerbHall/netvantage/internal/services"
-	"github.com/HerbHall/netvantage/internal/testutil"
+	"github.com/HerbHall/subnetree/internal/services"
+	"github.com/HerbHall/subnetree/internal/testutil"
 )
 
 func newSettingsRepo(t *testing.T) services.SettingsRepository {
@@ -22,7 +22,7 @@ func TestSQLiteSettingsRepository_SetAndGet(t *testing.T) {
 	repo := newSettingsRepo(t)
 	ctx := context.Background()
 
-	if err := repo.Set(ctx, "site_name", "NetVantage"); err != nil {
+	if err := repo.Set(ctx, "site_name", "SubNetree"); err != nil {
 		t.Fatalf("Set: %v", err)
 	}
 
@@ -33,8 +33,8 @@ func TestSQLiteSettingsRepository_SetAndGet(t *testing.T) {
 	if s.Key != "site_name" {
 		t.Errorf("Key = %q, want %q", s.Key, "site_name")
 	}
-	if s.Value != "NetVantage" {
-		t.Errorf("Value = %q, want %q", s.Value, "NetVantage")
+	if s.Value != "SubNetree" {
+		t.Errorf("Value = %q, want %q", s.Value, "SubNetree")
 	}
 	if s.UpdatedAt.IsZero() {
 		t.Error("UpdatedAt is zero")

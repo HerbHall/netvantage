@@ -7,15 +7,15 @@ Accepted
 2025-02-02
 
 ## Context
-NetVantage needs a public-facing product website to communicate the project's purpose, features, roadmap, and documentation to potential users and contributors. The project is currently unfunded, so hosting costs must be zero or near-zero. The website should be maintainable by a single developer, automatable via CI/CD, and capable of growing with the project.
+SubNetree needs a public-facing product website to communicate the project's purpose, features, roadmap, and documentation to potential users and contributors. The project is currently unfunded, so hosting costs must be zero or near-zero. The website should be maintainable by a single developer, automatable via CI/CD, and capable of growing with the project.
 
-The domain netvantage.net has been registered via Cloudflare Registrar (~$12/yr).
+The domain subnetree.net has been registered via Cloudflare Registrar (~$12/yr).
 
 Requirements:
 - Product landing page (hero, features, architecture, roadmap)
 - Documentation section (getting started, contributing, architecture, FAQ)
 - Blog for development updates and release announcements
-- Dark theme matching the NetVantage brand identity (forest greens, earth tones)
+- Dark theme matching the SubNetree brand identity (forest greens, earth tones)
 - Automated deployment on content changes
 - Zero hosting cost
 
@@ -26,7 +26,7 @@ Use Hugo static site generator with the Hextra theme, deployed to GitHub Pages v
 - **Theme**: Hextra (MIT licensed), installed via Hugo Modules
 - **Deployment**: GitHub Actions workflow triggered on push to `main` when `website/**` files change
 - **Hosting**: GitHub Pages (free for public repositories)
-- **Domain**: netvantage.net with CNAME record pointing to GitHub Pages
+- **Domain**: subnetree.net with CNAME record pointing to GitHub Pages
 
 ## Consequences
 
@@ -37,7 +37,7 @@ Use Hugo static site generator with the Hextra theme, deployed to GitHub Pages v
 - Hextra provides landing page, documentation, and blog layouts in a single theme
 - No external dependencies required (no Node.js, npm, or database)
 - GitHub Actions automates deployment with zero manual intervention
-- Dark mode and custom CSS support matches NetVantage brand identity
+- Dark mode and custom CSS support matches SubNetree brand identity
 - Content is Markdown files -- easy for developers to maintain
 - Site can be fully automated (future: auto-generate pages from releases, milestones)
 

@@ -3,7 +3,7 @@ title: Contributing
 weight: 3
 ---
 
-NetVantage welcomes contributions from the community. Whether you're reporting a bug, requesting a feature, or submitting code, this section covers everything you need to know.
+SubNetree welcomes contributions from the community. Whether you're reporting a bug, requesting a feature, or submitting code, this section covers everything you need to know.
 
 ## Quick Links
 
@@ -15,17 +15,17 @@ NetVantage welcomes contributions from the community. Whether you're reporting a
 
 ## Contributor License Agreement
 
-All contributors must sign the [CLA](https://github.com/HerbHall/netvantage/blob/main/.github/CLA.md) before their first PR can be merged. This is automated -- the CLA bot will prompt you on your first pull request.
+All contributors must sign the [CLA](https://github.com/HerbHall/subnetree/blob/main/.github/CLA.md) before their first PR can be merged. This is automated -- the CLA bot will prompt you on your first pull request.
 
-**Why a CLA?** NetVantage uses a split licensing model (BSL 1.1 + Apache 2.0). The CLA ensures a clean IP chain, which is essential for the project's long-term sustainability.
+**Why a CLA?** SubNetree uses a split licensing model (BSL 1.1 + Apache 2.0). The CLA ensures a clean IP chain, which is essential for the project's long-term sustainability.
 
 ## Code of Conduct
 
-All contributors are expected to follow our [Code of Conduct](https://github.com/HerbHall/netvantage/blob/main/CODE_OF_CONDUCT.md). We are committed to providing a welcoming and inclusive environment.
+All contributors are expected to follow our [Code of Conduct](https://github.com/HerbHall/subnetree/blob/main/CODE_OF_CONDUCT.md). We are committed to providing a welcoming and inclusive environment.
 
 ## Commit Conventions
 
-NetVantage uses [Conventional Commits](https://www.conventionalcommits.org/):
+SubNetree uses [Conventional Commits](https://www.conventionalcommits.org/):
 
 ```
 feat: add device type icon mapping

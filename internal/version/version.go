@@ -1,4 +1,4 @@
-// Package version provides build-time version information for NetVantage components.
+// Package version provides build-time version information for SubNetree components.
 // Variables are injected at build time via ldflags.
 package version
 
@@ -16,7 +16,7 @@ var (
 
 // Info returns a formatted version string suitable for --version output.
 func Info() string {
-	return fmt.Sprintf("NetVantage %s (commit: %s, built: %s, go: %s)",
+	return fmt.Sprintf("SubNetree %s (commit: %s, built: %s, go: %s)",
 		Version, GitCommit, BuildDate, runtime.Version())
 }
 

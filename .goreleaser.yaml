@@ -1,15 +1,15 @@
 version: 2
 
-project_name: netvantage
+project_name: subnetree
 
 before:
   hooks:
     - go mod tidy
 
 builds:
-  - id: netvantage
-    main: ./cmd/netvantage/
-    binary: netvantage
+  - id: subnetree
+    main: ./cmd/subnetree/
+    binary: subnetree
     env:
       - CGO_ENABLED=0
     goos:
@@ -21,9 +21,9 @@ builds:
       - arm64
     ldflags:
       - -s -w
-      - -X github.com/HerbHall/netvantage/internal/version.Version={{.Version}}
-      - -X github.com/HerbHall/netvantage/internal/version.GitCommit={{.ShortCommit}}
-      - -X github.com/HerbHall/netvantage/internal/version.BuildDate={{.Date}}
+      - -X github.com/HerbHall/subnetree/internal/version.Version={{.Version}}
+      - -X github.com/HerbHall/subnetree/internal/version.GitCommit={{.ShortCommit}}
+      - -X github.com/HerbHall/subnetree/internal/version.BuildDate={{.Date}}
 
   - id: scout
     main: ./cmd/scout/
@@ -39,16 +39,16 @@ builds:
       - arm64
     ldflags:
       - -s -w
-      - -X github.com/HerbHall/netvantage/internal/version.Version={{.Version}}
-      - -X github.com/HerbHall/netvantage/internal/version.GitCommit={{.ShortCommit}}
-      - -X github.com/HerbHall/netvantage/internal/version.BuildDate={{.Date}}
+      - -X github.com/HerbHall/subnetree/internal/version.Version={{.Version}}
+      - -X github.com/HerbHall/subnetree/internal/version.GitCommit={{.ShortCommit}}
+      - -X github.com/HerbHall/subnetree/internal/version.BuildDate={{.Date}}
 
 archives:
-  - id: netvantage
+  - id: subnetree
     ids:
-      - netvantage
+      - subnetree
     name_template: >-
-      netvantage_{{ .Version }}_{{ .Os }}_{{ .Arch }}
+      subnetree_{{ .Version }}_{{ .Os }}_{{ .Arch }}
     format_overrides:
       - goos: windows
         formats:
@@ -92,51 +92,51 @@ changelog:
       order: 999
 
 dockers:
-  - id: netvantage-amd64
+  - id: subnetree-amd64
     ids:
-      - netvantage
+      - subnetree
     goos: linux
     goarch: amd64
     use: buildx
     image_templates:
-      - "ghcr.io/herbhall/netvantage:{{ .Tag }}-amd64"
-      - "ghcr.io/herbhall/netvantage:latest-amd64"
+      - "ghcr.io/herbhall/subnetree:{{ .Tag }}-amd64"
+      - "ghcr.io/herbhall/subnetree:latest-amd64"
     build_flag_templates:
       - "--platform=linux/amd64"
-      - "--label=org.opencontainers.image.title=NetVantage"
+      - "--label=org.opencontainers.image.title=SubNetree"
       - "--label=org.opencontainers.image.description=Network monitoring"
       - "--label=org.opencontainers.image.version={{ .Version }}"
-      - "--label=org.opencontainers.image.source=https://github.com/HerbHall/netvantage"
+      - "--label=org.opencontainers.image.source=https://github.com/HerbHall/subnetree"
       - "--label=org.opencontainers.image.licenses=BSL-1.1"
     dockerfile: Dockerfile.goreleaser
 
-  - id: netvantage-arm64
+  - id: subnetree-arm64
     ids:
-      - netvantage
+      - subnetree
     goos: linux
     goarch: arm64
     use: buildx
     image_templates:
-      - "ghcr.io/herbhall/netvantage:{{ .Tag }}-arm64"
-      - "ghcr.io/herbhall/netvantage:latest-arm64"
+      - "ghcr.io/herbhall/subnetree:{{ .Tag }}-arm64"
+      - "ghcr.io/herbhall/subnetree:latest-arm64"
     build_flag_templates:
       - "--platform=linux/arm64"
-      - "--label=org.opencontainers.image.title=NetVantage"
+      - "--label=org.opencontainers.image.title=SubNetree"
       - "--label=org.opencontainers.image.description=Network monitoring"
       - "--label=org.opencontainers.image.version={{ .Version }}"
-      - "--label=org.opencontainers.image.source=https://github.com/HerbHall/netvantage"
+      - "--label=org.opencontainers.image.source=https://github.com/HerbHall/subnetree"
       - "--label=org.opencontainers.image.licenses=BSL-1.1"
     dockerfile: Dockerfile.goreleaser
 
 docker_manifests:
-  - name_template: "ghcr.io/herbhall/netvantage:{{ .Tag }}"
+  - name_template: "ghcr.io/herbhall/subnetree:{{ .Tag }}"
     image_templates:
-      - "ghcr.io/herbhall/netvantage:{{ .Tag }}-amd64"
-      - "ghcr.io/herbhall/netvantage:{{ .Tag }}-arm64"
-  - name_template: "ghcr.io/herbhall/netvantage:latest"
+      - "ghcr.io/herbhall/subnetree:{{ .Tag }}-amd64"
+      - "ghcr.io/herbhall/subnetree:{{ .Tag }}-arm64"
+  - name_template: "ghcr.io/herbhall/subnetree:latest"
     image_templates:
-      - "ghcr.io/herbhall/netvantage:latest-amd64"
-      - "ghcr.io/herbhall/netvantage:latest-arm64"
+      - "ghcr.io/herbhall/subnetree:latest-amd64"
+      - "ghcr.io/herbhall/subnetree:latest-arm64"
 
 sboms:
   - artifacts: archive
@@ -156,26 +156,26 @@ signs:
 release:
   github:
     owner: HerbHall
-    name: netvantage
+    name: subnetree
   prerelease: auto
   name_template: "{{.Tag}}"
   header: |
-    ## NetVantage {{.Version}}
+    ## SubNetree {{.Version}}
 
     ### Installation
 
     **Docker (recommended):**
     ```bash
     docker run -d -p 8080:8080 \
-      -v netvantage-data:/data \
-      ghcr.io/herbhall/netvantage:{{ .Tag }}
+      -v subnetree-data:/data \
+      ghcr.io/herbhall/subnetree:{{ .Tag }}
     ```
 
     **Binary:** Download the appropriate archive for your platform below.
 
-    See the [full changelog](https://github.com/HerbHall/netvantage/compare/{{.PreviousTag}}...{{.Tag}}) for all changes.
+    See the [full changelog](https://github.com/HerbHall/subnetree/compare/{{.PreviousTag}}...{{.Tag}}) for all changes.
   footer: |
-    **Full Changelog**: https://github.com/HerbHall/netvantage/compare/{{.PreviousTag}}...{{.Tag}}
+    **Full Changelog**: https://github.com/HerbHall/subnetree/compare/{{.PreviousTag}}...{{.Tag}}
 
     ---
     Licensed under BSL 1.1 (core) and Apache 2.0 (plugin SDK).

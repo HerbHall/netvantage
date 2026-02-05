@@ -5,7 +5,7 @@ import (
 	"context"
 	"sync"
 
-	"github.com/HerbHall/netvantage/pkg/plugin"
+	"github.com/HerbHall/subnetree/pkg/plugin"
 	"go.uber.org/zap"
 )
 

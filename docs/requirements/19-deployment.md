@@ -12,15 +12,15 @@ The Go server embeds:
 
 ```yaml
 services:
-  netvantage:
-    image: netvantage/server:latest
+  subnetree:
+    image: subnetree/server:latest
     ports:
       - "8080:8080"   # Web UI + API
       - "9090:9090"   # gRPC (Scout agents)
     volumes:
-      - netvantage-data:/data
+      - subnetree-data:/data
     environment:
-      - NV_DATABASE_DSN=/data/netvantage.db
+      - NV_DATABASE_DSN=/data/subnetree.db
       - NV_VAULT_PASSPHRASE_FILE=/run/secrets/vault_passphrase
 
   guacamole:  # Optional: only if Gateway module is enabled
@@ -40,7 +40,7 @@ Pre-configured module sets for common use cases:
 | **remote-access** | Vault + Gateway + Recon | Remote access tool without monitoring |
 | **msp** | All + multi-tenancy | Managed service provider |
 
-Usage: `netvantage --profile monitoring-only` or copy profile as starting config.
+Usage: `subnetree --profile monitoring-only` or copy profile as starting config.
 
 ### Performance Profiles (Adaptive Scaling)
 
@@ -82,8 +82,8 @@ The configuration file includes a `config_version` field at the root level. This
 - **Additive changes** (new keys with defaults) do NOT increment `config_version`. An old config file works without modification.
 - If `config_version` is missing, the server assumes version 1 (backward compatible with pre-versioning configs).
 - If `config_version` is newer than the server supports, the server refuses to start with: `"Configuration file version %d is newer than this server supports (max: %d). Upgrade the server or downgrade the config."`
-- If `config_version` is older than current, the server starts normally but logs a warning: `"Configuration file version %d is outdated (current: %d). Run 'netvantage config migrate' to update. See release notes for changes."`
-- The `netvantage config migrate` CLI command transforms an old config file to the current version, writing a backup of the original.
+- If `config_version` is older than current, the server starts normally but logs a warning: `"Configuration file version %d is outdated (current: %d). Run 'subnetree config migrate' to update. See release notes for changes."`
+- The `subnetree config migrate` CLI command transforms an old config file to the current version, writing a backup of the original.
 - **Breaking config changes are rare.** Most config evolution is additive (new keys with sensible defaults). A `config_version` bump is expected roughly once per major server version, if at all.
 
 ```yaml
@@ -100,7 +100,7 @@ logging:
 
 database:
   driver: "sqlite"
-  dsn: "./data/netvantage.db"
+  dsn: "./data/subnetree.db"
 
 auth:
   jwt_secret: ""                    # Auto-generated on first run
@@ -140,7 +140,7 @@ modules:
     api_key_credential_id: ""              # Vault credential ID for API key
     oauth_credential_id: ""                # Vault credential ID for OAuth client
     sync_interval: "5m"                     # How often to poll Tailscale API for device changes
-    import_tags: true                       # Import Tailscale ACL tags as NetVantage device tags
+    import_tags: true                       # Import Tailscale ACL tags as SubNetree device tags
     prefer_tailscale_ip: true              # Use Tailscale IPs when device is on tailnet
     discover_subnet_routes: true            # Detect and offer to scan advertised subnet routes
 ```

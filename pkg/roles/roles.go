@@ -9,7 +9,7 @@ package roles
 import (
 	"context"
 
-	"github.com/HerbHall/netvantage/pkg/models"
+	"github.com/HerbHall/subnetree/pkg/models"
 )
 
 // Role name constants match the strings used in PluginInfo.Roles.

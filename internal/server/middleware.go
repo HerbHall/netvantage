@@ -11,7 +11,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/HerbHall/netvantage/internal/version"
+	"github.com/HerbHall/subnetree/internal/version"
 	"github.com/prometheus/client_golang/prometheus"
 	"go.uber.org/zap"
 	"golang.org/x/time/rate"
@@ -119,10 +119,10 @@ func SecurityHeadersMiddleware(next http.Handler) http.Handler {
 	})
 }
 
-// VersionHeaderMiddleware adds X-NetVantage-Version to all responses.
+// VersionHeaderMiddleware adds X-SubNetree-Version to all responses.
 func VersionHeaderMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		w.Header().Set("X-NetVantage-Version", version.Short())
+		w.Header().Set("X-SubNetree-Version", version.Short())
 		next.ServeHTTP(w, r)
 	})
 }

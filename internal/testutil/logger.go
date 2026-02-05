@@ -1,4 +1,4 @@
-// Package testutil provides shared test helpers for NetVantage packages.
+// Package testutil provides shared test helpers for SubNetree packages.
 package testutil
 
 import "go.uber.org/zap"

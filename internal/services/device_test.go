@@ -6,10 +6,10 @@ import (
 	"testing"
 	"time"
 
-	"github.com/HerbHall/netvantage/internal/services"
-	"github.com/HerbHall/netvantage/internal/testutil"
-	"github.com/HerbHall/netvantage/pkg/models"
-	"github.com/HerbHall/netvantage/pkg/plugin"
+	"github.com/HerbHall/subnetree/internal/services"
+	"github.com/HerbHall/subnetree/internal/testutil"
+	"github.com/HerbHall/subnetree/pkg/models"
+	"github.com/HerbHall/subnetree/pkg/plugin"
 )
 
 // reconMigrations creates the recon_devices and recon_scan_devices tables

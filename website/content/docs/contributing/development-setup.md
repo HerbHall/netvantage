@@ -3,7 +3,7 @@ title: Development Setup
 weight: 3
 ---
 
-Set up your local environment to contribute code to NetVantage.
+Set up your local environment to contribute code to SubNetree.
 
 ## Prerequisites
 
@@ -15,8 +15,8 @@ Set up your local environment to contribute code to NetVantage.
 
 ```bash
 # Fork the repository on GitHub, then:
-git clone https://github.com/YOUR_USERNAME/netvantage.git
-cd netvantage
+git clone https://github.com/YOUR_USERNAME/subnetree.git
+cd subnetree
 make build
 ```
 
@@ -62,7 +62,7 @@ Uses [golangci-lint](https://golangci-lint.run/) with the project's `.golangci.y
 
 ```
 cmd/
-  netvantage/     Server entry point
+  subnetree/     Server entry point
   scout/          Agent entry point
 internal/
   config/         Configuration management
@@ -90,10 +90,10 @@ web/              React dashboard (TypeScript)
 
 ## Pull Request Process
 
-1. Fill out the [PR template](https://github.com/HerbHall/netvantage/blob/main/.github/pull_request_template.md) completely
+1. Fill out the [PR template](https://github.com/HerbHall/subnetree/blob/main/.github/pull_request_template.md) completely
 2. Ensure CI passes (build, test, lint, license check)
 3. Request review from a maintainer
 4. Address review feedback
 5. Squash or rebase as needed before merge
 
-For more details, see the full [CONTRIBUTING.md](https://github.com/HerbHall/netvantage/blob/main/CONTRIBUTING.md) in the repository.
+For more details, see the full [CONTRIBUTING.md](https://github.com/HerbHall/subnetree/blob/main/CONTRIBUTING.md) in the repository.

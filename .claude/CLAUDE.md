@@ -1,8 +1,8 @@
-# NetVantage - Claude Code Project Configuration
+# SubNetree - Claude Code Project Configuration
 
 ## Project Overview
 
-NetVantage is a modular, source-available network monitoring and management platform written in Go. It consists of a server with plugin-based modules and a lightweight agent (Scout) for monitored devices.
+SubNetree is a modular, source-available network monitoring and management platform written in Go. It consists of a server with plugin-based modules and a lightweight agent (Scout) for monitored devices.
 
 **Free for personal/home use forever. Commercial for business use.** Licensed under BSL 1.1 (core) and Apache 2.0 (plugin SDK). Built with acquisition readiness in mind.
 
@@ -64,7 +64,7 @@ These principles govern every development decision. When in doubt, refer here:
 
 ## Architecture
 
-- **Server** (`cmd/netvantage/`): Central application with HTTP API, plugin registry
+- **Server** (`cmd/subnetree/`): Central application with HTTP API, plugin registry
 - **Scout** (`cmd/scout/`): Lightweight agent installed on monitored devices
 - **Dashboard** (`web/`): React + TypeScript SPA served by the server
 - **Modules** (`internal/`): Recon (scanning), Pulse (monitoring), Dispatch (agent mgmt), Vault (credentials), Gateway (remote access)
@@ -90,7 +90,7 @@ make clean          # Clean build artifacts
 
 ## Go Conventions
 
-- Module path: `github.com/HerbHall/netvantage`
+- Module path: `github.com/HerbHall/subnetree`
 - Go 1.25+
 - Use `internal/` for private packages, `pkg/` for public
 - Standard Go project layout
@@ -116,7 +116,7 @@ These patterns are enforced across the codebase. See [02-architecture-overview.m
 - **Compile-time interface guards:** Every type implementing an interface must have `var _ Interface = (*Type)(nil)` at the top of the file.
 - **Thin interfaces, composed:** Keep interfaces to 1-2 methods. Compose larger interfaces from small ones (e.g., `EventBus = Publisher + Subscriber`).
 - **Contract test suites:** Every `plugin.Plugin` implementation must call `plugintest.TestPluginContract` in its tests.
-- **Manual DI in main():** No DI frameworks. All wiring is explicit in `cmd/netvantage/main.go`.
+- **Manual DI in main():** No DI frameworks. All wiring is explicit in `cmd/subnetree/main.go`.
 - **Hexagonal mapping:** `pkg/plugin/` = ports, `internal/` = adapters, `cmd/` = composition root.
 
 ## Plugin Architecture
@@ -136,7 +136,7 @@ Optional interfaces detected via type assertions:
 - `Reloadable` -- hot config reload
 - `AnalyticsProvider` -- AI/analytics capabilities (Phase 2+)
 
-Plugins are registered at compile time in `cmd/netvantage/main.go`. Plugin API version is validated at registration (see [04-plugin-architecture.md](docs/requirements/04-plugin-architecture.md)).
+Plugins are registered at compile time in `cmd/subnetree/main.go`. Plugin API version is validated at registration (see [04-plugin-architecture.md](docs/requirements/04-plugin-architecture.md)).
 
 ## Version Management
 
@@ -173,7 +173,7 @@ Every GitHub issue must be developed on its own branch:
 
 ## Useful Claude Code Skills
 
-These installed skills are particularly relevant for NetVantage development:
+These installed skills are particularly relevant for SubNetree development:
 
 | Skill / Command | When to Use |
 |----------------|-------------|

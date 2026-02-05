@@ -34,7 +34,7 @@ export function LoginPage() {
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Sign in to NetVantage</CardTitle>
+        <CardTitle>Sign in to SubNetree</CardTitle>
         <CardDescription>Enter your credentials to access the dashboard.</CardDescription>
       </CardHeader>
       <CardContent>

@@ -1,6 +1,6 @@
 # Standards and Best Practices Commitment
 
-NetVantage is committed to following industry-standard best practices in architecture, coding, security, and operations. This document tracks our adopted standards and any intentional deviations.
+SubNetree is committed to following industry-standard best practices in architecture, coding, security, and operations. This document tracks our adopted standards and any intentional deviations.
 
 ## Guiding Principle
 
@@ -122,7 +122,7 @@ Plugin compatibility matrix defining which combinations are tested and supported
 | XI. Logs | Adopted | Structured logging to stdout |
 | XII. Admin processes | **Partial** | CLI commands, not one-off dynos |
 
-**Reason:** NetVantage targets single-tenant, home-lab deployments where operational simplicity matters more than horizontal scalability. Full 12-Factor compliance adds complexity without proportional benefit.
+**Reason:** SubNetree targets single-tenant, home-lab deployments where operational simplicity matters more than horizontal scalability. Full 12-Factor compliance adds complexity without proportional benefit.
 
 ---
 
@@ -164,7 +164,7 @@ Plugin compatibility matrix defining which combinations are tested and supported
 
 **Standard:** MACH architecture typically implies physically distributed microservices.
 
-**Deviation:** NetVantage deploys as a single binary with plugin-based logical separation.
+**Deviation:** SubNetree deploys as a single binary with plugin-based logical separation.
 
 **Reason:**
 - Target audience (home-lab, single-tenant) values operational simplicity
@@ -220,7 +220,7 @@ Plugin compatibility matrix defining which combinations are tested and supported
 
 When adopting a new standard or methodology:
 
-1. **Evaluate fit:** Does it solve a real problem for NetVantage?
+1. **Evaluate fit:** Does it solve a real problem for SubNetree?
 2. **Document adoption:** Add to the "Adopted Standards" table above
 3. **Note deviations:** If we can't fully adopt, add a "Documented Deviations" section
 4. **Create ADR:** For significant architectural decisions, create an ADR in `docs/adr/`

@@ -6,7 +6,7 @@
 
 | Component | Location | Method |
 |-----------|----------|--------|
-| Database | `data/netvantage.db` | SQLite online backup API (safe during operation) |
+| Database | `data/subnetree.db` | SQLite online backup API (safe during operation) |
 | Configuration | `config.yaml` + env vars | File copy |
 | TLS certificates | `data/certs/` | File copy (CA key, server cert, agent certs) |
 | OUI database | Embedded in binary | Not needed (re-embedded on upgrade) |
@@ -15,9 +15,9 @@
 #### Backup Commands
 
 ```bash
-netvantage backup --output /path/to/backup.tar.gz    # Full backup (DB + config + certs)
-netvantage restore --input /path/to/backup.tar.gz     # Restore to current data dir
-netvantage backup --db-only --output /path/to/db.bak  # Database-only backup
+subnetree backup --output /path/to/backup.tar.gz    # Full backup (DB + config + certs)
+subnetree restore --input /path/to/backup.tar.gz     # Restore to current data dir
+subnetree backup --db-only --output /path/to/db.bak  # Database-only backup
 ```
 
 - Online backup: safe to run while server is operating (uses SQLite backup API)
@@ -63,8 +63,8 @@ retention:
 ### Database Maintenance
 
 - **SQLite WAL checkpointing:** Automatic on server shutdown; configurable periodic checkpoint during operation
-- **SQLite VACUUM:** Manual via CLI command `netvantage db vacuum`; not automatic (can be slow on large databases)
-- **Database size monitoring:** Exposed as Prometheus metric `netvantage_db_size_bytes`
+- **SQLite VACUUM:** Manual via CLI command `subnetree db vacuum`; not automatic (can be slow on large databases)
+- **Database size monitoring:** Exposed as Prometheus metric `subnetree_db_size_bytes`
 
 ### Upgrade Strategy
 
@@ -87,12 +87,12 @@ The server monitors its own health and exposes metrics:
 
 | Metric | Type | Description |
 |--------|------|-------------|
-| `netvantage_db_size_bytes` | Gauge | Database file size |
-| `netvantage_db_query_queue_depth` | Gauge | Pending database queries |
-| `netvantage_event_bus_queue_depth` | Gauge | Pending async events |
-| `netvantage_goroutine_count` | Gauge | Active goroutines |
-| `netvantage_disk_free_bytes` | Gauge | Free disk space on data directory |
-| `netvantage_uptime_seconds` | Gauge | Server uptime |
+| `subnetree_db_size_bytes` | Gauge | Database file size |
+| `subnetree_db_query_queue_depth` | Gauge | Pending database queries |
+| `subnetree_event_bus_queue_depth` | Gauge | Pending async events |
+| `subnetree_goroutine_count` | Gauge | Active goroutines |
+| `subnetree_disk_free_bytes` | Gauge | Free disk space on data directory |
+| `subnetree_uptime_seconds` | Gauge | Server uptime |
 
 Self-monitoring alerts (built-in, always active):
 - Disk space < 10% free on data directory

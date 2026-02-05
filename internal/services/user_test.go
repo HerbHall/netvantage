@@ -5,9 +5,9 @@ import (
 	"database/sql"
 	"testing"
 
-	"github.com/HerbHall/netvantage/internal/services"
-	"github.com/HerbHall/netvantage/internal/testutil"
-	"github.com/HerbHall/netvantage/pkg/plugin"
+	"github.com/HerbHall/subnetree/internal/services"
+	"github.com/HerbHall/subnetree/internal/testutil"
+	"github.com/HerbHall/subnetree/pkg/plugin"
 	"github.com/google/uuid"
 )
 

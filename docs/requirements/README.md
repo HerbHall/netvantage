@@ -1,4 +1,4 @@
-# NetVantage Requirements
+# SubNetree Requirements
 
 This directory contains the complete project requirements, split into per-section files for easier navigation, editing, and context-efficient AI-assisted development.
 

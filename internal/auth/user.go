@@ -23,7 +23,7 @@ var ValidRoles = map[Role]bool{
 	RoleViewer:   true,
 }
 
-// User represents a NetVantage user account.
+// User represents a SubNetree user account.
 type User struct {
 	ID                  string     `json:"id"`
 	Username            string     `json:"username"`

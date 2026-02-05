@@ -149,8 +149,8 @@ Before a module is initialized, the registry checks its `Prerequisites` to verif
 
 **Example messages:**
 
-- *Gateway:* "Gateway module requires Apache Guacamole running on port 4822. See https://netvantage.dev/docs/gateway-setup for Docker instructions."
-- *Recon (ARP):* "ARP scanning requires root privileges or CAP_NET_RAW capability. Falling back to ICMP-only discovery. Run with `sudo` or add capability: `setcap cap_net_raw+ep ./netvantage`"
+- *Gateway:* "Gateway module requires Apache Guacamole running on port 4822. See https://subnetree.dev/docs/gateway-setup for Docker instructions."
+- *Recon (ARP):* "ARP scanning requires root privileges or CAP_NET_RAW capability. Falling back to ICMP-only discovery. Run with `sudo` or add capability: `setcap cap_net_raw+ep ./subnetree`"
 - *Pulse (large deployment):* "Pulse module monitoring 500+ devices recommends 512MB+ available RAM. Current available: 280MB. Consider reducing scan frequency or disabling unused discovery protocols."
 
 ### Role System
@@ -180,7 +180,7 @@ Roles define abstract capabilities that alternative implementations can fill. Ro
 
 Build tags allow custom binaries without unused modules:
 ```bash
-go build -tags "nogateway,novault" -o netvantage-monitor ./cmd/netvantage
+go build -tags "nogateway,novault" -o subnetree-monitor ./cmd/subnetree
 ```
 
 ### Plugin Lifecycle

@@ -3,15 +3,15 @@ title: Installation
 weight: 1
 ---
 
-NetVantage can be installed from source, as a standalone binary, or via Docker.
+SubNetree can be installed from source, as a standalone binary, or via Docker.
 
 ## From Source
 
 Requires Go 1.25+ and Make.
 
 ```bash
-git clone https://github.com/HerbHall/netvantage.git
-cd netvantage
+git clone https://github.com/HerbHall/subnetree.git
+cd subnetree
 make build
 ```
 
@@ -19,21 +19,21 @@ Binaries are output to the `bin/` directory.
 
 ## Standalone Binary
 
-Download the latest release from [GitHub Releases](https://github.com/HerbHall/netvantage/releases).
+Download the latest release from [GitHub Releases](https://github.com/HerbHall/subnetree/releases).
 
 {{< callout type="info" >}}
-Pre-built binaries will be available starting with the first tagged release. NetVantage is currently in Phase 1 development -- building from source is the recommended method.
+Pre-built binaries will be available starting with the first tagged release. SubNetree is currently in Phase 1 development -- building from source is the recommended method.
 {{< /callout >}}
 
 ## Docker
 
 ```bash
 docker run -d \
-  --name netvantage \
+  --name subnetree \
   -p 8080:8080 \
   -p 9090:9090 \
-  -v netvantage-data:/data \
-  ghcr.io/herbhall/netvantage:latest
+  -v subnetree-data:/data \
+  ghcr.io/herbhall/subnetree:latest
 ```
 
 ## Docker Compose
@@ -41,17 +41,17 @@ docker run -d \
 ```yaml
 version: '3.8'
 services:
-  netvantage:
-    image: ghcr.io/herbhall/netvantage:latest
+  subnetree:
+    image: ghcr.io/herbhall/subnetree:latest
     ports:
       - "8080:8080"   # HTTP API + Dashboard
       - "9090:9090"   # gRPC (Scout agents)
     volumes:
-      - netvantage-data:/data
+      - subnetree-data:/data
     restart: unless-stopped
 
 volumes:
-  netvantage-data:
+  subnetree-data:
 ```
 
 {{< callout type="info" >}}

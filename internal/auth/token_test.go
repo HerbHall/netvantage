@@ -44,8 +44,8 @@ func TestIssueAndValidateAccessToken(t *testing.T) {
 	if claims.Role != string(user.Role) {
 		t.Errorf("Role = %q, want %q", claims.Role, string(user.Role))
 	}
-	if claims.Issuer != "netvantage" {
-		t.Errorf("Issuer = %q, want %q", claims.Issuer, "netvantage")
+	if claims.Issuer != "subnetree" {
+		t.Errorf("Issuer = %q, want %q", claims.Issuer, "subnetree")
 	}
 }
 

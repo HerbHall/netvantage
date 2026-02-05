@@ -10,7 +10,7 @@
 
 ## Reporting a Vulnerability
 
-If you discover a security vulnerability in NetVantage, please report it responsibly.
+If you discover a security vulnerability in SubNetree, please report it responsibly.
 
 **Do NOT open a public GitHub issue for security vulnerabilities.**
 
@@ -41,7 +41,7 @@ on the GitHub profile of [@HerbHall](https://github.com/HerbHall).
 
 ## Security Practices
 
-NetVantage follows these security practices:
+SubNetree follows these security practices:
 
 - Dependencies are monitored via Dependabot
 - CI runs `go vet` and `golangci-lint` (including `gosec`) on every PR

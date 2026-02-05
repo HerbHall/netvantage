@@ -7,8 +7,8 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/HerbHall/netvantage/internal/recon"
-	"github.com/HerbHall/netvantage/pkg/plugin"
+	"github.com/HerbHall/subnetree/internal/recon"
+	"github.com/HerbHall/subnetree/pkg/plugin"
 	"go.uber.org/zap"
 )
 
@@ -142,7 +142,7 @@ func (m *Module) send(ctx context.Context, body []byte, topic string) {
 		return
 	}
 	req.Header.Set("Content-Type", "application/json")
-	req.Header.Set("User-Agent", "NetVantage-Webhook/0.1")
+	req.Header.Set("User-Agent", "SubNetree-Webhook/0.1")
 
 	resp, err := m.client.Do(req)
 	if err != nil {

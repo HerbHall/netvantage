@@ -45,12 +45,12 @@ Standard files that GitHub recognizes and surfaces in the repository UI. These e
 The README is the project's front door. It must convert a skeptical visitor into someone who tries the software. Target structure for Phase 1:
 
 ```
-# NetVantage
+# SubNetree
 [badges: CI | Go version | License | Latest Release | Docker Pulls]
 
 One-sentence description + key screenshot/GIF
 
-## Why NetVantage?
+## Why SubNetree?
 - Feature comparison table (vs Zabbix, LibreNMS, Uptime Kuma, Domotz)
 - "One tool instead of five" value proposition
 

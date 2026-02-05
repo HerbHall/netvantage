@@ -31,9 +31,9 @@ The founder is not planning to build or operate a subscription business. However
 - **Change License:** Apache 2.0 (code auto-converts after Change Date)
 - **Additional Use Grant:** Non-competing production use permitted. Personal, home-lab, and educational use always permitted regardless of this grant.
 - **Commercial Use:** Requires a paid license from the copyright holder for:
-  - Offering NetVantage as a hosted/managed service
-  - Embedding NetVantage in a commercial product that competes with NetVantage offerings
-  - Reselling or white-labeling NetVantage
+  - Offering SubNetree as a hosted/managed service
+  - Embedding SubNetree in a commercial product that competes with SubNetree offerings
+  - Reselling or white-labeling SubNetree
 
 #### Contributor License Agreement (CLA)
 
@@ -47,9 +47,9 @@ The founder is not planning to build or operate a subscription business. However
 
 #### Trademark
 
-- Use **NetVantage™** (common-law TM symbol) immediately to establish rights
+- Use **SubNetree™** (common-law TM symbol) immediately to establish rights
 - Defer USPTO registration until closer to commercialization
-- Trademark policy: forks may not use the "NetVantage" name
+- Trademark policy: forks may not use the "SubNetree" name
 - Trademark guidelines documented in TRADEMARK.md
 
 #### Dependency Compliance
@@ -66,7 +66,7 @@ The founder is not planning to build or operate a subscription business. However
 #### Repository Licensing Structure
 
 ```
-d:\NetVantage\
+d:\SubNetree\
   LICENSE                    # BSL 1.1 (covers everything by default)
   LICENSING.md              # Human-readable explanation of the licensing model
   pkg/
@@ -153,7 +153,7 @@ Every item must be complete before any public promotion (blog posts, Reddit, Hac
 | CI pipeline with passing badge in README | Proves the code compiles and tests pass -- basic credibility signal |
 | Docker one-liner in README | Lowest friction path to "Time to First Value < 10 minutes" |
 | At least one screenshot or GIF in README | Visitors decide in 10 seconds; a wall of text loses them |
-| "Why NetVantage?" section in README | Answers the immediate question every visitor has |
+| "Why SubNetree?" section in README | Answers the immediate question every visitor has |
 | "Current Status" section in README | Honesty about what works prevents disappointment and builds trust |
 | CONTRIBUTING.md | Contributors need a clear path; without it, PRs don't happen |
 | 5+ labeled issues (`good first issue`, `help wanted`) | Contributors scan issues first; an empty issue tracker signals a dead project |
@@ -163,7 +163,7 @@ Every item must be complete before any public promotion (blog posts, Reddit, Hac
 The goal is to convert passive visitors into active contributors. Each step reduces friction:
 
 ```
-1. GitHub visitor reads README → understands value proposition (Why NetVantage?)
+1. GitHub visitor reads README → understands value proposition (Why SubNetree?)
 2. Visitor tries Docker quickstart → sees it work in < 10 minutes
 3. User files a bug or feature request → issue templates guide quality reports
 4. Interested dev reads CONTRIBUTING.md → knows how to set up dev environment
@@ -181,7 +181,7 @@ Sequence matters. Announce only after the pre-launch checklist is complete.
 | Channel | Timing | Content |
 |---------|--------|---------|
 | GitHub Release (`v0.1.0-alpha`) | Day 0 | Release notes, binary downloads, Docker image |
-| Personal blog post | Day 0 | "Why I built NetVantage" -- problem statement, architecture choices, what works, what's planned |
+| Personal blog post | Day 0 | "Why I built SubNetree" -- problem statement, architecture choices, what works, what's planned |
 | r/selfhosted | Day 0–1 | Show & Tell post, link to blog, Docker quickstart |
 | r/homelab | Day 0–1 | Focus on homelab use case, hardware requirements, screenshots |
 | Hacker News (Show HN) | Day 1–2 | Technical focus, architecture, BSL licensing rationale |
@@ -283,7 +283,7 @@ Metrics are only useful if they are tracked consistently from early in the proje
 | **go-licenses** | License compliance checking | Free | 1 | Already planned in CI pipeline |
 | **golangci-lint** | Static analysis + linting | Free | 1 | Already planned in CI pipeline |
 | **Google Search Console** | Organic search traffic for project website | Free | 2 | Register when project website launches |
-| **Plausible Analytics** | Privacy-friendly website analytics | Free (self-hosted) or $9/mo | 2 | Embed in project website (NOT in the NetVantage product) |
+| **Plausible Analytics** | Privacy-friendly website analytics | Free (self-hosted) or $9/mo | 2 | Embed in project website (NOT in the SubNetree product) |
 | **Opt-in telemetry** (custom) | Active installations, MAU, feature usage | Free (custom implementation) | 2 | See Telemetry Design below |
 | **SonarQube Community** | Technical debt + code smell tracking | Free (self-hosted) | 2 | Optional -- Go Report Card + golangci-lint may suffice |
 
@@ -292,11 +292,11 @@ Metrics are only useful if they are tracked consistently from early in the proje
 Telemetry is the only way to measure actual adoption vs. downloads. It must be designed with privacy as the primary constraint.
 
 **Principles:**
-1. **Opt-in only.** Telemetry is disabled by default. Users explicitly enable it in settings or during the first-run wizard ("Help improve NetVantage by sharing anonymous usage data").
+1. **Opt-in only.** Telemetry is disabled by default. Users explicitly enable it in settings or during the first-run wizard ("Help improve SubNetree by sharing anonymous usage data").
 2. **Anonymous.** No IP addresses, hostnames, device names, credentials, or network topology sent. Ever.
 3. **Transparent.** Users can see exactly what is sent before enabling. The telemetry payload is documented and viewable in the UI.
 4. **Minimal.** Only aggregate data needed to answer specific questions (see payload below).
-5. **No third-party services.** Telemetry data sent to a NetVantage-operated endpoint, not Google Analytics, Mixpanel, or similar.
+5. **No third-party services.** Telemetry data sent to a SubNetree-operated endpoint, not Google Analytics, Mixpanel, or similar.
 
 **Telemetry payload (sent weekly):**
 
@@ -319,14 +319,14 @@ Telemetry is the only way to measure actual adoption vs. downloads. It must be d
 
 - `installation_id` is a random UUID generated when telemetry is first enabled. It is not tied to any user identity. It enables deduplication (count unique installations, not unique pings).
 - No fields contain user data, device data, network data, or credentials.
-- The endpoint is a simple HTTPS POST to `telemetry.netvantage.io` (or similar). The server responds with 200 OK and no body.
+- The endpoint is a simple HTTPS POST to `telemetry.subnetree.io` (or similar). The server responds with 200 OK and no body.
 
 **Configuration:**
 
 ```yaml
 telemetry:
   enabled: false                    # Opt-in only, default off
-  endpoint: "https://telemetry.netvantage.io/v1/ping"
+  endpoint: "https://telemetry.subnetree.io/v1/ping"
   interval: "168h"                  # Weekly
 ```
 
@@ -350,13 +350,13 @@ Badges provide at-a-glance confidence signals. Add these to the README as each b
 **Badge markdown (target state):**
 
 ```markdown
-[![Build](https://github.com/HerbHall/netvantage/actions/workflows/ci.yml/badge.svg)](https://github.com/HerbHall/netvantage/actions/workflows/ci.yml)
-[![Coverage](https://codecov.io/gh/HerbHall/netvantage/branch/main/graph/badge.svg)](https://codecov.io/gh/HerbHall/netvantage)
-[![Go Report Card](https://goreportcard.com/badge/github.com/HerbHall/netvantage)](https://goreportcard.com/report/github.com/HerbHall/netvantage)
-[![Go Version](https://img.shields.io/github/go-mod/go-version/HerbHall/netvantage)](go.mod)
+[![Build](https://github.com/HerbHall/subnetree/actions/workflows/ci.yml/badge.svg)](https://github.com/HerbHall/subnetree/actions/workflows/ci.yml)
+[![Coverage](https://codecov.io/gh/HerbHall/subnetree/branch/main/graph/badge.svg)](https://codecov.io/gh/HerbHall/subnetree)
+[![Go Report Card](https://goreportcard.com/badge/github.com/HerbHall/subnetree)](https://goreportcard.com/report/github.com/HerbHall/subnetree)
+[![Go Version](https://img.shields.io/github/go-mod/go-version/HerbHall/subnetree)](go.mod)
 [![License](https://img.shields.io/badge/license-BSL%201.1-blue)](LICENSE)
-[![Release](https://img.shields.io/github/v/release/HerbHall/netvantage)](https://github.com/HerbHall/netvantage/releases)
-[![Docker Pulls](https://img.shields.io/docker/pulls/herbhall/netvantage)](https://hub.docker.com/r/herbhall/netvantage)
+[![Release](https://img.shields.io/github/v/release/HerbHall/subnetree)](https://github.com/HerbHall/subnetree/releases)
+[![Docker Pulls](https://img.shields.io/docker/pulls/herbhall/subnetree)](https://hub.docker.com/r/herbhall/subnetree)
 ```
 
 #### Milestone Targets
@@ -386,15 +386,15 @@ Concrete milestones that signal project health at each stage:
 
 #### Competitive Benchmarks
 
-For context, here is where established players in the network monitoring space sit. NetVantage will not compete on raw numbers with mature projects, but a focused niche with strong metrics can be very attractive for acquisition.
+For context, here is where established players in the network monitoring space sit. SubNetree will not compete on raw numbers with mature projects, but a focused niche with strong metrics can be very attractive for acquisition.
 
 | Project | Stars | Contributors | Docker Pulls | Key Insight |
 |---------|-------|-------------|-------------|-------------|
 | Prometheus | 56k+ | 900+ | 1B+ | De facto standard, massive ecosystem |
 | Grafana | 65k+ | 2,000+ | 1B+ | Visualization layer, not monitoring -- complementary |
-| Netdata | 70k+ | 400+ | 500M+ | Agent-first, zero-config ethos (closest to NetVantage philosophy) |
+| Netdata | 70k+ | 400+ | 500M+ | Agent-first, zero-config ethos (closest to SubNetree philosophy) |
 | Zabbix | 5k+ | 200+ | 100M+ | Enterprise-focused, steep learning curve |
 | LibreNMS | 4k+ | 400+ | 10M+ | SNMP-focused, welcoming community, PHP stack |
 | Uptime Kuma | 60k+ | 300+ | 100M+ | Beautiful UX, monitoring-only, SQLite (closest UX target) |
 
-**NetVantage positioning:** Not competing on scale but on breadth (5-in-1: discovery + monitoring + remote access + credentials + IoT) and ease of use. A project with 1,000 stars, 10 contributors, 100 active installs, and 5 paying customers is a credible acquisition candidate if the code quality, documentation, and IP chain are clean.
+**SubNetree positioning:** Not competing on scale but on breadth (5-in-1: discovery + monitoring + remote access + credentials + IoT) and ease of use. A project with 1,000 stars, 10 contributors, 100 active installs, and 5 paying customers is a credible acquisition candidate if the code quality, documentation, and IP chain are clean.

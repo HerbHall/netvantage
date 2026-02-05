@@ -2,7 +2,7 @@ import type { Config } from "tailwindcss";
 import tailwindAnimate from "tailwindcss-animate";
 
 /**
- * NetVantage Tailwind Configuration
+ * SubNetree Tailwind Configuration
  *
  * Brand palette: forest greens + earth tones (amber, sage, warm cream).
  * Dark mode is the default; light mode via [data-theme="light"].

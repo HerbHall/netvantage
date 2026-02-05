@@ -2,7 +2,7 @@
 
 ### Design Philosophy
 
-AI in NetVantage follows the same principles as the rest of the platform: **optional, progressive, and practical**. Every AI feature is a plugin that can be disabled entirely. The core monitoring system works perfectly without any AI capabilities. AI enhances the experience -- it never gates it.
+AI in SubNetree follows the same principles as the rest of the platform: **optional, progressive, and practical**. Every AI feature is a plugin that can be disabled entirely. The core monitoring system works perfectly without any AI capabilities. AI enhances the experience -- it never gates it.
 
 Research into how "AI" works in production monitoring tools (Datadog, Dynatrace, Auvik, Moogsoft) reveals that the most valuable features are fundamentally **statistical algorithms and graph traversal**, not deep learning. Dynamic baselining, anomaly detection, and topology-aware alert correlation deliver 80%+ of the value at a fraction of the computational cost of neural networks.
 
@@ -85,7 +85,7 @@ Optional machine learning models that run locally via ONNX Runtime. Models are t
 
 ### Tier 3: LLM Integration (Phase 3)
 
-Optional integration with large language models for natural language interaction. Follows a "bring your own API key" model -- NetVantage never requires a paid AI subscription.
+Optional integration with large language models for natural language interaction. Follows a "bring your own API key" model -- SubNetree never requires a paid AI subscription.
 
 **Natural Language Querying:**
 - "Show me all devices that had CPU above 90% last Tuesday"
@@ -141,7 +141,7 @@ Optional integration with large language models for natural language interaction
 
 ### AI Plugin Architecture
 
-The Insight plugin (Tier 1) and optional Tier 2/3 plugins follow the standard NetVantage plugin pattern:
+The Insight plugin (Tier 1) and optional Tier 2/3 plugins follow the standard SubNetree plugin pattern:
 
 - Implements `Plugin` interface (core lifecycle)
 - Implements `EventSubscriber` to receive metric/alert/device events via `PublishAsync` (never blocks metric collection)

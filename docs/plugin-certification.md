@@ -1,6 +1,6 @@
 # Plugin Certification Checklist
 
-This checklist defines the requirements for certifying a NetVantage plugin as conformant with our architecture standards. Based on MOSA (Modular Open Systems Approach) principles, certification ensures plugins are interoperable, maintainable, and safe.
+This checklist defines the requirements for certifying a SubNetree plugin as conformant with our architecture standards. Based on MOSA (Modular Open Systems Approach) principles, certification ensures plugins are interoperable, maintainable, and safe.
 
 ## Overview
 
@@ -14,7 +14,7 @@ Plugin certification has three tiers:
 
 ## Tier 1: Core Compliant
 
-Minimum requirements for any plugin to be loaded by NetVantage.
+Minimum requirements for any plugin to be loaded by SubNetree.
 
 ### 1.1 Interface Contract
 
@@ -95,7 +95,7 @@ Additional requirements for plugins distributed outside the core repository.
 - [ ] Version follows SemVer 2.0.0
 - [ ] Breaking changes increment MAJOR version
 - [ ] Plugin API version compatibility documented
-- [ ] Minimum NetVantage version documented
+- [ ] Minimum SubNetree version documented
 
 ### 2.4 Configuration
 
@@ -141,7 +141,7 @@ logger.Info(fmt.Sprintf("device discovered: ip=%s mac=%s", ip, mac))
 
 ## Tier 3: Marketplace Certified
 
-Additional requirements for plugins in the official NetVantage marketplace.
+Additional requirements for plugins in the official SubNetree marketplace.
 
 ### 3.1 Tier 2 Complete
 
@@ -184,11 +184,11 @@ Additional requirements for plugins in the official NetVantage marketplace.
 - [ ] Maintainer contact information provided
 - [ ] Issue tracker available (GitHub Issues or equivalent)
 - [ ] Response time SLA documented (e.g., "critical bugs within 72 hours")
-- [ ] Compatibility commitment (supported NetVantage versions)
+- [ ] Compatibility commitment (supported SubNetree versions)
 
 ### 3.7 Legal
 
-- [ ] License compatible with NetVantage distribution
+- [ ] License compatible with SubNetree distribution
 - [ ] CLA signed (if contributing to core repository)
 - [ ] No GPL/AGPL/LGPL/SSPL dependencies
 - [ ] Third-party licenses documented

@@ -4,7 +4,7 @@ import (
 	"context"
 	"sync"
 
-	"github.com/HerbHall/netvantage/pkg/plugin"
+	"github.com/HerbHall/subnetree/pkg/plugin"
 )
 
 // Compile-time interface check.

@@ -1,4 +1,4 @@
-# NetVantage Server - Multi-stage Dockerfile
+# SubNetree Server - Multi-stage Dockerfile
 # Builds the Go server with embedded frontend assets
 
 # ============================================================================
@@ -47,11 +47,11 @@ ARG BUILD_TIME=unknown
 # Build the server binary
 RUN CGO_ENABLED=0 GOOS=linux go build \
     -ldflags "-s -w \
-        -X github.com/HerbHall/netvantage/internal/version.Version=${VERSION} \
-        -X github.com/HerbHall/netvantage/internal/version.Commit=${COMMIT} \
-        -X github.com/HerbHall/netvantage/internal/version.BuildTime=${BUILD_TIME}" \
-    -o /netvantage \
-    ./cmd/netvantage
+        -X github.com/HerbHall/subnetree/internal/version.Version=${VERSION} \
+        -X github.com/HerbHall/subnetree/internal/version.Commit=${COMMIT} \
+        -X github.com/HerbHall/subnetree/internal/version.BuildTime=${BUILD_TIME}" \
+    -o /subnetree \
+    ./cmd/subnetree
 
 # ============================================================================
 # Stage 3: Runtime image
@@ -66,14 +66,14 @@ RUN apk add --no-cache \
     iputils
 
 # Create non-root user
-RUN addgroup -g 1000 netvantage && \
-    adduser -u 1000 -G netvantage -s /bin/sh -D netvantage
+RUN addgroup -g 1000 subnetree && \
+    adduser -u 1000 -G subnetree -s /bin/sh -D subnetree
 
 # Create data directory
-RUN mkdir -p /data && chown netvantage:netvantage /data
+RUN mkdir -p /data && chown subnetree:subnetree /data
 
 # Copy binary from builder
-COPY --from=go-builder /netvantage /usr/local/bin/netvantage
+COPY --from=go-builder /subnetree /usr/local/bin/subnetree
 
 # Copy timezone data
 COPY --from=go-builder /usr/share/zoneinfo /usr/share/zoneinfo
@@ -82,7 +82,7 @@ COPY --from=go-builder /usr/share/zoneinfo /usr/share/zoneinfo
 WORKDIR /data
 
 # Switch to non-root user
-USER netvantage
+USER subnetree
 
 # Expose ports
 # 8080 - HTTP (Web UI + REST API)
@@ -94,7 +94,7 @@ HEALTHCHECK --interval=30s --timeout=5s --start-period=10s --retries=3 \
     CMD wget --no-verbose --tries=1 --spider http://localhost:8080/healthz || exit 1
 
 # Default environment
-ENV NV_DATABASE_DSN=/data/netvantage.db \
+ENV NV_DATABASE_DSN=/data/subnetree.db \
     NV_LOG_LEVEL=info \
     NV_HTTP_ADDRESS=:8080 \
     NV_GRPC_ADDRESS=:9090
@@ -103,5 +103,5 @@ ENV NV_DATABASE_DSN=/data/netvantage.db \
 VOLUME ["/data"]
 
 # Run the server
-ENTRYPOINT ["netvantage"]
+ENTRYPOINT ["subnetree"]
 CMD ["serve"]

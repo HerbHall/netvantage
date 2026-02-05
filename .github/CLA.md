@@ -1,15 +1,15 @@
-# NetVantage Contributor License Agreement
+# SubNetree Contributor License Agreement
 
-Thank you for your interest in contributing to NetVantage. This Contributor
+Thank you for your interest in contributing to SubNetree. This Contributor
 License Agreement ("Agreement") is agreed to by the party signing below
 ("You"), and conveys certain license rights to Herb Hall ("Project Owner")
-for Your contributions to the NetVantage project.
+for Your contributions to the SubNetree project.
 
 ## Definitions
 
 "Contribution" means any original work of authorship, including any
 modifications or additions to an existing work, that You intentionally
-submit to the Project Owner for inclusion in the NetVantage project.
+submit to the Project Owner for inclusion in the SubNetree project.
 "Submit" means any form of electronic, verbal, or written communication
 sent to the Project Owner or its representatives, including but not
 limited to communication on electronic mailing lists, source code control
@@ -44,7 +44,7 @@ You represent that:
 4. If Your employer(s) has rights to intellectual property that You create
    that includes Your Contributions, You have received permission to make
    Contributions on behalf of that employer, or Your employer has waived
-   such rights for Your Contributions to NetVantage.
+   such rights for Your Contributions to SubNetree.
 
 ## No Obligation
 
@@ -57,4 +57,4 @@ does not create an obligation to use or include Your Contribution.
 By signing this Agreement (via CLA Assistant on your first pull request),
 You accept and agree to the terms and conditions of this Contributor License
 Agreement for Your present and future Contributions submitted to the
-NetVantage project.
+SubNetree project.

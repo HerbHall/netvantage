@@ -10,7 +10,7 @@ Accepted
 
 ## Context
 
-NetVantage targets single-server deployments for home labs and small businesses (Phase 1), scaling to multi-tenant MSP deployments (Phase 2+). The database must:
+SubNetree targets single-server deployments for home labs and small businesses (Phase 1), scaling to multi-tenant MSP deployments (Phase 2+). The database must:
 
 - Support zero-configuration deployment (no external database server)
 - Handle up to 500 devices on a single server (Phase 1 target)
@@ -62,7 +62,7 @@ Use SQLite as the primary database for Phase 1-2, with PostgreSQL + TimescaleDB 
 
 ### Alternative 1: PostgreSQL Only
 
-Would require users to install and configure PostgreSQL before using NetVantage. Violates the "Time to First Value under 10 minutes" goal and the zero-configuration deployment principle.
+Would require users to install and configure PostgreSQL before using SubNetree. Violates the "Time to First Value under 10 minutes" goal and the zero-configuration deployment principle.
 
 ### Alternative 2: Embedded Key-Value Store (BoltDB/BadgerDB)
 

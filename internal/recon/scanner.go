@@ -5,8 +5,8 @@ import (
 	"net"
 	"time"
 
-	"github.com/HerbHall/netvantage/pkg/models"
-	"github.com/HerbHall/netvantage/pkg/plugin"
+	"github.com/HerbHall/subnetree/pkg/models"
+	"github.com/HerbHall/subnetree/pkg/plugin"
 	"go.uber.org/zap"
 )
 

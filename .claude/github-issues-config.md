@@ -1,11 +1,11 @@
-# GitHub Issues Configuration -- NetVantage
+# GitHub Issues Configuration -- SubNetree
 
 This file is read by the `/manage-github-issues` skill to provide project-specific context.
 
 ## Project
 
-- **Name**: NetVantage
-- **Repo**: HerbHall/netvantage
+- **Name**: SubNetree
+- **Repo**: HerbHall/subnetree
 - **Description**: Modular network monitoring and management platform (Go)
 
 ## Roadmap

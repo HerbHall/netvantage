@@ -11,29 +11,29 @@ RUN apk add --no-cache \
     iputils
 
 # Create non-root user
-RUN addgroup -g 1000 netvantage && \
-    adduser -u 1000 -G netvantage -s /bin/sh -D netvantage
+RUN addgroup -g 1000 subnetree && \
+    adduser -u 1000 -G subnetree -s /bin/sh -D subnetree
 
 # Create data directory
-RUN mkdir -p /data && chown netvantage:netvantage /data
+RUN mkdir -p /data && chown subnetree:subnetree /data
 
 # Copy pre-built binary from GoReleaser
-COPY netvantage /usr/local/bin/netvantage
+COPY subnetree /usr/local/bin/subnetree
 
 WORKDIR /data
-USER netvantage
+USER subnetree
 
 EXPOSE 8080 9090
 
 HEALTHCHECK --interval=30s --timeout=5s --start-period=10s --retries=3 \
     CMD wget --no-verbose --tries=1 --spider http://localhost:8080/healthz || exit 1
 
-ENV NV_DATABASE_DSN=/data/netvantage.db \
+ENV NV_DATABASE_DSN=/data/subnetree.db \
     NV_LOG_LEVEL=info \
     NV_HTTP_ADDRESS=:8080 \
     NV_GRPC_ADDRESS=:9090
 
 VOLUME ["/data"]
 
-ENTRYPOINT ["netvantage"]
+ENTRYPOINT ["subnetree"]
 CMD ["serve"]

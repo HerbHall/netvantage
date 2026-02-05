@@ -2,7 +2,7 @@
 
 ### Logo
 
-The NetVantage logo is an "N" constructed from network topology elements:
+The SubNetree logo is an "N" constructed from network topology elements:
 - **4 primary nodes** at the letter's corners (green) -- network endpoints
 - **3 midpoint nodes** (amber/sage) -- monitored devices along connections
 - **2 satellite nodes** (sage) -- discovered peripheral devices

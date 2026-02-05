@@ -259,7 +259,7 @@ func writeAuthError(w http.ResponseWriter, status int, detail string) {
 	w.Header().Set("Content-Type", "application/problem+json")
 	w.WriteHeader(status)
 	_ = json.NewEncoder(w).Encode(map[string]any{
-		"type":   "https://netvantage.io/problems/auth-error",
+		"type":   "https://subnetree.com/problems/auth-error",
 		"title":  http.StatusText(status),
 		"status": status,
 		"detail": detail,

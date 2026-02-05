@@ -10,7 +10,7 @@ Accepted
 
 ## Context
 
-NetVantage needs a licensing model that:
+SubNetree needs a licensing model that:
 - Keeps the product free for personal, home-lab, and educational use
 - Enables commercial monetization for business/MSP/enterprise customers
 - Allows third-party plugin development without license contamination

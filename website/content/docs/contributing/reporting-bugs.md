@@ -3,17 +3,17 @@ title: Reporting Bugs
 weight: 1
 ---
 
-Found a bug? We appreciate your help in improving NetVantage.
+Found a bug? We appreciate your help in improving SubNetree.
 
 ## Before Reporting
 
-1. **Search existing issues** -- check [open issues](https://github.com/HerbHall/netvantage/issues) to see if the bug has already been reported
+1. **Search existing issues** -- check [open issues](https://github.com/HerbHall/subnetree/issues) to see if the bug has already been reported
 2. **Reproduce the issue** -- confirm you can reproduce it reliably
 3. **Update to latest** -- verify the bug exists on the latest version of `main`
 
 ## How to Report
 
-Use the [Bug Report template](https://github.com/HerbHall/netvantage/issues/new?template=bug_report.md) on GitHub.
+Use the [Bug Report template](https://github.com/HerbHall/subnetree/issues/new?template=bug_report.md) on GitHub.
 
 Include the following information:
 
@@ -21,7 +21,7 @@ Include the following information:
 - **What happened** -- clear description of the bug
 - **What you expected** -- what should have happened instead
 - **Steps to reproduce** -- numbered steps to trigger the bug
-- **Environment** -- OS, Go version, NetVantage version
+- **Environment** -- OS, Go version, SubNetree version
 
 ### Helpful
 - **Logs** -- relevant server or agent log output
@@ -30,7 +30,7 @@ Include the following information:
 
 ## Security Vulnerabilities
 
-If you've found a security vulnerability, **do not open a public issue**. Instead, follow the [Security Policy](https://github.com/HerbHall/netvantage/blob/main/SECURITY.md) for responsible disclosure.
+If you've found a security vulnerability, **do not open a public issue**. Instead, follow the [Security Policy](https://github.com/HerbHall/subnetree/blob/main/SECURITY.md) for responsible disclosure.
 
 ## What Happens Next
 

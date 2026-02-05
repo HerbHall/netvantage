@@ -1,5 +1,5 @@
-// Package plugin provides the public SDK types for NetVantage plugins.
-// All NetVantage modules (built-in and third-party) implement these interfaces.
+// Package plugin provides the public SDK types for SubNetree plugins.
+// All SubNetree modules (built-in and third-party) implement these interfaces.
 // This package is Apache 2.0 licensed, separate from the BSL 1.1 core.
 package plugin
 
@@ -19,7 +19,7 @@ const (
 	APIVersionCurrent = 1 // Current Plugin API version
 )
 
-// Plugin defines the interface that all NetVantage modules must implement.
+// Plugin defines the interface that all SubNetree modules must implement.
 type Plugin interface {
 	// Info returns the plugin's metadata and dependency declarations.
 	Info() PluginInfo

@@ -7,13 +7,13 @@ import (
 
 // Problem types for RFC 7807 Problem Details responses.
 const (
-	ProblemTypeNotFound     = "https://netvantage.io/problems/not-found"
-	ProblemTypeBadRequest   = "https://netvantage.io/problems/bad-request"
-	ProblemTypeInternal     = "https://netvantage.io/problems/internal-error"
-	ProblemTypeUnauthorized = "https://netvantage.io/problems/unauthorized"
-	ProblemTypeForbidden    = "https://netvantage.io/problems/forbidden"
-	ProblemTypeRateLimited  = "https://netvantage.io/problems/rate-limited"
-	ProblemTypeConflict     = "https://netvantage.io/problems/conflict"
+	ProblemTypeNotFound     = "https://subnetree.com/problems/not-found"
+	ProblemTypeBadRequest   = "https://subnetree.com/problems/bad-request"
+	ProblemTypeInternal     = "https://subnetree.com/problems/internal-error"
+	ProblemTypeUnauthorized = "https://subnetree.com/problems/unauthorized"
+	ProblemTypeForbidden    = "https://subnetree.com/problems/forbidden"
+	ProblemTypeRateLimited  = "https://subnetree.com/problems/rate-limited"
+	ProblemTypeConflict     = "https://subnetree.com/problems/conflict"
 )
 
 // Problem represents an RFC 7807 Problem Details response.
