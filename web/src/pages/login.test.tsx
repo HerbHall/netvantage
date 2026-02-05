@@ -1,0 +1,179 @@
+import { describe, it, expect, vi, beforeEach } from 'vitest'
+import { screen, waitFor } from '@testing-library/react'
+import userEvent from '@testing-library/user-event'
+import { render } from '@/test/utils'
+import { LoginPage } from './login'
+import { useAuthStore } from '@/stores/auth'
+
+// Mock react-router-dom hooks
+const mockNavigate = vi.fn()
+vi.mock('react-router-dom', async () => {
+  const actual = await vi.importActual('react-router-dom')
+  return {
+    ...actual,
+    useNavigate: () => mockNavigate,
+    useLocation: () => ({ state: null }),
+  }
+})
+
+// Mock auth API
+vi.mock('@/api/auth', () => ({
+  checkSetupRequired: vi.fn(),
+  loginApi: vi.fn(),
+  refreshApi: vi.fn(),
+  logoutApi: vi.fn(),
+}))
+
+describe('LoginPage', () => {
+  const user = userEvent.setup()
+
+  beforeEach(() => {
+    vi.clearAllMocks()
+    useAuthStore.setState({
+      accessToken: null,
+      refreshToken: null,
+      user: null,
+      isAuthenticated: false,
+      isHydrated: true,
+    })
+  })
+
+  it('shows loading state while checking setup', async () => {
+    const { checkSetupRequired } = await import('@/api/auth')
+    let resolveSetupCheck: (value: boolean) => void
+    vi.mocked(checkSetupRequired).mockReturnValue(
+      new Promise((resolve) => {
+        resolveSetupCheck = resolve
+      })
+    )
+
+    render(<LoginPage />)
+
+    expect(screen.getByText(/checking setup status/i)).toBeInTheDocument()
+
+    resolveSetupCheck!(false)
+
+    await waitFor(() => {
+      expect(screen.queryByText(/checking setup status/i)).not.toBeInTheDocument()
+    })
+  })
+
+  it('redirects to setup page if setup is required', async () => {
+    const { checkSetupRequired } = await import('@/api/auth')
+    vi.mocked(checkSetupRequired).mockResolvedValue(true)
+
+    render(<LoginPage />)
+
+    await waitFor(() => {
+      expect(mockNavigate).toHaveBeenCalledWith('/setup', { replace: true })
+    })
+  })
+
+  it('renders login form after setup check completes', async () => {
+    const { checkSetupRequired } = await import('@/api/auth')
+    vi.mocked(checkSetupRequired).mockResolvedValue(false)
+
+    render(<LoginPage />)
+
+    await waitFor(() => {
+      expect(screen.getByText(/sign in to subnetree/i)).toBeInTheDocument()
+    })
+
+    expect(screen.getByLabelText(/username/i)).toBeInTheDocument()
+    expect(screen.getByLabelText(/password/i)).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: /sign in/i })).toBeInTheDocument()
+  })
+
+  it('allows entering credentials', async () => {
+    const { checkSetupRequired } = await import('@/api/auth')
+    vi.mocked(checkSetupRequired).mockResolvedValue(false)
+
+    render(<LoginPage />)
+
+    await waitFor(() => {
+      expect(screen.getByLabelText(/username/i)).toBeInTheDocument()
+    })
+
+    const usernameInput = screen.getByLabelText(/username/i)
+    const passwordInput = screen.getByLabelText(/password/i)
+
+    await user.type(usernameInput, 'testuser')
+    await user.type(passwordInput, 'password123')
+
+    expect(usernameInput).toHaveValue('testuser')
+    expect(passwordInput).toHaveValue('password123')
+  })
+
+  it('shows error message on login failure', async () => {
+    const { checkSetupRequired, loginApi } = await import('@/api/auth')
+    vi.mocked(checkSetupRequired).mockResolvedValue(false)
+    vi.mocked(loginApi).mockRejectedValue(new Error('Invalid credentials'))
+
+    render(<LoginPage />)
+
+    await waitFor(() => {
+      expect(screen.getByLabelText(/username/i)).toBeInTheDocument()
+    })
+
+    await user.type(screen.getByLabelText(/username/i), 'testuser')
+    await user.type(screen.getByLabelText(/password/i), 'wrongpass')
+    await user.click(screen.getByRole('button', { name: /sign in/i }))
+
+    await waitFor(() => {
+      expect(screen.getByRole('alert')).toHaveTextContent('Invalid credentials')
+    })
+  })
+
+  it('shows loading state during login', async () => {
+    const { checkSetupRequired, loginApi } = await import('@/api/auth')
+    vi.mocked(checkSetupRequired).mockResolvedValue(false)
+    vi.mocked(loginApi).mockImplementation(
+      () => new Promise((resolve) => setTimeout(resolve, 100))
+    )
+
+    render(<LoginPage />)
+
+    await waitFor(() => {
+      expect(screen.getByLabelText(/username/i)).toBeInTheDocument()
+    })
+
+    await user.type(screen.getByLabelText(/username/i), 'testuser')
+    await user.type(screen.getByLabelText(/password/i), 'password123')
+    await user.click(screen.getByRole('button', { name: /sign in/i }))
+
+    expect(screen.getByRole('button', { name: /signing in/i })).toBeDisabled()
+  })
+
+  it('navigates to dashboard on successful login', async () => {
+    const { checkSetupRequired, loginApi } = await import('@/api/auth')
+    vi.mocked(checkSetupRequired).mockResolvedValue(false)
+    vi.mocked(loginApi).mockResolvedValue({
+      access_token: 'test-token',
+      refresh_token: 'test-refresh',
+    })
+
+    // Mock jwt-decode for the store
+    vi.mock('jwt-decode', () => ({
+      jwtDecode: () => ({
+        uid: 'user-123',
+        usr: 'testuser',
+        role: 'admin',
+        exp: Math.floor(Date.now() / 1000) + 3600,
+      }),
+    }))
+
+    render(<LoginPage />)
+
+    await waitFor(() => {
+      expect(screen.getByLabelText(/username/i)).toBeInTheDocument()
+    })
+
+    await user.type(screen.getByLabelText(/username/i), 'testuser')
+    await user.type(screen.getByLabelText(/password/i), 'password123')
+    await user.click(screen.getByRole('button', { name: /sign in/i }))
+
+    await waitFor(() => {
+      expect(mockNavigate).toHaveBeenCalledWith('/dashboard', { replace: true })
+    })
+  })
+})
