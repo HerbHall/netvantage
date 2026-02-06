@@ -1,3 +1,4 @@
+// Package server provides the main HTTP server for SubNetree.
 package server
 
 import (
@@ -40,10 +41,16 @@ type Server struct {
 	ready      ReadinessChecker
 }
 
+// SimpleRouteRegistrar can register routes without middleware.
+type SimpleRouteRegistrar interface {
+	RegisterRoutes(mux *http.ServeMux)
+}
+
 // New creates a new Server with middleware and routes.
 // The auth parameter is optional; pass nil to disable authentication.
 // The dashboard parameter is optional; pass nil to disable dashboard serving.
-func New(addr string, plugins PluginSource, logger *zap.Logger, ready ReadinessChecker, auth RouteRegistrar, dashboard http.Handler) *Server {
+// Additional route registrars can be passed to register extra API routes.
+func New(addr string, plugins PluginSource, logger *zap.Logger, ready ReadinessChecker, auth RouteRegistrar, dashboard http.Handler, extraRoutes ...SimpleRouteRegistrar) *Server {
 	mux := http.NewServeMux()
 
 	s := &Server{
@@ -56,6 +63,9 @@ func New(addr string, plugins PluginSource, logger *zap.Logger, ready ReadinessC
 	s.registerRoutes()
 	if auth != nil {
 		auth.RegisterRoutes(mux)
+	}
+	for _, r := range extraRoutes {
+		r.RegisterRoutes(mux)
 	}
 	s.mountPluginRoutes()
 

@@ -21,6 +21,20 @@ vi.mock('@/api/auth', () => ({
   loginApi: vi.fn(),
 }))
 
+// Mock settings API
+vi.mock('@/api/settings', () => ({
+  getNetworkInterfaces: vi.fn().mockResolvedValue([
+    {
+      name: 'eth0',
+      ip_address: '192.168.1.100',
+      subnet: '192.168.1.0/24',
+      mac: 'aa:bb:cc:dd:ee:ff',
+      status: 'up',
+    },
+  ]),
+  setScanInterface: vi.fn().mockResolvedValue({ interface_name: '' }),
+}))
+
 // Mock jwt-decode
 vi.mock('jwt-decode', () => ({
   jwtDecode: () => ({
@@ -185,7 +199,7 @@ describe('SetupPage', () => {
       await goToStep2()
 
       expect(screen.getByText(/configure network scanning/i)).toBeInTheDocument()
-      expect(screen.getByText(/network configuration/i)).toBeInTheDocument()
+      expect(screen.getByText(/select network interface/i)).toBeInTheDocument()
     })
 
     it('shows back and next buttons', async () => {
@@ -272,6 +286,7 @@ describe('SetupPage', () => {
 
     it('navigates to dashboard on successful setup', async () => {
       const { setupApi, loginApi } = await import('@/api/auth')
+      const { setScanInterface } = await import('@/api/settings')
       vi.mocked(setupApi).mockResolvedValue({
         id: 'user-123',
         username: 'admin',
@@ -286,6 +301,7 @@ describe('SetupPage', () => {
         refresh_token: 'test-refresh',
         expires_in: 900,
       })
+      vi.mocked(setScanInterface).mockResolvedValue({ interface_name: '' })
 
       render(<SetupPage />)
       await goToStep3()
@@ -293,6 +309,7 @@ describe('SetupPage', () => {
       await user.click(screen.getByRole('button', { name: /complete setup/i }))
 
       await waitFor(() => {
+        expect(setScanInterface).toHaveBeenCalledWith('')
         expect(mockNavigate).toHaveBeenCalledWith('/dashboard', { replace: true })
       })
     })
