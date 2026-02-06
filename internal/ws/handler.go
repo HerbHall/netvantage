@@ -10,7 +10,7 @@ import (
 	"github.com/HerbHall/subnetree/pkg/models"
 	"github.com/HerbHall/subnetree/pkg/plugin"
 	"go.uber.org/zap"
-	"nhooyr.io/websocket"
+	"github.com/coder/websocket"
 )
 
 // Handler provides WebSocket endpoints for real-time scan updates.

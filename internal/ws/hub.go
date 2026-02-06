@@ -6,8 +6,8 @@ import (
 	"time"
 
 	"go.uber.org/zap"
-	"nhooyr.io/websocket"
-	"nhooyr.io/websocket/wsjson"
+	"github.com/coder/websocket"
+	"github.com/coder/websocket/wsjson"
 )
 
 // Client represents a connected WebSocket client.
