@@ -21,10 +21,12 @@ import (
 	"github.com/HerbHall/subnetree/internal/recon"
 	"github.com/HerbHall/subnetree/internal/registry"
 	"github.com/HerbHall/subnetree/internal/server"
+	"github.com/HerbHall/subnetree/internal/services"
+	"github.com/HerbHall/subnetree/internal/settings"
 	"github.com/HerbHall/subnetree/internal/store"
 	"github.com/HerbHall/subnetree/internal/vault"
-	"github.com/HerbHall/subnetree/internal/webhook"
 	"github.com/HerbHall/subnetree/internal/version"
+	"github.com/HerbHall/subnetree/internal/webhook"
 	"github.com/HerbHall/subnetree/pkg/plugin"
 	"go.uber.org/zap"
 )
@@ -174,6 +176,14 @@ func main() {
 		zap.Duration("refresh_token_ttl", refreshTTL),
 	)
 
+	// Create settings service
+	settingsRepo, err := services.NewSQLiteSettingsRepository(ctx, db)
+	if err != nil {
+		logger.Fatal("failed to initialize settings repository", zap.Error(err))
+	}
+	settingsHandler := settings.NewHandler(settingsRepo, logger.Named("settings"))
+	logger.Info("settings service initialized", zap.String("component", "settings"))
+
 	// Create and start HTTP server
 	addr := viperCfg.GetString("server.host") + ":" + viperCfg.GetString("server.port")
 	if addr == ":" {
@@ -187,7 +197,7 @@ func main() {
 		return db.DB().PingContext(ctx)
 	})
 	dashboardHandler := dashboard.Handler()
-	srv := server.New(addr, reg, logger, readyCheck, authHandler, dashboardHandler)
+	srv := server.New(addr, reg, logger, readyCheck, authHandler, dashboardHandler, settingsHandler)
 
 	// Start server in background
 	go func() {

@@ -1,7 +1,8 @@
-import { useState, useMemo } from 'react'
+import { useState, useMemo, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAuthStore } from '@/stores/auth'
 import { setupApi, loginApi } from '@/api/auth'
+import { getNetworkInterfaces, setScanInterface, type NetworkInterface } from '@/api/settings'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -20,6 +21,7 @@ interface FormData {
   email: string
   password: string
   confirmPassword: string
+  selectedInterface: string // Empty string means auto-detect
 }
 
 interface FormErrors {
@@ -95,12 +97,32 @@ export function SetupPage() {
     email: '',
     password: '',
     confirmPassword: '',
+    selectedInterface: '',
   })
   const [errors, setErrors] = useState<FormErrors>({})
   const [apiError, setApiError] = useState('')
   const [loading, setLoading] = useState(false)
+  const [interfaces, setInterfaces] = useState<NetworkInterface[]>([])
+  const [interfacesLoading, setInterfacesLoading] = useState(false)
   const setTokens = useAuthStore((s) => s.setTokens)
   const navigate = useNavigate()
+
+  // Fetch network interfaces when entering step 2
+  useEffect(() => {
+    if (step === 2 && interfaces.length === 0) {
+      setInterfacesLoading(true)
+      getNetworkInterfaces()
+        .then((data) => {
+          setInterfaces(data)
+        })
+        .catch((err) => {
+          setApiError(err instanceof Error ? err.message : 'Failed to load network interfaces')
+        })
+        .finally(() => {
+          setInterfacesLoading(false)
+        })
+    }
+  }, [step, interfaces.length])
 
   const passwordStrength = useMemo(
     () => getPasswordStrength(formData.password),
@@ -109,8 +131,12 @@ export function SetupPage() {
 
   function updateField<K extends keyof FormData>(key: K, value: FormData[K]) {
     setFormData((prev) => ({ ...prev, [key]: value }))
-    if (errors[key]) {
-      setErrors((prev) => ({ ...prev, [key]: undefined }))
+    // Only clear error for fields that have form errors
+    if (key in errors) {
+      const errorKey = key as keyof FormErrors
+      if (errors[errorKey]) {
+        setErrors((prev) => ({ ...prev, [errorKey]: undefined }))
+      }
     }
   }
 
@@ -167,6 +193,8 @@ export function SetupPage() {
       await setupApi(formData.username, formData.email, formData.password)
       const tokens = await loginApi(formData.username, formData.password)
       setTokens(tokens.access_token, tokens.refresh_token)
+      // Save the selected interface (empty string means auto-detect)
+      await setScanInterface(formData.selectedInterface)
       navigate('/dashboard', { replace: true })
     } catch (err) {
       setApiError(err instanceof Error ? err.message : 'Setup failed')
@@ -290,31 +318,128 @@ export function SetupPage() {
 
         {step === 2 && (
           <div className="space-y-4">
-            <div className="rounded-lg border border-dashed border-muted-foreground/25 p-6 text-center">
-              <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-muted">
-                <svg
-                  className="h-6 w-6 text-muted-foreground"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M9 3v2m6-2v2M9 19v2m6-2v2M5 9H3m2 6H3m18-6h-2m2 6h-2M7 19h10a2 2 0 002-2V7a2 2 0 00-2-2H7a2 2 0 00-2 2v10a2 2 0 002 2zM9 9h6v6H9V9z"
-                  />
-                </svg>
-              </div>
-              <h3 className="font-medium text-foreground">Network Configuration</h3>
-              <p className="mt-1 text-sm text-muted-foreground">
-                Network interface selection will be available in a future update.
-                For now, SubNetree will auto-detect available interfaces.
+            <div className="space-y-3">
+              <h3 className="font-medium text-foreground">Select Network Interface</h3>
+              <p className="text-sm text-muted-foreground">
+                Choose which network interface SubNetree should use for scanning.
               </p>
+
+              {interfacesLoading ? (
+                <div className="space-y-2">
+                  {[1, 2, 3].map((i) => (
+                    <div
+                      key={i}
+                      className="h-16 animate-pulse rounded-lg bg-muted"
+                    />
+                  ))}
+                </div>
+              ) : (
+                <div className="space-y-2">
+                  {/* Auto-detect option */}
+                  <label
+                    htmlFor="interface-auto"
+                    className={`flex cursor-pointer items-start gap-3 rounded-lg border p-3 transition-colors ${
+                      formData.selectedInterface === ''
+                        ? 'border-primary bg-primary/5'
+                        : 'border-muted hover:border-muted-foreground/50'
+                    }`}
+                  >
+                    <input
+                      type="radio"
+                      id="interface-auto"
+                      name="interface"
+                      value=""
+                      checked={formData.selectedInterface === ''}
+                      onChange={(e) =>
+                        setFormData((prev) => ({
+                          ...prev,
+                          selectedInterface: e.target.value,
+                        }))
+                      }
+                      className="mt-1"
+                    />
+                    <div className="flex-1">
+                      <div className="flex items-center gap-2">
+                        <span className="font-medium">Auto-detect</span>
+                        <span className="rounded bg-muted px-1.5 py-0.5 text-xs text-muted-foreground">
+                          Recommended
+                        </span>
+                      </div>
+                      <p className="mt-0.5 text-sm text-muted-foreground">
+                        SubNetree will automatically select the best available interface
+                      </p>
+                    </div>
+                  </label>
+
+                  {/* Network interfaces */}
+                  {interfaces.map((iface) => (
+                    <label
+                      key={iface.name}
+                      htmlFor={`interface-${iface.name}`}
+                      className={`flex cursor-pointer items-start gap-3 rounded-lg border p-3 transition-colors ${
+                        formData.selectedInterface === iface.name
+                          ? 'border-primary bg-primary/5'
+                          : 'border-muted hover:border-muted-foreground/50'
+                      } ${iface.status === 'down' ? 'opacity-60' : ''}`}
+                    >
+                      <input
+                        type="radio"
+                        id={`interface-${iface.name}`}
+                        name="interface"
+                        value={iface.name}
+                        checked={formData.selectedInterface === iface.name}
+                        onChange={(e) =>
+                          setFormData((prev) => ({
+                            ...prev,
+                            selectedInterface: e.target.value,
+                          }))
+                        }
+                        className="mt-1"
+                        disabled={iface.status === 'down'}
+                      />
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2">
+                          <span className="font-medium truncate">{iface.name}</span>
+                          <span
+                            className={`rounded px-1.5 py-0.5 text-xs ${
+                              iface.status === 'up'
+                                ? 'bg-green-500/20 text-green-400'
+                                : 'bg-red-500/20 text-red-400'
+                            }`}
+                          >
+                            {iface.status}
+                          </span>
+                        </div>
+                        <div className="mt-1 space-y-0.5 text-sm text-muted-foreground">
+                          <p className="truncate">
+                            <span className="font-medium">IP:</span> {iface.ip_address}
+                          </p>
+                          <p className="truncate">
+                            <span className="font-medium">Subnet:</span> {iface.subnet}
+                          </p>
+                          {iface.mac && (
+                            <p className="truncate">
+                              <span className="font-medium">MAC:</span> {iface.mac}
+                            </p>
+                          )}
+                        </div>
+                      </div>
+                    </label>
+                  ))}
+
+                  {interfaces.length === 0 && !interfacesLoading && (
+                    <div className="rounded-lg border border-dashed border-muted-foreground/25 p-4 text-center">
+                      <p className="text-sm text-muted-foreground">
+                        No network interfaces found. SubNetree will use auto-detection.
+                      </p>
+                    </div>
+                  )}
+                </div>
+              )}
             </div>
 
             <p className="text-sm text-muted-foreground">
-              You can configure network settings later in{' '}
+              You can change this later in{' '}
               <span className="font-medium text-foreground">Settings → Network</span>.
             </p>
 
@@ -347,8 +472,10 @@ export function SetupPage() {
                   <span className="font-medium">Administrator</span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-muted-foreground">Network</span>
-                  <span className="font-medium text-muted-foreground">Auto-detect</span>
+                  <span className="text-muted-foreground">Network Interface</span>
+                  <span className="font-medium">
+                    {formData.selectedInterface || 'Auto-detect'}
+                  </span>
                 </div>
               </div>
             </div>

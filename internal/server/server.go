@@ -1,3 +1,4 @@
+// Package server provides the main HTTP server for SubNetree.
 package server
 
 import (
@@ -10,8 +11,38 @@ import (
 	"github.com/HerbHall/subnetree/internal/version"
 	"github.com/HerbHall/subnetree/pkg/plugin"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
+	httpSwagger "github.com/swaggo/http-swagger/v2"
 	"go.uber.org/zap"
 )
+
+// StatusResponse represents a health status response.
+// @Description Health check status response.
+type StatusResponse struct {
+	Status string `json:"status" example:"alive"`
+}
+
+// ReadyzResponse represents a readiness check response.
+// @Description Readiness check response with optional error.
+type ReadyzResponse struct {
+	Status string `json:"status" example:"ready"`
+	Error  string `json:"error,omitempty" example:"database connection failed"`
+}
+
+// HealthResponse represents detailed health information.
+// @Description Detailed health information including version.
+type HealthResponse struct {
+	Status  string            `json:"status" example:"ok"`
+	Service string            `json:"service" example:"subnetree"`
+	Version map[string]string `json:"version"`
+}
+
+// PluginResponse represents plugin information.
+// @Description Plugin metadata.
+type PluginResponse struct {
+	Name        string `json:"name" example:"recon"`
+	Version     string `json:"version" example:"1.0.0"`
+	Description string `json:"description" example:"Network scanning and discovery"`
+}
 
 // PluginSource provides the server with plugin metadata and routes.
 // Defined here (consumer-side) rather than importing the concrete registry.
@@ -40,10 +71,16 @@ type Server struct {
 	ready      ReadinessChecker
 }
 
+// SimpleRouteRegistrar can register routes without middleware.
+type SimpleRouteRegistrar interface {
+	RegisterRoutes(mux *http.ServeMux)
+}
+
 // New creates a new Server with middleware and routes.
 // The auth parameter is optional; pass nil to disable authentication.
 // The dashboard parameter is optional; pass nil to disable dashboard serving.
-func New(addr string, plugins PluginSource, logger *zap.Logger, ready ReadinessChecker, auth RouteRegistrar, dashboard http.Handler) *Server {
+// Additional route registrars can be passed to register extra API routes.
+func New(addr string, plugins PluginSource, logger *zap.Logger, ready ReadinessChecker, auth RouteRegistrar, dashboard http.Handler, extraRoutes ...SimpleRouteRegistrar) *Server {
 	mux := http.NewServeMux()
 
 	s := &Server{
@@ -56,6 +93,9 @@ func New(addr string, plugins PluginSource, logger *zap.Logger, ready ReadinessC
 	s.registerRoutes()
 	if auth != nil {
 		auth.RegisterRoutes(mux)
+	}
+	for _, r := range extraRoutes {
+		r.RegisterRoutes(mux)
 	}
 	s.mountPluginRoutes()
 
@@ -97,6 +137,14 @@ func (s *Server) registerRoutes() {
 	s.mux.HandleFunc("GET /readyz", s.handleReadyz)
 	s.mux.Handle("GET /metrics", promhttp.Handler())
 
+	// Swagger UI and spec - served at /swagger/
+	s.mux.Handle("GET /swagger/", httpSwagger.Handler(
+		httpSwagger.URL("/swagger/doc.json"),
+		httpSwagger.DeepLinking(true),
+		httpSwagger.DocExpansion("list"),
+		httpSwagger.DomID("swagger-ui"),
+	))
+
 	// Versioned API endpoints.
 	s.mux.HandleFunc("GET /api/v1/health", s.handleHealth)
 	s.mux.HandleFunc("GET /api/v1/plugins", s.handlePlugins)
@@ -133,12 +181,27 @@ func (s *Server) Shutdown(ctx context.Context) error {
 }
 
 // handleHealthz is a liveness probe -- returns 200 if the process is running.
+//
+//	@Summary		Liveness probe
+//	@Description	Check if the server process is alive. Used by orchestrators like Kubernetes.
+//	@Tags			health
+//	@Produce		json
+//	@Success		200	{object}	StatusResponse	"Server is alive"
+//	@Router			/healthz [get]
 func (s *Server) handleHealthz(w http.ResponseWriter, _ *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	_ = json.NewEncoder(w).Encode(map[string]string{"status": "alive"})
 }
 
 // handleReadyz checks readiness -- returns 200 if the server can serve traffic.
+//
+//	@Summary		Readiness probe
+//	@Description	Check if the server is ready to handle traffic. Checks database connection and plugin health.
+//	@Tags			health
+//	@Produce		json
+//	@Success		200	{object}	ReadyzResponse	"Server is ready"
+//	@Failure		503	{object}	ReadyzResponse	"Server is not ready"
+//	@Router			/readyz [get]
 func (s *Server) handleReadyz(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 
@@ -157,6 +220,13 @@ func (s *Server) handleReadyz(w http.ResponseWriter, r *http.Request) {
 }
 
 // handleHealth returns detailed health information (versioned API endpoint).
+//
+//	@Summary		Health check
+//	@Description	Get detailed health information including version details.
+//	@Tags			health
+//	@Produce		json
+//	@Success		200	{object}	HealthResponse	"Health information"
+//	@Router			/health [get]
 func (s *Server) handleHealth(w http.ResponseWriter, _ *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	_ = json.NewEncoder(w).Encode(map[string]interface{}{
@@ -167,17 +237,19 @@ func (s *Server) handleHealth(w http.ResponseWriter, _ *http.Request) {
 }
 
 // handlePlugins returns the list of registered plugins.
+//
+//	@Summary		List plugins
+//	@Description	Get a list of all registered plugins with their metadata.
+//	@Tags			plugins
+//	@Produce		json
+//	@Success		200	{array}	PluginResponse	"List of plugins"
+//	@Router			/plugins [get]
 func (s *Server) handlePlugins(w http.ResponseWriter, _ *http.Request) {
 	plugins := s.plugins.All()
-	type pluginResponse struct {
-		Name        string `json:"name"`
-		Version     string `json:"version"`
-		Description string `json:"description"`
-	}
-	info := make([]pluginResponse, 0, len(plugins))
+	info := make([]PluginResponse, 0, len(plugins))
 	for _, p := range plugins {
 		pi := p.Info()
-		info = append(info, pluginResponse{
+		info = append(info, PluginResponse{
 			Name:        pi.Name,
 			Version:     pi.Version,
 			Description: pi.Description,
