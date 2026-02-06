@@ -30,7 +30,7 @@ func (s *InterfaceService) ListNetworkInterfaces() ([]NetworkInterface, error) {
 		return nil, err
 	}
 
-	var result []NetworkInterface
+	result := make([]NetworkInterface, 0, len(ifaces))
 	for i := range ifaces {
 		iface := &ifaces[i]
 
