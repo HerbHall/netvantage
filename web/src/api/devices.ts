@@ -1,11 +1,52 @@
 import { api } from './client'
-import type { TopologyGraph, Scan } from './types'
+import type { TopologyGraph, Scan, Device } from './types'
 
 /**
  * Fetch the network topology (devices + connections).
  */
 export async function getTopology(): Promise<TopologyGraph> {
   return api.get<TopologyGraph>('/recon/topology')
+}
+
+/**
+ * Get a single device by ID.
+ */
+export async function getDevice(id: string): Promise<Device> {
+  return api.get<Device>(`/devices/${id}`)
+}
+
+/**
+ * Update device notes and tags.
+ */
+export async function updateDevice(
+  id: string,
+  data: { notes?: string; tags?: string[] }
+): Promise<Device> {
+  return api.put<Device>(`/devices/${id}`, data)
+}
+
+/**
+ * Get status history for a device.
+ */
+export interface DeviceStatusEvent {
+  id: string
+  device_id: string
+  status: 'online' | 'offline' | 'degraded' | 'unknown'
+  timestamp: string
+}
+
+export async function getDeviceStatusHistory(
+  id: string,
+  limit = 50
+): Promise<DeviceStatusEvent[]> {
+  return api.get<DeviceStatusEvent[]>(`/devices/${id}/status-history?limit=${limit}`)
+}
+
+/**
+ * Get scan history for a device (scans that discovered/updated this device).
+ */
+export async function getDeviceScanHistory(id: string): Promise<Scan[]> {
+  return api.get<Scan[]>(`/devices/${id}/scans`)
 }
 
 /**
