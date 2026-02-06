@@ -38,18 +38,23 @@ const REFRESH_OPTIONS = [
 export function DashboardPage() {
   const [autoRefresh, setAutoRefresh] = useState(true)
   const [refreshInterval, setRefreshInterval] = useState(30 * 1000) // Default 30s
-  const [countdown, setCountdown] = useState(30)
+  const intervalSeconds = Math.floor(refreshInterval / 1000)
+  const [countdown, setCountdown] = useState(intervalSeconds)
   const { activeScan: wsScan, progress: scanProgress } = useScanProgress()
 
-  // Countdown timer effect
-  useEffect(() => {
-    if (!autoRefresh) {
-      setCountdown(Math.floor(refreshInterval / 1000))
-      return
-    }
-
-    const intervalSeconds = Math.floor(refreshInterval / 1000)
+  // Reset countdown during render when dependencies change (React-recommended
+  // "adjust state during render" pattern avoids setState-in-effect).
+  const [prevAutoRefresh, setPrevAutoRefresh] = useState(autoRefresh)
+  const [prevInterval, setPrevInterval] = useState(refreshInterval)
+  if (autoRefresh !== prevAutoRefresh || refreshInterval !== prevInterval) {
+    setPrevAutoRefresh(autoRefresh)
+    setPrevInterval(refreshInterval)
     setCountdown(intervalSeconds)
+  }
+
+  // Countdown timer effect -- only the interval callback sets state.
+  useEffect(() => {
+    if (!autoRefresh) return
 
     const timer = setInterval(() => {
       setCountdown((prev) => {
@@ -61,7 +66,7 @@ export function DashboardPage() {
     }, 1000)
 
     return () => clearInterval(timer)
-  }, [autoRefresh, refreshInterval])
+  }, [autoRefresh, intervalSeconds])
 
   // Fetch topology data with auto-refresh
   const {
