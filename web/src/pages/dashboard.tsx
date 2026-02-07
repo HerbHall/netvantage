@@ -372,8 +372,6 @@ export function DashboardPage() {
           description="Visual topology of your network"
           icon={Activity}
           href="/topology"
-          disabled
-          badge="Coming Soon"
         />
         <QuickLinkCard
           title="Credentials"
