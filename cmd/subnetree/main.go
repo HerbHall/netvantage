@@ -43,6 +43,21 @@ import (
 )
 
 func main() {
+	// Subcommand dispatch (before flag.Parse).
+	if len(os.Args) > 1 {
+		switch os.Args[1] {
+		case "backup":
+			runBackup(os.Args[2:])
+			return
+		case "restore":
+			runRestore(os.Args[2:])
+			return
+		case "version":
+			fmt.Println(version.Info())
+			return
+		}
+	}
+
 	configPath := flag.String("config", "", "path to configuration file")
 	showVersion := flag.Bool("version", false, "print version information and exit")
 	flag.Parse()
