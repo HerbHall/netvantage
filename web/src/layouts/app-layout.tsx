@@ -1,11 +1,12 @@
 import { Outlet, NavLink } from 'react-router-dom'
 import { useAuthStore } from '@/stores/auth'
 import { Button } from '@/components/ui/button'
-import { LayoutDashboard, Monitor, Settings, Info, LogOut } from 'lucide-react'
+import { LayoutDashboard, Monitor, Network, Settings, Info, LogOut } from 'lucide-react'
 
 const navItems = [
   { to: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
   { to: '/devices', label: 'Devices', icon: Monitor },
+  { to: '/topology', label: 'Topology', icon: Network },
   { to: '/settings', label: 'Settings', icon: Settings },
   { to: '/about', label: 'About', icon: Info },
 ]
