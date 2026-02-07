@@ -1,14 +1,17 @@
 package ollama
 
 import (
+	"bufio"
+	"bytes"
 	"context"
+	"encoding/json"
 	"fmt"
+	"io"
 	"net/http"
 	"net/url"
 	"strings"
 
 	"github.com/HerbHall/subnetree/pkg/llm"
-	"github.com/ollama/ollama/api"
 	"go.uber.org/zap"
 )
 
@@ -18,28 +21,26 @@ var (
 	_ llm.HealthReporter = (*Provider)(nil)
 )
 
-// Provider implements llm.Provider for Ollama.
+// Provider implements llm.Provider for Ollama using its REST API.
 type Provider struct {
-	client *api.Client
-	cfg    Config
-	logger *zap.Logger
+	baseURL    string
+	httpClient *http.Client
+	cfg        Config
+	logger     *zap.Logger
 }
 
 // New creates an Ollama provider. It does not verify connectivity;
 // call Heartbeat explicitly if you need an early health check.
 func New(cfg Config, logger *zap.Logger) (*Provider, error) {
-	base, err := url.Parse(cfg.URL)
-	if err != nil {
+	if _, err := url.Parse(cfg.URL); err != nil {
 		return nil, fmt.Errorf("parse ollama url %q: %w", cfg.URL, err)
 	}
 
-	httpClient := &http.Client{Timeout: cfg.Timeout}
-	client := api.NewClient(base, httpClient)
-
 	return &Provider{
-		client: client,
-		cfg:    cfg,
-		logger: logger,
+		baseURL:    strings.TrimRight(cfg.URL, "/"),
+		httpClient: &http.Client{Timeout: cfg.Timeout},
+		cfg:        cfg,
+		logger:     logger,
 	}, nil
 }
 
@@ -53,38 +54,58 @@ func (p *Provider) Generate(ctx context.Context, prompt string, opts ...llm.Call
 	}
 
 	noStream := false
-	req := &api.GenerateRequest{
+	req := generateRequest{
 		Model:   model,
 		Prompt:  prompt,
 		Stream:  &noStream,
 		Options: buildOptions(cfg),
 	}
 
-	var content strings.Builder
-	var metrics api.Metrics
-	var done bool
-
 	if cfg.StreamFunc != nil {
-		// Streaming: leave Stream nil (defaults to true).
-		req.Stream = nil
+		req.Stream = nil // omit → Ollama defaults to streaming
 	}
 
-	err := p.client.Generate(ctx, req, func(resp api.GenerateResponse) error {
-		if resp.Response != "" {
-			content.WriteString(resp.Response)
+	body, err := json.Marshal(req)
+	if err != nil {
+		return nil, fmt.Errorf("marshal generate request: %w", err)
+	}
+
+	respBody, err := p.doPost(ctx, "/api/generate", body)
+	if err != nil {
+		return nil, mapError(err)
+	}
+	defer respBody.Close()
+
+	var content strings.Builder
+	var metrics responseMetrics
+	var done bool
+
+	scanner := bufio.NewScanner(respBody)
+	for scanner.Scan() {
+		line := scanner.Bytes()
+		if len(line) == 0 {
+			continue
+		}
+
+		var chunk generateResponse
+		if err := json.Unmarshal(line, &chunk); err != nil {
+			continue
+		}
+
+		if chunk.Response != "" {
+			content.WriteString(chunk.Response)
 			if cfg.StreamFunc != nil {
-				if sErr := cfg.StreamFunc(ctx, []byte(resp.Response)); sErr != nil {
-					return sErr
+				if sErr := cfg.StreamFunc(ctx, []byte(chunk.Response)); sErr != nil {
+					return nil, sErr
 				}
 			}
 		}
-		if resp.Done {
-			metrics = resp.Metrics
+		if chunk.Done {
+			metrics = chunk.responseMetrics
 			done = true
 		}
-		return nil
-	})
-	if err != nil {
+	}
+	if err := scanner.Err(); err != nil {
 		return nil, mapError(err)
 	}
 
@@ -113,16 +134,16 @@ func (p *Provider) Chat(ctx context.Context, messages []llm.Message, opts ...llm
 		model = p.cfg.Model
 	}
 
-	apiMessages := make([]api.Message, len(messages))
+	apiMessages := make([]chatMessage, len(messages))
 	for i, m := range messages {
-		apiMessages[i] = api.Message{
+		apiMessages[i] = chatMessage{
 			Role:    m.Role,
 			Content: m.Content,
 		}
 	}
 
 	noStream := false
-	req := &api.ChatRequest{
+	req := chatRequest{
 		Model:    model,
 		Messages: apiMessages,
 		Stream:   &noStream,
@@ -133,26 +154,47 @@ func (p *Provider) Chat(ctx context.Context, messages []llm.Message, opts ...llm
 		req.Stream = nil
 	}
 
+	body, err := json.Marshal(req)
+	if err != nil {
+		return nil, fmt.Errorf("marshal chat request: %w", err)
+	}
+
+	respBody, err := p.doPost(ctx, "/api/chat", body)
+	if err != nil {
+		return nil, mapError(err)
+	}
+	defer respBody.Close()
+
 	var content strings.Builder
-	var metrics api.Metrics
+	var metrics responseMetrics
 	var done bool
 
-	err := p.client.Chat(ctx, req, func(resp api.ChatResponse) error {
-		if resp.Message.Content != "" {
-			content.WriteString(resp.Message.Content)
+	scanner := bufio.NewScanner(respBody)
+	for scanner.Scan() {
+		line := scanner.Bytes()
+		if len(line) == 0 {
+			continue
+		}
+
+		var chunk chatResponse
+		if err := json.Unmarshal(line, &chunk); err != nil {
+			continue
+		}
+
+		if chunk.Message.Content != "" {
+			content.WriteString(chunk.Message.Content)
 			if cfg.StreamFunc != nil {
-				if sErr := cfg.StreamFunc(ctx, []byte(resp.Message.Content)); sErr != nil {
-					return sErr
+				if sErr := cfg.StreamFunc(ctx, []byte(chunk.Message.Content)); sErr != nil {
+					return nil, sErr
 				}
 			}
 		}
-		if resp.Done {
-			metrics = resp.Metrics
+		if chunk.Done {
+			metrics = chunk.responseMetrics
 			done = true
 		}
-		return nil
-	})
-	if err != nil {
+	}
+	if err := scanner.Err(); err != nil {
 		return nil, mapError(err)
 	}
 
@@ -170,21 +212,87 @@ func (p *Provider) Chat(ctx context.Context, messages []llm.Message, opts ...llm
 
 // Heartbeat checks whether the Ollama server is reachable.
 func (p *Provider) Heartbeat(ctx context.Context) error {
-	return mapError(p.client.Heartbeat(ctx))
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, p.baseURL+"/", nil)
+	if err != nil {
+		return mapError(err)
+	}
+
+	resp, err := p.httpClient.Do(req)
+	if err != nil {
+		return mapError(err)
+	}
+	resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		return mapError(&ollamaStatusError{StatusCode: resp.StatusCode, Message: "heartbeat failed"})
+	}
+	return nil
 }
 
 // ListModels returns the names of locally available models.
 func (p *Provider) ListModels(ctx context.Context) ([]string, error) {
-	resp, err := p.client.List(ctx)
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, p.baseURL+"/api/tags", nil)
 	if err != nil {
 		return nil, mapError(err)
 	}
 
-	names := make([]string, len(resp.Models))
-	for i, m := range resp.Models {
-		names[i] = m.Name
+	resp, err := p.httpClient.Do(req)
+	if err != nil {
+		return nil, mapError(err)
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		return nil, mapError(parseStatusError(resp))
+	}
+
+	var result listResponse
+	if err := json.NewDecoder(resp.Body).Decode(&result); err != nil {
+		return nil, fmt.Errorf("decode list response: %w", err)
+	}
+
+	names := make([]string, len(result.Models))
+	for i := range result.Models {
+		names[i] = result.Models[i].Name
 	}
 	return names, nil
+}
+
+// doPost sends a POST request and returns the response body.
+// The caller must close the returned body.
+func (p *Provider) doPost(ctx context.Context, path string, body []byte) (io.ReadCloser, error) {
+	req, err := http.NewRequestWithContext(ctx, http.MethodPost, p.baseURL+path, bytes.NewReader(body))
+	if err != nil {
+		return nil, err
+	}
+	req.Header.Set("Content-Type", "application/json")
+
+	resp, err := p.httpClient.Do(req)
+	if err != nil {
+		return nil, err
+	}
+
+	if resp.StatusCode >= 400 {
+		defer resp.Body.Close()
+		return nil, parseStatusError(resp)
+	}
+
+	return resp.Body, nil
+}
+
+// parseStatusError reads an error response body and returns an ollamaStatusError.
+func parseStatusError(resp *http.Response) *ollamaStatusError {
+	var errResp struct {
+		Error string `json:"error"`
+	}
+	if err := json.NewDecoder(resp.Body).Decode(&errResp); err != nil {
+		return &ollamaStatusError{StatusCode: resp.StatusCode, Message: resp.Status}
+	}
+	msg := errResp.Error
+	if msg == "" {
+		msg = resp.Status
+	}
+	return &ollamaStatusError{StatusCode: resp.StatusCode, Message: msg}
 }
 
 // buildOptions converts CallConfig fields into Ollama's Options map.
@@ -197,4 +305,52 @@ func buildOptions(cfg llm.CallConfig) map[string]any {
 		opts["num_predict"] = cfg.MaxTokens
 	}
 	return opts
+}
+
+// --- Ollama REST API types (internal) ---
+
+type generateRequest struct {
+	Model   string         `json:"model"`
+	Prompt  string         `json:"prompt"`
+	Stream  *bool          `json:"stream,omitempty"`
+	Options map[string]any `json:"options,omitempty"`
+}
+
+type chatRequest struct {
+	Model    string         `json:"model"`
+	Messages []chatMessage  `json:"messages"`
+	Stream   *bool          `json:"stream,omitempty"`
+	Options  map[string]any `json:"options,omitempty"`
+}
+
+type chatMessage struct {
+	Role    string `json:"role"`
+	Content string `json:"content"`
+}
+
+type responseMetrics struct {
+	PromptEvalCount int `json:"prompt_eval_count"`
+	EvalCount       int `json:"eval_count"`
+}
+
+type generateResponse struct {
+	Model    string `json:"model"`
+	Response string `json:"response"`
+	Done     bool   `json:"done"`
+	responseMetrics
+}
+
+type chatResponse struct {
+	Model   string      `json:"model"`
+	Message chatMessage `json:"message"`
+	Done    bool        `json:"done"`
+	responseMetrics
+}
+
+type listResponse struct {
+	Models []listModel `json:"models"`
+}
+
+type listModel struct {
+	Name string `json:"name"`
 }

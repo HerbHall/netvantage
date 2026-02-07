@@ -5,25 +5,20 @@ import (
 	"encoding/json"
 	"net/http"
 	"net/http/httptest"
-	"net/url"
 	"strings"
 	"testing"
 	"time"
 
 	"github.com/HerbHall/subnetree/pkg/llm"
-	"github.com/ollama/ollama/api"
 	"go.uber.org/zap"
 )
 
 // newTestProvider creates a Provider pointing at the given httptest server URL.
 func newTestProvider(t *testing.T, serverURL string) *Provider {
 	t.Helper()
-	base, err := url.Parse(serverURL)
-	if err != nil {
-		t.Fatalf("parse URL: %v", err)
-	}
 	return &Provider{
-		client: api.NewClient(base, &http.Client{Timeout: 10 * time.Second}),
+		baseURL:    serverURL,
+		httpClient: &http.Client{Timeout: 10 * time.Second},
 		cfg: Config{
 			URL:     serverURL,
 			Model:   "test-model",
@@ -41,66 +36,64 @@ func mockOllama(t *testing.T) *httptest.Server {
 	// Heartbeat
 	mux.HandleFunc("GET /", func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusOK)
-		w.Write([]byte("Ollama is running")) //nolint:errcheck
+		w.Write([]byte("Ollama is running")) //nolint:errcheck // test mock response
 	})
 
 	// Generate (non-streaming)
 	mux.HandleFunc("POST /api/generate", func(w http.ResponseWriter, r *http.Request) {
-		var req api.GenerateRequest
+		var req generateRequest
 		if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 			http.Error(w, err.Error(), http.StatusBadRequest)
 			return
 		}
 
-		resp := api.GenerateResponse{
+		resp := generateResponse{
 			Model:    req.Model,
 			Response: "Hello from Ollama!",
 			Done:     true,
-			Metrics: api.Metrics{
+			responseMetrics: responseMetrics{
 				PromptEvalCount: 5,
 				EvalCount:       4,
-				TotalDuration:   100 * time.Millisecond,
 			},
 		}
 		w.Header().Set("Content-Type", "application/json")
-		json.NewEncoder(w).Encode(resp) //nolint:errcheck
+		json.NewEncoder(w).Encode(resp) //nolint:errcheck // test mock response
 	})
 
 	// Chat (non-streaming)
 	mux.HandleFunc("POST /api/chat", func(w http.ResponseWriter, r *http.Request) {
-		var req api.ChatRequest
+		var req chatRequest
 		if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 			http.Error(w, err.Error(), http.StatusBadRequest)
 			return
 		}
 
-		resp := api.ChatResponse{
+		resp := chatResponse{
 			Model: req.Model,
-			Message: api.Message{
+			Message: chatMessage{
 				Role:    "assistant",
 				Content: "The answer is 4.",
 			},
 			Done: true,
-			Metrics: api.Metrics{
+			responseMetrics: responseMetrics{
 				PromptEvalCount: 10,
 				EvalCount:       6,
-				TotalDuration:   150 * time.Millisecond,
 			},
 		}
 		w.Header().Set("Content-Type", "application/json")
-		json.NewEncoder(w).Encode(resp) //nolint:errcheck
+		json.NewEncoder(w).Encode(resp) //nolint:errcheck // test mock response
 	})
 
 	// List models
 	mux.HandleFunc("GET /api/tags", func(w http.ResponseWriter, r *http.Request) {
-		resp := api.ListResponse{
-			Models: []api.ListModelResponse{
-				{Name: "qwen2.5:32b", Model: "qwen2.5:32b", Size: 1024},
-				{Name: "llama3:8b", Model: "llama3:8b", Size: 512},
+		resp := listResponse{
+			Models: []listModel{
+				{Name: "qwen2.5:32b"},
+				{Name: "llama3:8b"},
 			},
 		}
 		w.Header().Set("Content-Type", "application/json")
-		json.NewEncoder(w).Encode(resp) //nolint:errcheck
+		json.NewEncoder(w).Encode(resp) //nolint:errcheck // test mock response
 	})
 
 	srv := httptest.NewServer(mux)
@@ -244,7 +237,7 @@ func TestChat_EmptyMessages(t *testing.T) {
 	if !llm.IsModelNotFoundError(err) && !strings.Contains(err.Error(), "empty") {
 		// Verify it's an InvalidRequest error.
 		var pe *llm.ProviderError
-		if ok := isProviderError(err, &pe); !ok || pe.Code != llm.ErrCodeInvalidRequest {
+		if !isProviderError(err, &pe) || pe.Code != llm.ErrCodeInvalidRequest {
 			t.Errorf("expected ErrCodeInvalidRequest, got %v", err)
 		}
 	}
@@ -305,9 +298,9 @@ func TestMapError_DeadlineExceeded(t *testing.T) {
 }
 
 func TestMapError_StatusError404Model(t *testing.T) {
-	err := mapError(api.StatusError{
-		StatusCode:   404,
-		ErrorMessage: "model 'nonexistent' not found",
+	err := mapError(&ollamaStatusError{
+		StatusCode: 404,
+		Message:    "model 'nonexistent' not found",
 	})
 	if !llm.IsModelNotFoundError(err) {
 		t.Errorf("expected model-not-found error, got %v", err)
@@ -315,9 +308,9 @@ func TestMapError_StatusError404Model(t *testing.T) {
 }
 
 func TestMapError_StatusError401(t *testing.T) {
-	err := mapError(api.StatusError{
-		StatusCode:   401,
-		ErrorMessage: "unauthorized",
+	err := mapError(&ollamaStatusError{
+		StatusCode: 401,
+		Message:    "unauthorized",
 	})
 	if !llm.IsAuthenticationError(err) {
 		t.Errorf("expected authentication error, got %v", err)
@@ -325,9 +318,9 @@ func TestMapError_StatusError401(t *testing.T) {
 }
 
 func TestMapError_StatusError500(t *testing.T) {
-	err := mapError(api.StatusError{
-		StatusCode:   500,
-		ErrorMessage: "internal server error",
+	err := mapError(&ollamaStatusError{
+		StatusCode: 500,
+		Message:    "internal server error",
 	})
 	if !llm.IsServerError(err) {
 		t.Errorf("expected server error, got %v", err)
@@ -342,11 +335,6 @@ func TestMapError_Nil(t *testing.T) {
 
 // isProviderError is a test helper that extracts a ProviderError from err.
 func isProviderError(err error, pe **llm.ProviderError) bool {
-	var target *llm.ProviderError
-	if ok := llm.IsAuthenticationError(err); ok {
-		// Not the check we want here, but errors.As will work.
-	}
-	// Use a simple type assertion since errors.As requires a pointer-to-pointer.
 	type unwrapper interface{ Unwrap() error }
 	for err != nil {
 		if p, ok := err.(*llm.ProviderError); ok {
@@ -359,6 +347,5 @@ func isProviderError(err error, pe **llm.ProviderError) bool {
 			break
 		}
 	}
-	_ = target
 	return false
 }

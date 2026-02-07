@@ -3,11 +3,21 @@ package ollama
 import (
 	"context"
 	"errors"
+	"fmt"
 	"strings"
 
 	"github.com/HerbHall/subnetree/pkg/llm"
-	"github.com/ollama/ollama/api"
 )
+
+// ollamaStatusError represents an HTTP error response from the Ollama API.
+type ollamaStatusError struct {
+	StatusCode int
+	Message    string
+}
+
+func (e *ollamaStatusError) Error() string {
+	return fmt.Sprintf("ollama: %d %s", e.StatusCode, e.Message)
+}
 
 // mapError translates Ollama and network errors into typed llm.ProviderError values.
 func mapError(err error) error {
@@ -20,18 +30,18 @@ func mapError(err error) error {
 		return llm.NewProviderError(llm.ErrCodeTimeout, "request timed out or cancelled", err)
 	}
 
-	// Ollama StatusError (HTTP-level errors).
-	var se api.StatusError
+	// Ollama HTTP error responses.
+	var se *ollamaStatusError
 	if errors.As(err, &se) {
 		switch {
 		case se.StatusCode == 401:
-			return llm.NewProviderError(llm.ErrCodeAuthentication, se.ErrorMessage, err)
-		case se.StatusCode == 404 && strings.Contains(strings.ToLower(se.ErrorMessage), "model"):
-			return llm.NewProviderError(llm.ErrCodeModelNotFound, se.ErrorMessage, err)
+			return llm.NewProviderError(llm.ErrCodeAuthentication, se.Message, err)
+		case se.StatusCode == 404 && strings.Contains(strings.ToLower(se.Message), "model"):
+			return llm.NewProviderError(llm.ErrCodeModelNotFound, se.Message, err)
 		case se.StatusCode >= 500:
-			return llm.NewProviderError(llm.ErrCodeServerError, se.ErrorMessage, err)
+			return llm.NewProviderError(llm.ErrCodeServerError, se.Message, err)
 		case se.StatusCode >= 400:
-			return llm.NewProviderError(llm.ErrCodeInvalidRequest, se.ErrorMessage, err)
+			return llm.NewProviderError(llm.ErrCodeInvalidRequest, se.Message, err)
 		}
 	}
 
