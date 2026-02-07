@@ -36,4 +36,3 @@ ENV NV_DATABASE_DSN=/data/subnetree.db \
 VOLUME ["/data"]
 
 ENTRYPOINT ["subnetree"]
-CMD ["serve"]
