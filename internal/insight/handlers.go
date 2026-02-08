@@ -7,6 +7,7 @@ import (
 
 	"github.com/HerbHall/subnetree/pkg/analytics"
 	"github.com/HerbHall/subnetree/pkg/plugin"
+	"go.uber.org/zap"
 )
 
 // Routes implements plugin.HTTPProvider.
@@ -177,9 +178,24 @@ func (m *Module) handleNLQuery(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// NL query requires LLM provider -- stub returns 503 until PR 3 wires it up.
-	writeError(w, http.StatusServiceUnavailable,
-		"natural language queries require the LLM plugin; this feature is coming soon")
+	proc := newNLQueryProcessor(m.plugins, m.store)
+	if proc == nil {
+		writeError(w, http.StatusServiceUnavailable,
+			"natural language queries require the LLM plugin")
+		return
+	}
+
+	resp, err := proc.Process(r.Context(), req.Query)
+	if err != nil {
+		m.logger.Error("nl query failed",
+			zap.String("query", req.Query),
+			zap.Error(err),
+		)
+		writeError(w, http.StatusInternalServerError, "query processing failed")
+		return
+	}
+
+	writeJSON(w, http.StatusOK, resp)
 }
 
 // -- helpers --
