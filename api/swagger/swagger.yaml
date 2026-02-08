@@ -244,6 +244,12 @@ definitions:
     - switch
     - printer
     - iot
+    - access_point
+    - firewall
+    - nas
+    - phone
+    - tablet
+    - camera
     - unknown
     type: string
     x-enum-varnames:
@@ -255,6 +261,12 @@ definitions:
     - DeviceTypeSwitch
     - DeviceTypePrinter
     - DeviceTypeIoT
+    - DeviceTypeAccessPoint
+    - DeviceTypeFirewall
+    - DeviceTypeNAS
+    - DeviceTypePhone
+    - DeviceTypeTablet
+    - DeviceTypeCamera
     - DeviceTypeUnknown
   github_com_HerbHall_subnetree_pkg_models.DiscoveryMethod:
     enum:

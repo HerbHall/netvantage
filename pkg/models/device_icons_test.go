@@ -6,7 +6,9 @@ func TestDeviceIconCoverage(t *testing.T) {
 	knownTypes := []DeviceType{
 		DeviceTypeServer, DeviceTypeDesktop, DeviceTypeLaptop,
 		DeviceTypeMobile, DeviceTypeRouter, DeviceTypeSwitch,
-		DeviceTypePrinter, DeviceTypeIoT, DeviceTypeUnknown,
+		DeviceTypePrinter, DeviceTypeIoT, DeviceTypeAccessPoint,
+		DeviceTypeFirewall, DeviceTypeNAS, DeviceTypePhone,
+		DeviceTypeTablet, DeviceTypeCamera, DeviceTypeUnknown,
 	}
 	for _, dt := range knownTypes {
 		icon := dt.Icon()

@@ -32,6 +32,7 @@ const DEVICE_TYPE_LABELS: Record<DeviceType, string> = {
   server: 'Server',
   desktop: 'Desktop',
   laptop: 'Laptop',
+  mobile: 'Mobile',
   router: 'Router',
   switch: 'Switch',
   access_point: 'Access Point',
