@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { toast } from 'sonner'
 import {
@@ -23,7 +23,6 @@ import type { NetworkInterface } from '@/api/settings'
 
 export function SettingsPage() {
   const queryClient = useQueryClient()
-  const [selectedInterface, setSelectedInterface] = useState<string>('')
 
   // Fetch available network interfaces
   const {
@@ -44,18 +43,17 @@ export function SettingsPage() {
     queryFn: getScanInterface,
   })
 
-  // Sync selected state when data loads
-  useEffect(() => {
-    if (currentSetting) {
-      setSelectedInterface(currentSetting.interface_name)
-    }
-  }, [currentSetting])
+  // Local override: null means "use server value"
+  const [localOverride, setLocalOverride] = useState<string | null>(null)
+  const selectedInterface = localOverride ?? currentSetting?.interface_name ?? ''
+  const setSelectedInterface = (value: string) => setLocalOverride(value)
 
   // Mutation to save scan interface
   const saveMutation = useMutation({
     mutationFn: (interfaceName: string) => setScanInterface(interfaceName),
     onSuccess: () => {
       toast.success('Scan interface saved successfully')
+      setLocalOverride(null)
       queryClient.invalidateQueries({ queryKey: ['settings', 'scan-interface'] })
     },
     onError: () => {
@@ -64,7 +62,7 @@ export function SettingsPage() {
   })
 
   const isLoading = interfacesLoading || settingLoading
-  const hasChanges = currentSetting?.interface_name !== selectedInterface
+  const hasChanges = localOverride !== null && localOverride !== (currentSetting?.interface_name ?? '')
   const upInterfaces = interfaces?.filter((iface) => iface.status === 'up') ?? []
 
   return (
@@ -165,11 +163,7 @@ export function SettingsPage() {
                 {hasChanges && (
                   <Button
                     variant="ghost"
-                    onClick={() =>
-                      setSelectedInterface(
-                        currentSetting?.interface_name ?? ''
-                      )
-                    }
+                    onClick={() => setLocalOverride(null)}
                     disabled={saveMutation.isPending}
                     className="gap-2"
                   >
