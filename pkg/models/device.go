@@ -6,15 +6,21 @@ import "time"
 type DeviceType string
 
 const (
-	DeviceTypeServer  DeviceType = "server"
-	DeviceTypeDesktop DeviceType = "desktop"
-	DeviceTypeLaptop  DeviceType = "laptop"
-	DeviceTypeMobile  DeviceType = "mobile"
-	DeviceTypeRouter  DeviceType = "router"
-	DeviceTypeSwitch  DeviceType = "switch"
-	DeviceTypePrinter DeviceType = "printer"
-	DeviceTypeIoT     DeviceType = "iot"
-	DeviceTypeUnknown DeviceType = "unknown"
+	DeviceTypeServer      DeviceType = "server"
+	DeviceTypeDesktop     DeviceType = "desktop"
+	DeviceTypeLaptop      DeviceType = "laptop"
+	DeviceTypeMobile      DeviceType = "mobile"
+	DeviceTypeRouter      DeviceType = "router"
+	DeviceTypeSwitch      DeviceType = "switch"
+	DeviceTypePrinter     DeviceType = "printer"
+	DeviceTypeIoT         DeviceType = "iot"
+	DeviceTypeAccessPoint DeviceType = "access_point"
+	DeviceTypeFirewall    DeviceType = "firewall"
+	DeviceTypeNAS         DeviceType = "nas"
+	DeviceTypePhone       DeviceType = "phone"
+	DeviceTypeTablet      DeviceType = "tablet"
+	DeviceTypeCamera      DeviceType = "camera"
+	DeviceTypeUnknown     DeviceType = "unknown"
 )
 
 // DeviceStatus represents the current state of a device.

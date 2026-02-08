@@ -40,6 +40,7 @@ export type DeviceType =
   | 'server'
   | 'desktop'
   | 'laptop'
+  | 'mobile'
   | 'router'
   | 'switch'
   | 'access_point'
