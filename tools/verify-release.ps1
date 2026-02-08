@@ -1,15 +1,15 @@
 # verify-release.ps1 -- Full functional verification of a SubNetree release binary.
 #
 # Usage:
-#   .\verify-release.ps1 [-Version "0.2.0"] [-Subnet "192.168.1.0/24"]
-#   .\verify-release.ps1 -Version "0.2.0" -Subnet "skip"
+#   .\verify-release.ps1 [-Version "0.2.1"] [-Subnet "192.168.1.0/24"]
+#   .\verify-release.ps1 -Version "0.2.1" -Subnet "skip"
 #
 # Prerequisites:
 #   - PowerShell 5.1+ (built into Windows)
 #   - Administrator for network scanning (ICMP/ARP require raw sockets)
 
 param(
-    [string]$Version = "0.2.0",
+    [string]$Version = "0.2.1",
     [string]$Subnet = "192.168.1.0/24",
     [int]$Port = 19999
 )

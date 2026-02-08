@@ -5,9 +5,9 @@
 #   ./verify-release.sh [VERSION] [SUBNET]
 #
 # Examples:
-#   ./verify-release.sh 0.2.0                    # Test on 192.168.1.0/24
-#   ./verify-release.sh 0.2.0 10.0.0.0/24        # Test on custom subnet
-#   ./verify-release.sh 0.2.0 skip               # Skip network scan
+#   ./verify-release.sh 0.2.1                    # Test on 192.168.1.0/24
+#   ./verify-release.sh 0.2.1 10.0.0.0/24        # Test on custom subnet
+#   ./verify-release.sh 0.2.1 skip               # Skip network scan
 #
 # Prerequisites:
 #   - curl, tar/unzip
@@ -19,7 +19,7 @@
 
 set -euo pipefail
 
-VERSION="${1:-0.2.0}"
+VERSION="${1:-0.2.1}"
 SUBNET="${2:-192.168.1.0/24}"
 PORT=19999
 BASE_URL="http://127.0.0.1:${PORT}"
