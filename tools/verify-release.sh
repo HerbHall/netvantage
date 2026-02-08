@@ -231,7 +231,7 @@ server:
   data_dir: "$WORKDIR/data"
 logging:
   level: "debug"
-  format: "text"
+  format: "console"
 plugins:
   recon:
     enabled: true

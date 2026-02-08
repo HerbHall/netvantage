@@ -142,7 +142,7 @@ server:
   data_dir: "$($DataDir -replace '\\','\\')"
 logging:
   level: "debug"
-  format: "text"
+  format: "console"
 plugins:
   recon:
     enabled: true
