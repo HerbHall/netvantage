@@ -48,7 +48,7 @@ vi.mock('jwt-decode', () => ({
 describe('SetupPage', () => {
   const user = userEvent.setup()
 
-  beforeEach(() => {
+  beforeEach(async () => {
     vi.clearAllMocks()
     useAuthStore.setState({
       accessToken: null,
@@ -56,6 +56,23 @@ describe('SetupPage', () => {
       user: null,
       isAuthenticated: false,
       isHydrated: true,
+    })
+
+    // Default success mocks for setup/login (called during step 1→2 transition)
+    const { setupApi, loginApi } = await import('@/api/auth')
+    vi.mocked(setupApi).mockResolvedValue({
+      id: 'user-123',
+      username: 'admin',
+      email: 'admin@test.com',
+      role: 'admin',
+      auth_provider: 'local',
+      created_at: new Date().toISOString(),
+      disabled: false,
+    })
+    vi.mocked(loginApi).mockResolvedValue({
+      access_token: 'test-token',
+      refresh_token: 'test-refresh',
+      expires_in: 900,
     })
   })
 
@@ -182,6 +199,42 @@ describe('SetupPage', () => {
       await user.type(screen.getByLabelText(/username/i), 'a')
       expect(screen.queryByText(/username is required/i)).not.toBeInTheDocument()
     })
+
+    it('shows error when account creation fails', async () => {
+      const { setupApi } = await import('@/api/auth')
+      vi.mocked(setupApi).mockRejectedValue(new Error('Username already exists'))
+
+      render(<SetupPage />)
+
+      await user.type(screen.getByLabelText(/username/i), 'admin')
+      await user.type(screen.getByLabelText(/email/i), 'admin@test.com')
+      await user.type(screen.getByLabelText(/^password$/i), 'password123')
+      await user.type(screen.getByLabelText(/confirm password/i), 'password123')
+      await user.click(screen.getByRole('button', { name: /next/i }))
+
+      await waitFor(() => {
+        expect(screen.getByRole('alert')).toHaveTextContent('Username already exists')
+      })
+      // Should stay on step 1
+      expect(screen.getByText(/create your administrator account/i)).toBeInTheDocument()
+    })
+
+    it('shows loading state during account creation', async () => {
+      const { setupApi } = await import('@/api/auth')
+      vi.mocked(setupApi).mockImplementation(
+        () => new Promise((resolve) => setTimeout(resolve, 100))
+      )
+
+      render(<SetupPage />)
+
+      await user.type(screen.getByLabelText(/username/i), 'admin')
+      await user.type(screen.getByLabelText(/email/i), 'admin@test.com')
+      await user.type(screen.getByLabelText(/^password$/i), 'password123')
+      await user.type(screen.getByLabelText(/confirm password/i), 'password123')
+      await user.click(screen.getByRole('button', { name: /next/i }))
+
+      expect(screen.getByRole('button', { name: /creating account/i })).toBeDisabled()
+    })
   })
 
   describe('Step 2 - Network Configuration', () => {
@@ -191,6 +244,10 @@ describe('SetupPage', () => {
       await user.type(screen.getByLabelText(/^password$/i), 'password123')
       await user.type(screen.getByLabelText(/confirm password/i), 'password123')
       await user.click(screen.getByRole('button', { name: /next/i }))
+      // Step 1→2 now calls setupApi + loginApi asynchronously
+      await waitFor(() => {
+        expect(screen.getByText(/configure network scanning/i)).toBeInTheDocument()
+      })
     }
 
     it('advances to step 2 with valid step 1 data', async () => {
@@ -236,6 +293,10 @@ describe('SetupPage', () => {
       await user.type(screen.getByLabelText(/^password$/i), 'password123')
       await user.type(screen.getByLabelText(/confirm password/i), 'password123')
       await user.click(screen.getByRole('button', { name: /next/i }))
+      // Wait for async step 1→2 transition (setupApi + loginApi)
+      await waitFor(() => {
+        expect(screen.getByText(/configure network scanning/i)).toBeInTheDocument()
+      })
       await user.click(screen.getByRole('button', { name: /next/i }))
     }
 
@@ -256,51 +317,19 @@ describe('SetupPage', () => {
       expect(screen.getByRole('button', { name: /complete setup/i })).toBeInTheDocument()
     })
 
-    it('calls setup and login APIs on complete', async () => {
+    it('calls setup and login APIs during step 1 to 2 transition', async () => {
       const { setupApi, loginApi } = await import('@/api/auth')
-      vi.mocked(setupApi).mockResolvedValue({
-        id: 'user-123',
-        username: 'admin',
-        email: 'admin@test.com',
-        role: 'admin',
-        auth_provider: 'local',
-        created_at: new Date().toISOString(),
-        disabled: false,
-      })
-      vi.mocked(loginApi).mockResolvedValue({
-        access_token: 'test-token',
-        refresh_token: 'test-refresh',
-        expires_in: 900,
-      })
 
       render(<SetupPage />)
       await goToStep3()
 
-      await user.click(screen.getByRole('button', { name: /complete setup/i }))
-
-      await waitFor(() => {
-        expect(setupApi).toHaveBeenCalledWith('admin', 'admin@test.com', 'password123')
-        expect(loginApi).toHaveBeenCalledWith('admin', 'password123')
-      })
+      // APIs called during step 1→2 transition, not on Complete
+      expect(setupApi).toHaveBeenCalledWith('admin', 'admin@test.com', 'password123')
+      expect(loginApi).toHaveBeenCalledWith('admin', 'password123')
     })
 
     it('navigates to dashboard on successful setup', async () => {
-      const { setupApi, loginApi } = await import('@/api/auth')
       const { setScanInterface } = await import('@/api/settings')
-      vi.mocked(setupApi).mockResolvedValue({
-        id: 'user-123',
-        username: 'admin',
-        email: 'admin@test.com',
-        role: 'admin',
-        auth_provider: 'local',
-        created_at: new Date().toISOString(),
-        disabled: false,
-      })
-      vi.mocked(loginApi).mockResolvedValue({
-        access_token: 'test-token',
-        refresh_token: 'test-refresh',
-        expires_in: 900,
-      })
       vi.mocked(setScanInterface).mockResolvedValue({ interface_name: '' })
 
       render(<SetupPage />)
@@ -314,9 +343,9 @@ describe('SetupPage', () => {
       })
     })
 
-    it('shows loading state during setup', async () => {
-      const { setupApi } = await import('@/api/auth')
-      vi.mocked(setupApi).mockImplementation(
+    it('shows loading state during complete', async () => {
+      const { setScanInterface } = await import('@/api/settings')
+      vi.mocked(setScanInterface).mockImplementation(
         () => new Promise((resolve) => setTimeout(resolve, 100))
       )
 
@@ -325,12 +354,12 @@ describe('SetupPage', () => {
 
       await user.click(screen.getByRole('button', { name: /complete setup/i }))
 
-      expect(screen.getByRole('button', { name: /creating account/i })).toBeDisabled()
+      expect(screen.getByRole('button', { name: /saving/i })).toBeDisabled()
     })
 
-    it('shows error on setup failure', async () => {
-      const { setupApi } = await import('@/api/auth')
-      vi.mocked(setupApi).mockRejectedValue(new Error('Username already exists'))
+    it('shows error on complete failure', async () => {
+      const { setScanInterface } = await import('@/api/settings')
+      vi.mocked(setScanInterface).mockRejectedValue(new Error('Failed to save settings'))
 
       render(<SetupPage />)
       await goToStep3()
@@ -338,7 +367,7 @@ describe('SetupPage', () => {
       await user.click(screen.getByRole('button', { name: /complete setup/i }))
 
       await waitFor(() => {
-        expect(screen.getByRole('alert')).toHaveTextContent('Username already exists')
+        expect(screen.getByRole('alert')).toHaveTextContent('Failed to save settings')
       })
     })
   })

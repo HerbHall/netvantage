@@ -79,8 +79,8 @@ describe('LoginPage', () => {
       expect(screen.getByText(/sign in to subnetree/i)).toBeInTheDocument()
     })
 
-    expect(screen.getByLabelText(/username/i)).toBeInTheDocument()
-    expect(screen.getByLabelText(/password/i)).toBeInTheDocument()
+    expect(screen.getByLabelText('Username')).toBeInTheDocument()
+    expect(screen.getByLabelText('Password')).toBeInTheDocument()
     expect(screen.getByRole('button', { name: /sign in/i })).toBeInTheDocument()
   })
 
@@ -91,11 +91,11 @@ describe('LoginPage', () => {
     render(<LoginPage />)
 
     await waitFor(() => {
-      expect(screen.getByLabelText(/username/i)).toBeInTheDocument()
+      expect(screen.getByLabelText('Username')).toBeInTheDocument()
     })
 
-    const usernameInput = screen.getByLabelText(/username/i)
-    const passwordInput = screen.getByLabelText(/password/i)
+    const usernameInput = screen.getByLabelText('Username')
+    const passwordInput = screen.getByLabelText('Password')
 
     await user.type(usernameInput, 'testuser')
     await user.type(passwordInput, 'password123')
@@ -112,11 +112,11 @@ describe('LoginPage', () => {
     render(<LoginPage />)
 
     await waitFor(() => {
-      expect(screen.getByLabelText(/username/i)).toBeInTheDocument()
+      expect(screen.getByLabelText('Username')).toBeInTheDocument()
     })
 
-    await user.type(screen.getByLabelText(/username/i), 'testuser')
-    await user.type(screen.getByLabelText(/password/i), 'wrongpass')
+    await user.type(screen.getByLabelText('Username'), 'testuser')
+    await user.type(screen.getByLabelText('Password'), 'wrongpass')
     await user.click(screen.getByRole('button', { name: /sign in/i }))
 
     await waitFor(() => {
@@ -134,11 +134,11 @@ describe('LoginPage', () => {
     render(<LoginPage />)
 
     await waitFor(() => {
-      expect(screen.getByLabelText(/username/i)).toBeInTheDocument()
+      expect(screen.getByLabelText('Username')).toBeInTheDocument()
     })
 
-    await user.type(screen.getByLabelText(/username/i), 'testuser')
-    await user.type(screen.getByLabelText(/password/i), 'password123')
+    await user.type(screen.getByLabelText('Username'), 'testuser')
+    await user.type(screen.getByLabelText('Password'), 'password123')
     await user.click(screen.getByRole('button', { name: /sign in/i }))
 
     expect(screen.getByRole('button', { name: /signing in/i })).toBeDisabled()
@@ -166,11 +166,11 @@ describe('LoginPage', () => {
     render(<LoginPage />)
 
     await waitFor(() => {
-      expect(screen.getByLabelText(/username/i)).toBeInTheDocument()
+      expect(screen.getByLabelText('Username')).toBeInTheDocument()
     })
 
-    await user.type(screen.getByLabelText(/username/i), 'testuser')
-    await user.type(screen.getByLabelText(/password/i), 'password123')
+    await user.type(screen.getByLabelText('Username'), 'testuser')
+    await user.type(screen.getByLabelText('Password'), 'password123')
     await user.click(screen.getByRole('button', { name: /sign in/i }))
 
     await waitFor(() => {
