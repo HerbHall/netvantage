@@ -133,7 +133,7 @@ func TestRoutes(t *testing.T) {
 		"PUT /credentials/{id}":               "",
 		"DELETE /credentials/{id}":            "",
 		"GET /credentials/{id}/data":          "",
-		"GET /credentials/device/{device_id}": "",
+		"GET /device-credentials/{device_id}": "",
 		"POST /rotate-keys":                   "",
 		"POST /seal":                          "",
 		"POST /unseal":                        "",
