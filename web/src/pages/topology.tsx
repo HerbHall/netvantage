@@ -1,4 +1,4 @@
-import { useState, useMemo, useCallback, useRef } from 'react'
+import { useState, useEffect, useMemo, useCallback, useRef } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import {
   ReactFlow,
@@ -398,8 +398,17 @@ export function TopologyPage() {
   )
 
   // React Flow state -- allows drag-to-reposition
-  const [nodes, , onNodesChangeRaw] = useNodesState<DeviceNodeType>(initialNodes)
-  const [edges, , onEdgesChangeRaw] = useEdgesState<TopologyEdgeType>(initialEdges)
+  const [nodes, setNodes, onNodesChangeRaw] = useNodesState<DeviceNodeType>(initialNodes)
+  const [edges, setEdges, onEdgesChangeRaw] = useEdgesState<TopologyEdgeType>(initialEdges)
+
+  // Sync React Flow state when layout/filters/data change
+  useEffect(() => {
+    setNodes(initialNodes)
+  }, [initialNodes, setNodes])
+
+  useEffect(() => {
+    setEdges(initialEdges)
+  }, [initialEdges, setEdges])
 
   const onNodesChange: OnNodesChange<DeviceNodeType> = useCallback(
     (changes) => onNodesChangeRaw(changes),
