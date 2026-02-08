@@ -604,7 +604,7 @@ func (h *Handler) handleSetActiveTheme(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	writeJSON(w, http.StatusOK, ActiveThemeResponse{ThemeID: req.ThemeID})
+	writeJSON(w, http.StatusOK, ActiveThemeResponse(req))
 }
 
 // ensureBuiltInThemes seeds the two default themes if they haven't been seeded yet.
