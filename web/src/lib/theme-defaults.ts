@@ -7,6 +7,8 @@
  * their final computed values for use in color pickers.
  */
 
+import type { ThemeTokens } from '@/api/themes'
+
 export const DARK_DEFAULTS: Record<string, string> = {
   // Backgrounds
   '--nv-bg-root': '#0c1a0e',
@@ -263,9 +265,10 @@ export const TOKEN_CATEGORIES: Record<string, { label: string; vars: string[] }>
  * Flatten a ThemeTokens object into a flat CSS variable map.
  * { backgrounds: { 'bg-root': '#fff' } } -> { '--nv-bg-root': '#fff' }
  */
-export function flattenTokens(tokens: Record<string, Record<string, string> | undefined>): Record<string, string> {
+export function flattenTokens(tokens: ThemeTokens): Record<string, string> {
   const result: Record<string, string> = {}
-  for (const [, categoryTokens] of Object.entries(tokens)) {
+  const entries = Object.entries(tokens) as [string, Record<string, string> | undefined][]
+  for (const [, categoryTokens] of entries) {
     if (!categoryTokens) continue
     for (const [key, value] of Object.entries(categoryTokens)) {
       result[`--nv-${key}`] = value
