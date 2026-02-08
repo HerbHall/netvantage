@@ -6,7 +6,7 @@
 [![codecov](https://codecov.io/gh/HerbHall/subnetree/branch/main/graph/badge.svg)](https://codecov.io/gh/HerbHall/subnetree)
 [![License](https://img.shields.io/badge/license-BSL%201.1-blue)](LICENSE)
 
-> **Alpha Status**: SubNetree is in active development. Core scanning and dashboard work, but expect rough edges. Contributions and feedback welcome!
+> **v0.2.0**: All core modules are functional. Discovery, monitoring, analytics, credential vault, and remote access all work. Contributions and feedback welcome!
 
 **Your homelab command center.** SubNetree discovers devices on your network, monitors their status, and gives you one-click access to everything -- without typing passwords a thousand times a day.
 
@@ -21,14 +21,16 @@ Homelabbers juggle dozens of tools: UnRAID for storage, Proxmox for VMs, Home As
 
 ## Current Status
 
-> **v0.1.0-alpha** -- Core scanning and dashboard are functional. Expect rough edges.
+> **v0.2.0** -- All core modules functional. 431+ tests across 5 new modules.
 
 ### What Works Today
 
-- **Network Discovery**: ARP + ICMP scanning with OUI manufacturer lookup and reverse DNS hostname resolution
-- **Device Monitoring**: ICMP health checks with configurable intervals, alert state machine, and data retention
-- **Interactive Dashboard**: Device list, detail pages, network topology visualization, and keyboard shortcuts
-- **AI-Powered Analytics**: Statistical baselines, anomaly detection, forecasting, and natural language queries via Ollama
+- **Network Discovery**: ARP + ICMP scanning with OUI manufacturer lookup and reverse DNS
+- **Device Monitoring**: ICMP health checks, alert state machine (OK/Warning/Critical), data retention
+- **AI-Powered Analytics**: EWMA baselines, Z-score anomaly detection, CUSUM change-point detection, linear regression forecasting, natural language queries via Ollama
+- **Credential Vault**: AES-256-GCM envelope encryption, Argon2id key derivation, seal/unseal model, 7 credential types, key rotation
+- **Remote Access Gateway**: HTTP reverse proxy, SSH-in-browser via WebSocket, session management with audit trail
+- **Interactive Dashboard**: Device list, detail pages, topology visualization, dark mode, keyboard shortcuts
 - **Real-Time Updates**: WebSocket-powered scan progress with live device feed
 - **Authentication**: JWT-based auth with first-run setup wizard
 - **Backup/Restore**: CLI commands for data safety
@@ -36,11 +38,10 @@ Homelabbers juggle dozens of tools: UnRAID for storage, Proxmox for VMs, Home As
 
 ### Coming Next
 
-- Scout agents for detailed host metrics
-- Credential vault for stored passwords
-- Remote access (SSH, RDP, HTTP proxy)
-- Additional LLM providers (OpenAI, Anthropic) planned alongside local Ollama
-- Enhanced discovery (SNMP, mDNS, UPnP)
+- Scout agents for detailed host metrics (v0.3.0)
+- Enhanced discovery: SNMP, mDNS, UPnP, LLDP/CDP (v0.4.0)
+- Additional LLM providers: OpenAI, Anthropic (v0.3.0+)
+- Multi-tenant support for MSPs (v0.5.0)
 
 See the [phased roadmap](docs/requirements/21-phased-roadmap.md) for the full plan.
 
@@ -239,11 +240,11 @@ api/
 
 ## Roadmap
 
-- **Phase 1** (v0.1.0-alpha shipped): Server + dashboard + agentless scanning + LLM integration
-- **Phase 1b**: Windows Scout agent
-- **Phase 2**: Enhanced discovery (SNMP, mDNS, UPnP) + monitoring + Linux agent
-- **Phase 3**: Remote access (SSH, RDP) + credential vault
-- **Phase 4**: Homelab integrations (Home Assistant, UnRAID, Proxmox)
+- **v0.2.0** (shipped): All core modules -- monitoring, analytics, vault, gateway, LLM
+- **v0.3.0**: Windows Scout agent + gRPC mTLS + Dispatch
+- **v0.4.0**: Enhanced discovery (SNMP, mDNS, UPnP, LLDP/CDP) + alerting
+- **v0.5.0**: Multi-tenant support for MSPs
+- **v1.0.0**: PostgreSQL, MFA, OIDC, homelab integrations (Home Assistant, UnRAID, Proxmox)
 
 ## Troubleshooting
 
