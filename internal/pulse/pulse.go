@@ -4,7 +4,9 @@ import (
 	"context"
 	"fmt"
 	"sync"
+	"time"
 
+	"github.com/HerbHall/subnetree/pkg/analytics"
 	"github.com/HerbHall/subnetree/pkg/plugin"
 	"github.com/HerbHall/subnetree/pkg/roles"
 	"go.uber.org/zap"
@@ -27,6 +29,8 @@ type Module struct {
 	bus       plugin.EventBus
 	plugins   plugin.PluginResolver
 	scheduler *Scheduler
+	checker   Checker
+	alerter   *Alerter
 
 	ctx    context.Context
 	cancel context.CancelFunc
@@ -81,8 +85,11 @@ func (m *Module) Init(_ context.Context, deps plugin.Dependencies) error {
 func (m *Module) Start(_ context.Context) error {
 	m.ctx, m.cancel = context.WithCancel(context.Background())
 
-	// Create scheduler with a stub executor for now (checker wired in PR 2).
+	m.checker = NewICMPChecker(m.cfg.PingTimeout, m.cfg.PingCount)
+
 	if m.store != nil {
+		m.alerter = NewAlerter(m.store, m.bus, m.cfg.ConsecutiveFailures, m.logger)
+
 		m.scheduler = NewScheduler(
 			m.store,
 			m.executeCheck,
@@ -109,13 +116,64 @@ func (m *Module) Stop(_ context.Context) error {
 	return nil
 }
 
-// executeCheck is the stub check executor. Wired to the real ICMP checker in PR 2.
-func (m *Module) executeCheck(_ context.Context, check Check) {
-	m.logger.Debug("check execution pending implementation",
-		zap.String("check_id", check.ID),
-		zap.String("device_id", check.DeviceID),
-		zap.String("target", check.Target),
-	)
+// executeCheck runs an ICMP check, stores the result, processes alerts, and publishes metrics.
+func (m *Module) executeCheck(ctx context.Context, check Check) {
+	result, err := m.checker.Check(ctx, check.Target)
+	if err != nil {
+		m.logger.Debug("check returned error",
+			zap.String("check_id", check.ID),
+			zap.String("target", check.Target),
+			zap.Error(err),
+		)
+	}
+	if result == nil {
+		return
+	}
+
+	result.CheckID = check.ID
+	result.DeviceID = check.DeviceID
+
+	// Store the result.
+	if err := m.store.InsertResult(ctx, result); err != nil {
+		m.logger.Warn("failed to store check result",
+			zap.String("check_id", check.ID),
+			zap.Error(err),
+		)
+	}
+
+	// Process alert state machine.
+	if m.alerter != nil {
+		m.alerter.ProcessResult(ctx, check, result)
+	}
+
+	// Publish metrics to the event bus for Insight consumption.
+	m.publishMetrics(ctx, check, result)
+}
+
+// publishMetrics emits metric points for analytics processing.
+func (m *Module) publishMetrics(ctx context.Context, check Check, result *CheckResult) {
+	if m.bus == nil {
+		return
+	}
+
+	now := time.Now().UTC()
+	successVal := 0.0
+	if result.Success {
+		successVal = 1.0
+	}
+
+	metrics := []analytics.MetricPoint{
+		{DeviceID: check.DeviceID, MetricName: "ping_latency_ms", Value: result.LatencyMs, Timestamp: now},
+		{DeviceID: check.DeviceID, MetricName: "ping_packet_loss", Value: result.PacketLoss, Timestamp: now},
+		{DeviceID: check.DeviceID, MetricName: "ping_success", Value: successVal, Timestamp: now},
+	}
+
+	m.bus.PublishAsync(ctx, plugin.Event{
+		Topic:     TopicMetricsCollected,
+		Source:    "pulse",
+		Timestamp: now,
+		Payload:   metrics,
+	})
 }
 
 // -- plugin.HealthChecker --
@@ -154,13 +212,6 @@ func (m *Module) Subscriptions() []plugin.Subscription {
 	return []plugin.Subscription{
 		{Topic: TopicDeviceDiscovered, Handler: m.handleDeviceDiscovered},
 	}
-}
-
-// handleDeviceDiscovered is a stub for auto-creating checks. Wired in PR 2.
-func (m *Module) handleDeviceDiscovered(_ context.Context, event plugin.Event) {
-	m.logger.Debug("received device discovered event",
-		zap.String("source", event.Source),
-	)
 }
 
 // -- roles.MonitoringProvider --
