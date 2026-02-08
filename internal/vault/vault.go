@@ -23,7 +23,7 @@ var (
 )
 
 // PassphraseEnvVar is the environment variable for the vault passphrase.
-const PassphraseEnvVar = "SUBNETREE_VAULT_PASSPHRASE"
+const PassphraseEnvVar = "SUBNETREE_VAULT_PASSPHRASE" //nolint:gosec // G101: env var name, not a secret
 
 // Module implements the Vault credential management plugin.
 type Module struct {

@@ -6,8 +6,8 @@ import "time"
 const (
 	CredTypeSSHPassword = "ssh_password"
 	CredTypeSSHKey      = "ssh_key"
-	CredTypeSNMPv2c     = "snmp_v2c"
-	CredTypeSNMPv3      = "snmp_v3"
+	CredTypeSNMPv2c     = "snmp_v2c"  //nolint:gosec // G101: credential type label, not a secret
+	CredTypeSNMPv3      = "snmp_v3"   //nolint:gosec // G101: credential type label, not a secret
 	CredTypeAPIKey      = "api_key"
 	CredTypeHTTPBasic   = "http_basic"
 	CredTypeCustom      = "custom"
