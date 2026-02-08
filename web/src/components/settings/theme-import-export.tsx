@@ -6,7 +6,6 @@ import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
 import {
   createTheme,
-  type ThemeDefinition,
   type ThemeTokens,
 } from '@/api/themes'
 import { useThemeStore } from '@/stores/theme'
