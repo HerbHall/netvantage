@@ -23,7 +23,7 @@ func (m *Module) Routes() []plugin.Route {
 		// Decrypted data retrieval
 		{Method: "GET", Path: "/credentials/{id}/data", Handler: m.handleGetCredentialData},
 		// Device-scoped listing
-		{Method: "GET", Path: "/credentials/device/{device_id}", Handler: m.handleListDeviceCredentials},
+		{Method: "GET", Path: "/device-credentials/{device_id}", Handler: m.handleListDeviceCredentials},
 		// Key management
 		{Method: "POST", Path: "/rotate-keys", Handler: m.handleRotateKeys},
 		{Method: "POST", Path: "/seal", Handler: m.handleSeal},

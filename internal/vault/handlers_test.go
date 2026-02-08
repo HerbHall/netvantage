@@ -569,7 +569,7 @@ func TestHandleListDeviceCredentials_Success(t *testing.T) {
 		EncryptedData: []byte("enc"), CreatedAt: now, UpdatedAt: now,
 	})
 
-	req := httptest.NewRequest(http.MethodGet, "/credentials/device/dev-1", http.NoBody)
+	req := httptest.NewRequest(http.MethodGet, "/device-credentials/dev-1", http.NoBody)
 	req.SetPathValue("device_id", "dev-1")
 	rr := httptest.NewRecorder()
 	m.handleListDeviceCredentials(rr, req)
