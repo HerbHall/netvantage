@@ -48,21 +48,22 @@ func (c *ICMPChecker) Check(ctx context.Context, target string) (*CheckResult, e
 	select {
 	case runErr := <-done:
 		// Pinger completed (possibly with error).
+		if runErr != nil {
+			return &CheckResult{
+				Success:      false,
+				PacketLoss:   1.0,
+				ErrorMessage: runErr.Error(),
+				CheckedAt:    time.Now().UTC(),
+			}, fmt.Errorf("ping %s: %w", target, runErr)
+		}
+
 		stats := pinger.Statistics()
 		result := &CheckResult{
-			CheckedAt: time.Now().UTC(),
+			LatencyMs:  float64(stats.AvgRtt) / float64(time.Millisecond),
+			PacketLoss: stats.PacketLoss / 100.0, // pro-bing returns 0-100
+			Success:    stats.PacketsRecv > 0,
+			CheckedAt:  time.Now().UTC(),
 		}
-
-		if runErr != nil {
-			result.Success = false
-			result.ErrorMessage = runErr.Error()
-			result.PacketLoss = 1.0
-			return result, nil
-		}
-
-		result.LatencyMs = float64(stats.AvgRtt) / float64(time.Millisecond)
-		result.PacketLoss = stats.PacketLoss / 100.0 // pro-bing returns 0-100
-		result.Success = stats.PacketsRecv > 0
 
 		if !result.Success {
 			result.ErrorMessage = "all packets lost"

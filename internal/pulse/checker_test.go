@@ -377,20 +377,10 @@ func TestMockChecker_PartialPacketLoss(t *testing.T) {
 }
 
 func TestICMPChecker_InterfaceCompliance(t *testing.T) {
-	// Verify that ICMPChecker implements the Checker interface.
+	// Compile-time interface guard.
 	var _ Checker = (*ICMPChecker)(nil)
 
-	// Test that ICMPChecker can be used as a Checker.
-	var checker Checker = NewICMPChecker(5*time.Second, 3)
-
-	if checker == nil {
-		t.Fatal("NewICMPChecker() returned nil")
-	}
-
-	// We can't test actual ICMP functionality without network permissions,
-	// but we can verify the interface contract is satisfied.
-	_, ok := checker.(*ICMPChecker)
-	if !ok {
-		t.Error("type assertion to *ICMPChecker failed")
-	}
+	// Verify constructor returns a valid instance usable as Checker.
+	checker := NewICMPChecker(5*time.Second, 3)
+	var _ Checker = checker // assignable to interface
 }

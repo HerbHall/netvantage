@@ -120,11 +120,13 @@ func (m *Module) Stop(_ context.Context) error {
 func (m *Module) executeCheck(ctx context.Context, check Check) {
 	result, err := m.checker.Check(ctx, check.Target)
 	if err != nil {
-		m.logger.Warn("check execution error",
+		m.logger.Debug("check returned error",
 			zap.String("check_id", check.ID),
 			zap.String("target", check.Target),
 			zap.Error(err),
 		)
+	}
+	if result == nil {
 		return
 	}
 
