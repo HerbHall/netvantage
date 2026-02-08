@@ -2,7 +2,6 @@ import { useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { toast } from 'sonner'
 import {
-  Settings,
   Network,
   Wifi,
   WifiOff,
@@ -10,6 +9,7 @@ import {
   Loader2,
   CheckCircle2,
   RotateCcw,
+  Palette,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
@@ -20,11 +20,86 @@ import {
   setScanInterface,
 } from '@/api/settings'
 import type { NetworkInterface } from '@/api/settings'
+import { ThemeSelector } from '@/components/settings/theme-selector'
+import { ThemeImportExport } from '@/components/settings/theme-import-export'
+
+type SettingsTab = 'network' | 'appearance'
 
 export function SettingsPage() {
+  const [activeTab, setActiveTab] = useState<SettingsTab>('network')
+
+  return (
+    <div className="space-y-6">
+      {/* Header */}
+      <div>
+        <h1 className="text-2xl font-semibold">Settings</h1>
+        <p className="text-sm text-muted-foreground mt-1">
+          Server configuration and preferences
+        </p>
+      </div>
+
+      {/* Tab bar */}
+      <div className="flex border-b">
+        <TabButton
+          active={activeTab === 'network'}
+          onClick={() => setActiveTab('network')}
+          icon={<Network className="h-4 w-4" />}
+          label="Network"
+        />
+        <TabButton
+          active={activeTab === 'appearance'}
+          onClick={() => setActiveTab('appearance')}
+          icon={<Palette className="h-4 w-4" />}
+          label="Appearance"
+        />
+      </div>
+
+      {/* Tab content */}
+      {activeTab === 'network' && <NetworkTab />}
+      {activeTab === 'appearance' && <AppearanceTab />}
+    </div>
+  )
+}
+
+function TabButton({
+  active,
+  onClick,
+  icon,
+  label,
+}: {
+  active: boolean
+  onClick: () => void
+  icon: React.ReactNode
+  label: string
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className={`flex items-center gap-2 px-4 py-2.5 text-sm font-medium border-b-2 transition-colors ${
+        active
+          ? 'border-primary text-foreground'
+          : 'border-transparent text-muted-foreground hover:text-foreground hover:border-muted-foreground/30'
+      }`}
+    >
+      {icon}
+      {label}
+    </button>
+  )
+}
+
+function AppearanceTab() {
+  return (
+    <div className="space-y-6">
+      <ThemeSelector />
+      <ThemeImportExport />
+    </div>
+  )
+}
+
+function NetworkTab() {
   const queryClient = useQueryClient()
 
-  // Fetch available network interfaces
   const {
     data: interfaces,
     isLoading: interfacesLoading,
@@ -34,7 +109,6 @@ export function SettingsPage() {
     queryFn: getNetworkInterfaces,
   })
 
-  // Fetch current scan interface setting
   const {
     data: currentSetting,
     isLoading: settingLoading,
@@ -43,12 +117,10 @@ export function SettingsPage() {
     queryFn: getScanInterface,
   })
 
-  // Local override: null means "use server value"
   const [localOverride, setLocalOverride] = useState<string | null>(null)
   const selectedInterface = localOverride ?? currentSetting?.interface_name ?? ''
   const setSelectedInterface = (value: string) => setLocalOverride(value)
 
-  // Mutation to save scan interface
   const saveMutation = useMutation({
     mutationFn: (interfaceName: string) => setScanInterface(interfaceName),
     onSuccess: () => {
@@ -66,131 +138,103 @@ export function SettingsPage() {
   const upInterfaces = interfaces?.filter((iface) => iface.status === 'up') ?? []
 
   return (
-    <div className="space-y-6">
-      {/* Header */}
-      <div>
-        <h1 className="text-2xl font-semibold">Settings</h1>
-        <p className="text-sm text-muted-foreground mt-1">
-          Server configuration and preferences
-        </p>
-      </div>
-
-      {/* Scan Interface Picker */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-sm font-medium flex items-center gap-2">
-            <Network className="h-4 w-4 text-muted-foreground" />
-            Scan Interface
-          </CardTitle>
-          <CardDescription>
-            Select the network interface used for device discovery scans.
-            Choose &quot;Auto-detect&quot; to let SubNetree pick the best
-            interface automatically.
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          {isLoading ? (
-            <div className="flex items-center justify-center py-8">
-              <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+    <Card>
+      <CardHeader>
+        <CardTitle className="text-sm font-medium flex items-center gap-2">
+          <Network className="h-4 w-4 text-muted-foreground" />
+          Scan Interface
+        </CardTitle>
+        <CardDescription>
+          Select the network interface used for device discovery scans.
+          Choose &quot;Auto-detect&quot; to let SubNetree pick the best
+          interface automatically.
+        </CardDescription>
+      </CardHeader>
+      <CardContent>
+        {isLoading ? (
+          <div className="flex items-center justify-center py-8">
+            <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+          </div>
+        ) : interfacesError ? (
+          <p className="text-sm text-red-400 py-4">
+            Failed to load network interfaces. Ensure the server is running.
+          </p>
+        ) : (
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="scan-interface">Network Interface</Label>
+              <select
+                id="scan-interface"
+                value={selectedInterface}
+                onChange={(e) => setSelectedInterface(e.target.value)}
+                disabled={saveMutation.isPending}
+                className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                <option value="">Auto-detect</option>
+                {interfaces?.map((iface) => (
+                  <option key={iface.name} value={iface.name}>
+                    {iface.name} - {iface.ip_address} ({iface.subnet})
+                  </option>
+                ))}
+              </select>
             </div>
-          ) : interfacesError ? (
-            <p className="text-sm text-red-400 py-4">
-              Failed to load network interfaces. Ensure the server is running.
-            </p>
-          ) : (
-            <div className="space-y-4">
-              {/* Interface selector */}
-              <div className="space-y-2">
-                <Label htmlFor="scan-interface">Network Interface</Label>
-                <select
-                  id="scan-interface"
-                  value={selectedInterface}
-                  onChange={(e) => setSelectedInterface(e.target.value)}
-                  disabled={saveMutation.isPending}
-                  className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
-                >
-                  <option value="">Auto-detect</option>
-                  {interfaces?.map((iface) => (
-                    <option key={iface.name} value={iface.name}>
-                      {iface.name} - {iface.ip_address} ({iface.subnet})
-                    </option>
-                  ))}
-                </select>
-              </div>
 
-              {/* Interface details table */}
-              {interfaces && interfaces.length > 0 && (
-                <div className="rounded-md border">
-                  <div className="px-4 py-2 border-b bg-muted/30">
-                    <p className="text-xs font-medium text-muted-foreground">
-                      Available Interfaces
-                    </p>
-                  </div>
-                  <div className="divide-y">
-                    {interfaces.map((iface) => (
-                      <InterfaceRow
-                        key={iface.name}
-                        iface={iface}
-                        selected={iface.name === selectedInterface}
-                        onSelect={() => setSelectedInterface(iface.name)}
-                      />
-                    ))}
-                  </div>
-                  {upInterfaces.length === 0 && (
-                    <div className="px-4 py-3 text-sm text-muted-foreground text-center">
-                      No active interfaces detected.
-                    </div>
-                  )}
+            {interfaces && interfaces.length > 0 && (
+              <div className="rounded-md border">
+                <div className="px-4 py-2 border-b bg-muted/30">
+                  <p className="text-xs font-medium text-muted-foreground">
+                    Available Interfaces
+                  </p>
                 </div>
-              )}
-
-              {/* Action buttons */}
-              <div className="flex items-center gap-3 pt-2">
-                <Button
-                  onClick={() => saveMutation.mutate(selectedInterface)}
-                  disabled={!hasChanges || saveMutation.isPending}
-                  className="gap-2"
-                >
-                  {saveMutation.isPending ? (
-                    <Loader2 className="h-4 w-4 animate-spin" />
-                  ) : saveMutation.isSuccess && !hasChanges ? (
-                    <CheckCircle2 className="h-4 w-4" />
-                  ) : (
-                    <Save className="h-4 w-4" />
-                  )}
-                  {saveMutation.isPending ? 'Saving...' : 'Save'}
-                </Button>
-                {hasChanges && (
-                  <Button
-                    variant="ghost"
-                    onClick={() => setLocalOverride(null)}
-                    disabled={saveMutation.isPending}
-                    className="gap-2"
-                  >
-                    <RotateCcw className="h-4 w-4" />
-                    Reset
-                  </Button>
+                <div className="divide-y">
+                  {interfaces.map((iface) => (
+                    <InterfaceRow
+                      key={iface.name}
+                      iface={iface}
+                      selected={iface.name === selectedInterface}
+                      onSelect={() => setSelectedInterface(iface.name)}
+                    />
+                  ))}
+                </div>
+                {upInterfaces.length === 0 && (
+                  <div className="px-4 py-3 text-sm text-muted-foreground text-center">
+                    No active interfaces detected.
+                  </div>
                 )}
               </div>
-            </div>
-          )}
-        </CardContent>
-      </Card>
+            )}
 
-      {/* Placeholder for future settings sections */}
-      <Card className="opacity-60">
-        <CardHeader>
-          <CardTitle className="text-sm font-medium flex items-center gap-2">
-            <Settings className="h-4 w-4 text-muted-foreground" />
-            More Settings
-          </CardTitle>
-          <CardDescription>
-            Additional configuration options will be available here in future
-            releases.
-          </CardDescription>
-        </CardHeader>
-      </Card>
-    </div>
+            <div className="flex items-center gap-3 pt-2">
+              <Button
+                onClick={() => saveMutation.mutate(selectedInterface)}
+                disabled={!hasChanges || saveMutation.isPending}
+                className="gap-2"
+              >
+                {saveMutation.isPending ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : saveMutation.isSuccess && !hasChanges ? (
+                  <CheckCircle2 className="h-4 w-4" />
+                ) : (
+                  <Save className="h-4 w-4" />
+                )}
+                {saveMutation.isPending ? 'Saving...' : 'Save'}
+              </Button>
+              {hasChanges && (
+                <Button
+                  variant="ghost"
+                  onClick={() => setLocalOverride(null)}
+                  disabled={saveMutation.isPending}
+                  className="gap-2"
+                >
+                  <RotateCcw className="h-4 w-4" />
+                  Reset
+                </Button>
+              )}
+            </div>
+          </div>
+        )}
+      </CardContent>
+    </Card>
   )
 }
 
