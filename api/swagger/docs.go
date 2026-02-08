@@ -1708,6 +1708,12 @@ const docTemplate = `{
                 "switch",
                 "printer",
                 "iot",
+                "access_point",
+                "firewall",
+                "nas",
+                "phone",
+                "tablet",
+                "camera",
                 "unknown"
             ],
             "x-enum-varnames": [
@@ -1719,6 +1725,12 @@ const docTemplate = `{
                 "DeviceTypeSwitch",
                 "DeviceTypePrinter",
                 "DeviceTypeIoT",
+                "DeviceTypeAccessPoint",
+                "DeviceTypeFirewall",
+                "DeviceTypeNAS",
+                "DeviceTypePhone",
+                "DeviceTypeTablet",
+                "DeviceTypeCamera",
                 "DeviceTypeUnknown"
             ]
         },
