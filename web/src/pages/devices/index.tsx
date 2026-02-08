@@ -1,4 +1,4 @@
-import { useState, useMemo, useRef, useCallback } from 'react'
+import { useState, useMemo } from 'react'
 import { Link, useSearchParams } from 'react-router-dom'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import {
@@ -21,7 +21,6 @@ import { getTopology, triggerScan } from '@/api/devices'
 import { useScanStore } from '@/stores/scan'
 import type { DeviceStatus, DeviceType } from '@/api/types'
 import { cn } from '@/lib/utils'
-import { useKeyboardShortcuts } from '@/hooks/use-keyboard-shortcuts'
 
 type ViewMode = 'grid' | 'list' | 'table'
 type SortField = 'label' | 'ip' | 'mac' | 'manufacturer' | 'device_type' | 'status'
@@ -57,7 +56,6 @@ export function DevicesPage() {
   const typeFilter = (searchParams.get('type') as DeviceType | 'all') || 'all'
 
   // Local UI state
-  const searchInputRef = useRef<HTMLInputElement>(null)
   const [viewMode, setViewMode] = useState<ViewMode>('table')
   const [searchQuery, setSearchQuery] = useState('')
   const [sortField, setSortField] = useState<SortField>('label')
@@ -85,18 +83,6 @@ export function DevicesPage() {
       }, 2000)
     },
   })
-
-  // Keyboard shortcuts
-  const handleFocusSearch = useCallback(() => { searchInputRef.current?.focus() }, [])
-  const handleRefresh = useCallback(() => { refetch() }, [refetch])
-  const devicesShortcuts = useMemo(
-    () => [
-      { key: '/', handler: handleFocusSearch, description: 'Focus search' },
-      { key: 'r', handler: handleRefresh, description: 'Refresh data' },
-    ],
-    [handleFocusSearch, handleRefresh]
-  )
-  useKeyboardShortcuts(devicesShortcuts)
 
   const devices = useMemo(() => topology?.nodes || [], [topology?.nodes])
 
@@ -259,7 +245,6 @@ export function DevicesPage() {
         <div className="relative flex-1 max-w-sm">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
           <Input
-            ref={searchInputRef}
             placeholder="Search hostname, IP, MAC, manufacturer..."
             value={searchQuery}
             onChange={(e) => {
