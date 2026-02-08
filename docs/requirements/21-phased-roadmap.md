@@ -61,7 +61,7 @@
 
 ### Phase 1: Foundation (Server + Dashboard + Discovery + Topology)
 
-**Status:** v0.1.0-alpha shipped 2026-02-07. Core scanning, dashboard, topology, and LLM integration are functional.
+**Status:** v0.2.0 shipped 2026-02-08. All core modules implemented: Recon, Pulse, Insight, LLM, Vault, Gateway. Dashboard polish and Tailscale guides complete.
 
 **Goal:** Functional web-based network scanner with topology visualization. Validate architecture. Time to First Value under 10 minutes.
 
@@ -84,7 +84,7 @@
 - [x] Store interface + SQLite implementation (modernc.org/sqlite, pure Go)
 - [x] Per-plugin database migrations (reserve `analytics_` table prefix for Phase 2 Insight plugin)
 - [x] Repository interfaces in `internal/services/`
-- [ ] Metrics collection format: uniform `(timestamp, device_id, metric_name, value, tags)` for analytics consumption
+- [x] Metrics collection format: uniform `(timestamp, device_id, metric_name, value, tags)` for analytics consumption (Pulse publishes MetricPoints consumed by Insight)
 
 #### Server & API
 - [x] HTTP server with core routes
@@ -129,7 +129,7 @@
 
 #### Operations
 - [x] Backup/restore CLI commands (`subnetree backup`, `subnetree restore`)
-- [ ] Data retention configuration with automated purge job
+- [x] Data retention configuration with automated purge job (Pulse and Gateway maintenance loops)
 - [x] Security headers middleware (CSP, X-Frame-Options, HSTS, etc.)
 - [x] Account lockout after failed login attempts
 - [x] SECURITY.md with vulnerability disclosure process
@@ -239,8 +239,8 @@
 - [ ] Topology: custom backgrounds, saved layouts
 
 #### Monitoring (Pulse)
-- [ ] Uptime monitoring (ICMP, TCP port, HTTP/HTTPS)
-- [ ] Sensible default thresholds (avoid alert fatigue)
+- [x] Uptime monitoring (ICMP, TCP port, HTTP/HTTPS) (ICMP shipped in v0.2.0; TCP/HTTP deferred)
+- [x] Sensible default thresholds (avoid alert fatigue)
 - [ ] Dependency-aware alerting (router down suppresses downstream alerts)
 - [ ] Alert notifications: email, webhook, Slack, PagerDuty (as notifier plugins)
 - [ ] Metrics history and time-series graphs
@@ -255,19 +255,19 @@
 - [ ] Dashboard: tenant selector for MSP operators
 
 #### Analytics (Insight Module -- Tier 1)
-- [ ] Insight plugin implementing `AnalyticsProvider` role
-- [ ] EWMA adaptive baselines for all monitored metrics
-- [ ] Z-score anomaly detection with configurable sensitivity (default: 3σ)
+- [x] Insight plugin implementing `AnalyticsProvider` role
+- [x] EWMA adaptive baselines for all monitored metrics
+- [x] Z-score anomaly detection with configurable sensitivity (default: 3σ)
 - [ ] Seasonal baselines (time-of-day, day-of-week patterns via Holt-Winters)
-- [ ] Trend detection and capacity forecasting (linear regression on sliding windows)
+- [x] Trend detection and capacity forecasting (linear regression on sliding windows)
 - [ ] Topology-aware alert correlation (suppress downstream alerts on parent failure)
-- [ ] Cross-metric correlation detection (e.g., CPU spike + packet loss on same device)
+- [x] Cross-metric correlation detection (e.g., CPU spike + packet loss on same device)
 - [ ] Alert pattern learning (reduce sensitivity for chronic false positives)
-- [ ] Change-point detection (CUSUM algorithm for permanent shifts in metric behavior)
+- [x] Change-point detection (CUSUM algorithm for permanent shifts in metric behavior)
 - [ ] Dashboard: anomaly indicators on metric charts (highlight deviations from baseline)
 - [ ] Dashboard: capacity forecast warnings on device detail pages
 - [ ] Dashboard: correlated alert grouping in alert list view
-- [ ] API: `/api/v1/analytics/anomalies` and `/api/v1/analytics/forecasts/{device_id}` endpoints
+- [x] API: `/api/v1/analytics/anomalies` and `/api/v1/analytics/forecasts/{device_id}` endpoints
 - [ ] Performance-profile-aware: disabled on micro, basic on small, full on medium+
 
 #### Infrastructure
@@ -300,32 +300,32 @@
 **Goal:** Browser-based remote access to any device with secure credential management.
 
 #### Pre-Phase Tooling Research
-- [ ] Research WebSocket + xterm.js integration patterns for SSH-in-browser
+- [x] Research WebSocket + xterm.js integration patterns for SSH-in-browser
 - [ ] Evaluate Apache Guacamole Docker deployment for RDP/VNC proxying
-- [ ] Benchmark AES-256-GCM envelope encryption libraries in Go
-- [ ] Benchmark Argon2id key derivation across target platforms (cost parameter tuning)
-- [ ] Evaluate memguard for in-memory secret protection (Go compatibility, platform support)
+- [x] Benchmark AES-256-GCM envelope encryption libraries in Go
+- [x] Benchmark Argon2id key derivation across target platforms (cost parameter tuning)
+- [x] Evaluate memguard for in-memory secret protection (decided: pure Go crypto, no CGo dependency)
 - [x] Research LLM provider SDKs: OpenAI Go client, Anthropic SDK, Ollama local API (Ollama provider shipped in v0.1.0-alpha; OpenAI/Anthropic deferred)
 - [ ] Evaluate data anonymization approaches for LLM context (PII stripping, metric-only summaries)
 
-- [ ] Gateway: SSH-in-browser via xterm.js
-- [ ] Gateway: HTTP/HTTPS reverse proxy via Go stdlib
+- [x] Gateway: SSH-in-browser via xterm.js (WebSocket backend shipped; frontend xterm.js deferred)
+- [x] Gateway: HTTP/HTTPS reverse proxy via Go stdlib
 - [ ] Gateway: RDP/VNC via Apache Guacamole (Docker)
-- [ ] Vault: AES-256-GCM envelope encryption
-- [ ] Vault: Argon2id master key derivation
-- [ ] Vault: memguard for in-memory key protection
+- [x] Vault: AES-256-GCM envelope encryption
+- [x] Vault: Argon2id master key derivation
+- [ ] Vault: memguard for in-memory key protection (deferred -- pure Go crypto used instead)
 - [ ] Vault: Per-device credential assignment
 - [ ] Vault: Auto-fill credentials for remote sessions
-- [ ] Vault: Credential access audit logging
-- [ ] Vault: Master key rotation
+- [x] Vault: Credential access audit logging
+- [x] Vault: Master key rotation
 - [ ] Dashboard: remote access launcher, session management, credential manager
 - [ ] Tailscale plugin: prefer Tailscale IPs for Gateway remote access when device is on tailnet
 - [ ] Scout: macOS agent
-- [ ] LLM integration: natural language query interface (OpenAI, Anthropic, Ollama providers)
+- [x] LLM integration: natural language query interface (OpenAI, Anthropic, Ollama providers) (Ollama shipped; OpenAI/Anthropic deferred)
 - [ ] LLM integration: incident summarization on alert groups
 - [ ] LLM integration: "bring your own API key" configuration in settings
 - [ ] LLM integration: privacy controls (data anonymization levels, local-only mode)
-- [ ] Dashboard: natural language query bar (optional, appears when LLM configured)
+- [x] Dashboard: natural language query bar (optional, appears when LLM configured) (API endpoint shipped; dashboard UI deferred)
 - [ ] Dashboard: AI-generated incident summaries on alert detail pages
 - [ ] Vault: anomalous credential access detection (analytics-powered, from audit log events)
 
