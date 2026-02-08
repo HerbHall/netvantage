@@ -78,7 +78,7 @@ func (km *KeyManager) Unseal(passphrase string) error {
 // FirstRunSetup creates a new salt, derives the KEK, and creates a
 // verification blob. Returns the salt and verification blob for
 // persistence to the database. The vault is unsealed after this call.
-func (km *KeyManager) FirstRunSetup(passphrase string) (salt []byte, verification []byte, err error) {
+func (km *KeyManager) FirstRunSetup(passphrase string) (salt, verification []byte, err error) {
 	km.mu.Lock()
 	defer km.mu.Unlock()
 

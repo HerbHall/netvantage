@@ -1,6 +1,7 @@
 package vault
 
 import (
+	"bytes"
 	"context"
 	"testing"
 	"time"
@@ -54,10 +55,10 @@ func TestUpsertMasterKeyRecord_InsertAndGet(t *testing.T) {
 	if rec == nil {
 		t.Fatal("expected non-nil record")
 	}
-	if string(rec.Salt) != string(salt) {
+	if !bytes.Equal(rec.Salt, salt) {
 		t.Errorf("Salt = %q, want %q", rec.Salt, salt)
 	}
-	if string(rec.VerificationBlob) != string(verification) {
+	if !bytes.Equal(rec.VerificationBlob, verification) {
 		t.Errorf("VerificationBlob = %q, want %q", rec.VerificationBlob, verification)
 	}
 }

@@ -293,7 +293,7 @@ func readPassphraseFromStdin() (string, error) {
 		return "", fmt.Errorf("stdin is not a terminal")
 	}
 
-	fmt.Fprint(os.Stderr, "Enter vault passphrase: ") //nolint:errcheck
+	fmt.Fprint(os.Stderr, "Enter vault passphrase: ") //nolint:errcheck // best-effort prompt to stderr
 	reader := bufio.NewReader(os.Stdin)
 	line, err := reader.ReadString('\n')
 	if err != nil {
