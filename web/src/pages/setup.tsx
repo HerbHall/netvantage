@@ -237,11 +237,12 @@ export function SetupPage() {
               <Label htmlFor="username">Username</Label>
               <Input
                 id="username"
+                name="new-username"
                 value={formData.username}
                 onChange={(e) => updateField('username', e.target.value)}
                 placeholder="admin"
                 autoFocus
-                autoComplete="username"
+                autoComplete="off"
               />
               {errors.username && (
                 <p className="text-sm text-red-400">{errors.username}</p>
