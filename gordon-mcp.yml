@@ -1,0 +1,7 @@
+services:
+  fs:
+    image: mcp/filesystem
+    command:
+      - /project
+    volumes:
+      - .:/project

@@ -7,7 +7,7 @@
 FROM node:22-alpine AS frontend-builder
 
 # Enable corepack for pnpm
-RUN corepack enable && corepack prepare pnpm@latest --activate
+RUN corepack enable && corepack prepare pnpm@9 --activate
 
 WORKDIR /build/web
 
@@ -44,8 +44,10 @@ ARG VERSION=dev
 ARG COMMIT=unknown
 ARG BUILD_TIME=unknown
 
-# Build the server binary
-RUN CGO_ENABLED=0 GOOS=linux go build \
+# Build the server binary (cache Go modules and build cache for faster rebuilds)
+RUN --mount=type=cache,target=/go/pkg/mod \
+    --mount=type=cache,target=/root/.cache/go-build \
+    CGO_ENABLED=0 GOOS=linux go build \
     -ldflags "-s -w \
         -X github.com/HerbHall/subnetree/internal/version.Version=${VERSION} \
         -X github.com/HerbHall/subnetree/internal/version.GitCommit=${COMMIT} \
@@ -58,25 +60,20 @@ RUN CGO_ENABLED=0 GOOS=linux go build \
 # ============================================================================
 FROM alpine:3.21
 
-# Install runtime dependencies
-RUN apk add --no-cache \
-    ca-certificates \
-    tzdata \
-    # Network scanning tools (optional, for ICMP without raw sockets)
-    iputils
+# OCI image labels
+LABEL org.opencontainers.image.title="SubNetree" \
+      org.opencontainers.image.description="Network monitoring and management platform" \
+      org.opencontainers.image.source="https://github.com/HerbHall/subnetree" \
+      org.opencontainers.image.licenses="BSL-1.1"
 
-# Create non-root user
-RUN addgroup -g 1000 subnetree && \
-    adduser -u 1000 -G subnetree -s /bin/sh -D subnetree
-
-# Create data directory
-RUN mkdir -p /data && chown subnetree:subnetree /data
+# Install runtime dependencies, create user and data directory (single layer)
+RUN apk add --no-cache ca-certificates tzdata iputils && \
+    addgroup -g 1000 subnetree && \
+    adduser -u 1000 -G subnetree -s /bin/sh -D subnetree && \
+    mkdir -p /data && chown subnetree:subnetree /data
 
 # Copy binary from builder
 COPY --from=go-builder /subnetree /usr/local/bin/subnetree
-
-# Copy timezone data
-COPY --from=go-builder /usr/share/zoneinfo /usr/share/zoneinfo
 
 # Set working directory
 WORKDIR /data
