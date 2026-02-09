@@ -1,4 +1,4 @@
-.PHONY: build build-server build-scout build-dashboard dev-dashboard lint-dashboard test test-race test-coverage lint run-server run-scout proto swagger clean license-check ai-review ai-test ai-doc
+.PHONY: build build-server build-scout build-dashboard dev-dashboard lint-dashboard test test-race test-coverage lint run-server run-scout proto swagger clean license-check ai-review ai-test ai-doc docker-build docker-test docker-clean docker-scout docker-scout-full
 
 # Binary names
 SERVER_BIN=subnetree
@@ -98,6 +98,34 @@ ai-test:
 ai-doc:
 	@test -n "$(FILE)" || (echo "Usage: make ai-doc FILE=path/to/file.go" && exit 1)
 	@bash tools/ai-doc.sh $(FILE)
+
+# Docker local testing
+DOCKER_IMAGE ?= subnetree:local
+DOCKER_TEST_PORT ?= 19998
+DOCKER_TEST_CONTAINER ?= subnetree-test
+
+docker-build:
+	docker build \
+		--build-arg VERSION=$(VERSION) \
+		--build-arg COMMIT=$(COMMIT) \
+		--build-arg BUILD_TIME=$(DATE) \
+		-t $(DOCKER_IMAGE) .
+
+docker-test: docker-build
+	@bash tools/docker-smoke-test.sh $(DOCKER_IMAGE) $(DOCKER_TEST_PORT) $(DOCKER_TEST_CONTAINER)
+
+docker-clean:
+	-docker rm -f $(DOCKER_TEST_CONTAINER) 2>/dev/null
+	-docker rmi $(DOCKER_IMAGE) 2>/dev/null
+	-docker volume rm subnetree-test-data 2>/dev/null
+
+docker-scout: docker-build
+	docker scout quickview $(DOCKER_IMAGE)
+	docker scout cves $(DOCKER_IMAGE) --only-severity critical,high
+
+docker-scout-full: docker-build
+	docker scout cves $(DOCKER_IMAGE)
+	docker scout recommendations $(DOCKER_IMAGE)
 
 clean:
 	rm -rf bin/ $(WEB_DIR)/dist $(WEB_DIR)/node_modules/.cache internal/dashboard/dist
