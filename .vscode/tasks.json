@@ -1,0 +1,114 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "Build All",
+      "type": "shell",
+      "command": "make build",
+      "group": {
+        "kind": "build",
+        "isDefault": true
+      },
+      "problemMatcher": ["$go"],
+      "presentation": { "reveal": "always", "panel": "shared" }
+    },
+    {
+      "label": "Build Server",
+      "type": "shell",
+      "command": "make build-server",
+      "group": "build",
+      "problemMatcher": ["$go"]
+    },
+    {
+      "label": "Build Scout",
+      "type": "shell",
+      "command": "make build-scout",
+      "group": "build",
+      "problemMatcher": ["$go"]
+    },
+    {
+      "label": "Build Dashboard",
+      "type": "shell",
+      "command": "make build-dashboard",
+      "group": "build",
+      "problemMatcher": ["$tsc"]
+    },
+    {
+      "label": "Dev Dashboard",
+      "type": "shell",
+      "command": "make dev-dashboard",
+      "isBackground": true,
+      "problemMatcher": {
+        "pattern": { "regexp": "." },
+        "background": {
+          "activeOnStart": true,
+          "beginsPattern": "VITE",
+          "endsPattern": "ready in"
+        }
+      },
+      "presentation": { "reveal": "always", "panel": "dedicated" }
+    },
+    {
+      "label": "Test (Go)",
+      "type": "shell",
+      "command": "make test",
+      "group": {
+        "kind": "test",
+        "isDefault": true
+      },
+      "problemMatcher": ["$go"],
+      "presentation": { "reveal": "always" }
+    },
+    {
+      "label": "Test with Race Detection",
+      "type": "shell",
+      "command": "make test-race",
+      "group": "test",
+      "problemMatcher": ["$go"]
+    },
+    {
+      "label": "Test Coverage",
+      "type": "shell",
+      "command": "make test-coverage",
+      "group": "test",
+      "problemMatcher": ["$go"]
+    },
+    {
+      "label": "Lint (Go)",
+      "type": "shell",
+      "command": "make lint",
+      "problemMatcher": ["$go"],
+      "presentation": { "reveal": "always" }
+    },
+    {
+      "label": "Lint Dashboard",
+      "type": "shell",
+      "command": "make lint-dashboard",
+      "problemMatcher": ["$eslint-stylish"]
+    },
+    {
+      "label": "Generate Swagger",
+      "type": "shell",
+      "command": "make swagger",
+      "problemMatcher": []
+    },
+    {
+      "label": "Generate Protobuf",
+      "type": "shell",
+      "command": "make proto",
+      "problemMatcher": []
+    },
+    {
+      "label": "License Check",
+      "type": "shell",
+      "command": "make license-check",
+      "problemMatcher": []
+    },
+    {
+      "label": "Clean",
+      "type": "shell",
+      "command": "make clean",
+      "problemMatcher": []
+    }
+  ]
+}
