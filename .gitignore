@@ -20,7 +20,7 @@ coverage.html
 
 # IDE
 .idea/
-.vscode/
+.vscode/mcp.json
 *.swp
 *.swo
 *~
