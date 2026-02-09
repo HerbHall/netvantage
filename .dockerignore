@@ -52,3 +52,4 @@ Thumbs.db
 Dockerfile*
 docker-compose*.yml
 .dockerignore
+gordon-mcp.yml

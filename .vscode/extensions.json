@@ -1,0 +1,18 @@
+{
+  "recommendations": [
+    "golang.go",
+    "esbenp.prettier-vscode",
+    "dbaeumer.vscode-eslint",
+    "bradlc.vscode-tailwindcss",
+    "editorconfig.editorconfig",
+    "bierner.markdown-mermaid",
+    "DavidAnson.vscode-markdownlint",
+    "zxh404.vscode-proto3",
+    "ms-vscode.makefile-tools",
+    "ms-azuretools.vscode-docker",
+    "redhat.vscode-yaml",
+    "qwtel.sqlite-viewer",
+    "42Crunch.vscode-openapi",
+    "ryanluker.vscode-coverage-gutters"
+  ]
+}
