@@ -3,6 +3,10 @@
 # Usage:
 #   .\verify-release.ps1 [-Version "0.2.1"] [-Subnet "192.168.1.0/24"]
 #   .\verify-release.ps1 -Version "0.2.1" -Subnet "skip"
+
+
+
+
 #
 # Prerequisites:
 #   - PowerShell 5.1+ (built into Windows)
@@ -23,10 +27,10 @@ $Warn = 0
 $Report = @()
 $ServerProcess = $null
 
-function Log-Pass($msg) { $script:Pass++; $script:Report += "PASS: $msg"; Write-Host "[PASS] $msg" -ForegroundColor Green }
-function Log-Fail($msg) { $script:Fail++; $script:Report += "FAIL: $msg"; Write-Host "[FAIL] $msg" -ForegroundColor Red }
-function Log-Warn($msg) { $script:Warn++; $script:Report += "WARN: $msg"; Write-Host "[WARN] $msg" -ForegroundColor Yellow }
-function Log-Info($msg) { Write-Host "[INFO] $msg" -ForegroundColor Cyan }
+function log-Pass($msg) { $script:Pass++; $script:Report += "PASS: $msg"; Write-Host "[PASS] $msg" -ForegroundColor Green }
+function log-Fail($msg) { $script:Fail++; $script:Report += "FAIL: $msg"; Write-Host "[FAIL] $msg" -ForegroundColor Red }
+function log-Warn($msg) { $script:Warn++; $script:Report += "WARN: $msg"; Write-Host "[WARN] $msg" -ForegroundColor Yellow }
+function log-Info($msg) { Write-Host "[INFO] $msg" -ForegroundColor Cyan }
 
 function Invoke-Api {
     param([string]$Method = "GET", [string]$Uri, [string]$Body, [string]$Token)
