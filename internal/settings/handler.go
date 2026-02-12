@@ -607,12 +607,8 @@ func (h *Handler) handleSetActiveTheme(w http.ResponseWriter, r *http.Request) {
 	writeJSON(w, http.StatusOK, ActiveThemeResponse(req))
 }
 
-// ensureBuiltInThemes seeds the two default themes if they haven't been seeded yet.
+// ensureBuiltInThemes seeds built-in themes, adding any new ones that don't exist yet.
 func (h *Handler) ensureBuiltInThemes(ctx context.Context) error {
-	if _, err := h.settings.Get(ctx, themeSeededKey); err == nil {
-		return nil // already seeded
-	}
-
 	now := time.Now().UTC().Format(time.RFC3339)
 	builtins := []ThemeDefinition{
 		{
@@ -637,9 +633,46 @@ func (h *Handler) ensureBuiltInThemes(ctx context.Context) error {
 			BuiltIn:     true,
 			Tokens:      ThemeTokens{},
 		},
+		{
+			ID:          "builtin-navy-copper",
+			Name:        "Navy Copper",
+			Description: "Dark navy theme with copper accents and a natural green palette.",
+			BaseMode:    "dark",
+			Version:     1,
+			CreatedAt:   now,
+			UpdatedAt:   now,
+			BuiltIn:     true,
+			Tokens:      navyCopperTokens(),
+		},
+		{
+			ID:          "builtin-classic-dark",
+			Name:        "Classic Dark",
+			Description: "Neutral dark theme with slate grays and blue accents.",
+			BaseMode:    "dark",
+			Version:     1,
+			CreatedAt:   now,
+			UpdatedAt:   now,
+			BuiltIn:     true,
+			Tokens:      classicDarkTokens(),
+		},
+		{
+			ID:          "builtin-classic-light",
+			Name:        "Classic Light",
+			Description: "Clean light theme with neutral grays and blue accents.",
+			BaseMode:    "light",
+			Version:     1,
+			CreatedAt:   now,
+			UpdatedAt:   now,
+			BuiltIn:     true,
+			Tokens:      classicLightTokens(),
+		},
 	}
 
 	for i := range builtins {
+		// Skip themes that already exist.
+		if _, err := h.settings.Get(ctx, themeKeyPrefix+builtins[i].ID); err == nil {
+			continue
+		}
 		data, err := json.Marshal(builtins[i])
 		if err != nil {
 			return fmt.Errorf("marshal built-in theme %s: %w", builtins[i].ID, err)
@@ -649,7 +682,221 @@ func (h *Handler) ensureBuiltInThemes(ctx context.Context) error {
 		}
 	}
 
-	return h.settings.Set(ctx, themeSeededKey, "true")
+	// Keep the seeded marker for backward compatibility.
+	if _, err := h.settings.Get(ctx, themeSeededKey); err != nil {
+		return h.settings.Set(ctx, themeSeededKey, "true")
+	}
+	return nil
+}
+
+// navyCopperTokens returns the complete token overrides for the Navy Copper theme.
+func navyCopperTokens() ThemeTokens {
+	return ThemeTokens{
+		Backgrounds: map[string]string{
+			"bg-root":     "#0D2238",
+			"bg-surface":  "#122E4E",
+			"bg-card":     "#1A4674",
+			"bg-elevated": "#1E5080",
+			"bg-hover":    "rgba(98, 203, 100, 0.06)",
+			"bg-active":   "rgba(98, 203, 100, 0.10)",
+			"bg-selected": "rgba(98, 203, 100, 0.08)",
+		},
+		Text: map[string]string{
+			"text-primary":   "#E8EDF2",
+			"text-secondary": "#8BA87A",
+			"text-muted":     "#658646",
+			"text-accent":    "#62CB64",
+			"text-warm":      "#D59958",
+			"text-inverse":   "#0D2238",
+		},
+		Borders: map[string]string{
+			"border-subtle":  "rgba(98, 203, 100, 0.08)",
+			"border-default": "rgba(98, 203, 100, 0.15)",
+			"border-strong":  "rgba(98, 203, 100, 0.25)",
+			"border-focus":   "#62CB64",
+		},
+		Buttons: map[string]string{
+			"btn-primary-bg":    "#62CB64",
+			"btn-primary-hover": "#78D67A",
+			"btn-primary-text":  "#0D2238",
+			"btn-danger-bg":     "#991b1b",
+			"btn-danger-hover":  "#b91c1c",
+			"btn-danger-text":   "#fecaca",
+		},
+		Inputs: map[string]string{
+			"input-bg":          "#0D2238",
+			"input-border":      "rgba(98, 203, 100, 0.15)",
+			"input-focus":       "#62CB64",
+			"input-text":        "#E8EDF2",
+			"input-placeholder": "#658646",
+		},
+		Sidebar: map[string]string{
+			"sidebar-bg":        "#0D2238",
+			"sidebar-item":      "#8BA87A",
+			"sidebar-active":    "#62CB64",
+			"sidebar-active-bg": "rgba(98, 203, 100, 0.10)",
+		},
+		Status: map[string]string{
+			"status-online":   "#62CB64",
+			"status-degraded": "#D59958",
+			"status-offline":  "#ef4444",
+			"status-unknown":  "#658646",
+		},
+		Charts: map[string]string{
+			"chart-green": "#62CB64",
+			"chart-amber": "#D59958",
+			"chart-sage":  "#658646",
+			"chart-red":   "#ef4444",
+			"chart-blue":  "#4A90D9",
+			"chart-grid":  "rgba(98, 203, 100, 0.06)",
+		},
+		Effects: map[string]string{
+			"shadow-sm":   "0 1px 2px rgba(0, 0, 0, 0.4)",
+			"shadow-md":   "0 4px 6px rgba(0, 0, 0, 0.35)",
+			"shadow-lg":   "0 10px 25px rgba(0, 0, 0, 0.4)",
+			"shadow-glow": "0 0 20px rgba(98, 203, 100, 0.12)",
+		},
+	}
+}
+
+// classicDarkTokens returns the complete token overrides for the Classic Dark theme.
+func classicDarkTokens() ThemeTokens {
+	return ThemeTokens{
+		Backgrounds: map[string]string{
+			"bg-root":     "#1a1b26",
+			"bg-surface":  "#1e1f2b",
+			"bg-card":     "#252736",
+			"bg-elevated": "#2a2b3d",
+			"bg-hover":    "rgba(91, 156, 246, 0.06)",
+			"bg-active":   "rgba(91, 156, 246, 0.10)",
+			"bg-selected": "rgba(91, 156, 246, 0.08)",
+		},
+		Text: map[string]string{
+			"text-primary":   "#e1e2e7",
+			"text-secondary": "#a0a4b8",
+			"text-muted":     "#6b6f85",
+			"text-accent":    "#5b9cf6",
+			"text-warm":      "#e6a855",
+			"text-inverse":   "#1a1b26",
+		},
+		Borders: map[string]string{
+			"border-subtle":  "rgba(91, 156, 246, 0.08)",
+			"border-default": "rgba(91, 156, 246, 0.15)",
+			"border-strong":  "rgba(91, 156, 246, 0.25)",
+			"border-focus":   "#5b9cf6",
+		},
+		Buttons: map[string]string{
+			"btn-primary-bg":    "#5b9cf6",
+			"btn-primary-hover": "#7ab3f8",
+			"btn-primary-text":  "#ffffff",
+			"btn-danger-bg":     "#991b1b",
+			"btn-danger-hover":  "#b91c1c",
+			"btn-danger-text":   "#fecaca",
+		},
+		Inputs: map[string]string{
+			"input-bg":          "#1a1b26",
+			"input-border":      "rgba(91, 156, 246, 0.15)",
+			"input-focus":       "#5b9cf6",
+			"input-text":        "#e1e2e7",
+			"input-placeholder": "#6b6f85",
+		},
+		Sidebar: map[string]string{
+			"sidebar-bg":        "#1a1b26",
+			"sidebar-item":      "#a0a4b8",
+			"sidebar-active":    "#5b9cf6",
+			"sidebar-active-bg": "rgba(91, 156, 246, 0.10)",
+		},
+		Status: map[string]string{
+			"status-online":   "#4ade80",
+			"status-degraded": "#e6a855",
+			"status-offline":  "#ef4444",
+			"status-unknown":  "#a0a4b8",
+		},
+		Charts: map[string]string{
+			"chart-green": "#4ade80",
+			"chart-amber": "#e6a855",
+			"chart-sage":  "#a0a4b8",
+			"chart-red":   "#ef4444",
+			"chart-blue":  "#5b9cf6",
+			"chart-grid":  "rgba(91, 156, 246, 0.06)",
+		},
+		Effects: map[string]string{
+			"shadow-sm":   "0 1px 2px rgba(0, 0, 0, 0.4)",
+			"shadow-md":   "0 4px 6px rgba(0, 0, 0, 0.35)",
+			"shadow-lg":   "0 10px 25px rgba(0, 0, 0, 0.4)",
+			"shadow-glow": "0 0 20px rgba(91, 156, 246, 0.12)",
+		},
+	}
+}
+
+// classicLightTokens returns the complete token overrides for the Classic Light theme.
+func classicLightTokens() ThemeTokens {
+	return ThemeTokens{
+		Backgrounds: map[string]string{
+			"bg-root":     "#f6f8fa",
+			"bg-surface":  "#eef1f5",
+			"bg-card":     "#ffffff",
+			"bg-elevated": "#ffffff",
+			"bg-hover":    "rgba(9, 105, 218, 0.04)",
+			"bg-active":   "rgba(9, 105, 218, 0.08)",
+			"bg-selected": "rgba(9, 105, 218, 0.06)",
+		},
+		Text: map[string]string{
+			"text-primary":   "#1f2328",
+			"text-secondary": "#656d76",
+			"text-muted":     "#8b949e",
+			"text-accent":    "#0969da",
+			"text-warm":      "#bf8700",
+			"text-inverse":   "#f6f8fa",
+		},
+		Borders: map[string]string{
+			"border-subtle":  "rgba(9, 105, 218, 0.06)",
+			"border-default": "rgba(9, 105, 218, 0.15)",
+			"border-strong":  "rgba(9, 105, 218, 0.25)",
+			"border-focus":   "#0969da",
+		},
+		Buttons: map[string]string{
+			"btn-primary-bg":    "#0969da",
+			"btn-primary-hover": "#0757b5",
+			"btn-primary-text":  "#ffffff",
+			"btn-danger-bg":     "#cf222e",
+			"btn-danger-hover":  "#a40e26",
+			"btn-danger-text":   "#ffffff",
+		},
+		Inputs: map[string]string{
+			"input-bg":          "#ffffff",
+			"input-border":      "rgba(9, 105, 218, 0.15)",
+			"input-focus":       "#0969da",
+			"input-text":        "#1f2328",
+			"input-placeholder": "#8b949e",
+		},
+		Sidebar: map[string]string{
+			"sidebar-bg":        "#eef1f5",
+			"sidebar-item":      "#656d76",
+			"sidebar-active":    "#0969da",
+			"sidebar-active-bg": "rgba(9, 105, 218, 0.08)",
+		},
+		Status: map[string]string{
+			"status-online":   "#1a7f37",
+			"status-degraded": "#bf8700",
+			"status-offline":  "#cf222e",
+			"status-unknown":  "#8b949e",
+		},
+		Charts: map[string]string{
+			"chart-green": "#1a7f37",
+			"chart-amber": "#bf8700",
+			"chart-sage":  "#8b949e",
+			"chart-red":   "#cf222e",
+			"chart-blue":  "#0969da",
+			"chart-grid":  "rgba(9, 105, 218, 0.06)",
+		},
+		Effects: map[string]string{
+			"shadow-sm":   "0 1px 2px rgba(0, 0, 0, 0.05)",
+			"shadow-md":   "0 4px 6px rgba(0, 0, 0, 0.07)",
+			"shadow-lg":   "0 10px 25px rgba(0, 0, 0, 0.1)",
+			"shadow-glow": "0 0 20px rgba(9, 105, 218, 0.08)",
+		},
+	}
 }
 
 // generateID returns a random 32-character hex string suitable for use as a theme ID.
