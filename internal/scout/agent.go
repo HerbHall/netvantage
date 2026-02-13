@@ -11,6 +11,7 @@ import (
 	"time"
 
 	scoutpb "github.com/HerbHall/subnetree/api/proto/v1"
+	"github.com/HerbHall/subnetree/internal/scout/metrics"
 	"go.uber.org/zap"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
@@ -18,18 +19,20 @@ import (
 
 // Agent is the Scout monitoring agent.
 type Agent struct {
-	config *Config
-	logger *zap.Logger
-	cancel context.CancelFunc
-	conn   *grpc.ClientConn
-	client scoutpb.ScoutServiceClient
+	config    *Config
+	logger    *zap.Logger
+	cancel    context.CancelFunc
+	conn      *grpc.ClientConn
+	client    scoutpb.ScoutServiceClient
+	collector metrics.Collector
 }
 
 // NewAgent creates a new Scout agent instance.
 func NewAgent(config *Config, logger *zap.Logger) *Agent {
 	return &Agent{
-		config: config,
-		logger: logger,
+		config:    config,
+		logger:    logger,
+		collector: metrics.NewCollector(logger),
 	}
 }
 
@@ -155,12 +158,23 @@ func (a *Agent) enroll(ctx context.Context) error {
 }
 
 func (a *Agent) checkIn(ctx context.Context) {
+	var sysMetrics *scoutpb.SystemMetrics
+	if a.collector != nil {
+		m, err := a.collector.Collect(ctx)
+		if err != nil {
+			a.logger.Warn("metrics collection failed", zap.Error(err))
+		} else {
+			sysMetrics = m
+		}
+	}
+
 	resp, err := a.client.CheckIn(ctx, &scoutpb.CheckInRequest{
 		AgentId:      a.config.AgentID,
 		Hostname:     hostname(),
 		Platform:     agentPlatform(),
 		AgentVersion: "0.1.0",
 		ProtoVersion: 1,
+		Metrics:      sysMetrics,
 	})
 	if err != nil {
 		a.logger.Warn("check-in failed", zap.Error(err))
