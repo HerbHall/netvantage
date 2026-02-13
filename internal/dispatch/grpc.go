@@ -4,6 +4,7 @@ import (
 	"context"
 	"crypto/sha256"
 	"fmt"
+	"strconv"
 	"time"
 
 	scoutpb "github.com/HerbHall/subnetree/api/proto/v1"
@@ -58,17 +59,31 @@ func (s *scoutServer) CheckIn(ctx context.Context, req *scoutpb.CheckInRequest) 
 		s.logger.Warn("check-in update failed", zap.String("agent_id", agentID), zap.Error(err))
 	}
 
-	// 4. Publish event.
+	// 4. Log and publish metrics if present.
+	payload := map[string]string{
+		"agent_id": agentID,
+		"hostname": req.Hostname,
+		"platform": req.Platform,
+	}
+	if req.Metrics != nil {
+		s.logger.Debug("received agent metrics",
+			zap.String("agent_id", agentID),
+			zap.Float64("cpu_percent", req.Metrics.CpuPercent),
+			zap.Float64("memory_percent", req.Metrics.MemoryPercent),
+			zap.Float64("memory_used_bytes", req.Metrics.MemoryUsedBytes),
+			zap.Float64("memory_total_bytes", req.Metrics.MemoryTotalBytes),
+			zap.Int("disk_count", len(req.Metrics.Disks)),
+			zap.Int("network_count", len(req.Metrics.Networks)),
+		)
+		payload["cpu_percent"] = strconv.FormatFloat(req.Metrics.CpuPercent, 'f', 2, 64)
+		payload["memory_percent"] = strconv.FormatFloat(req.Metrics.MemoryPercent, 'f', 2, 64)
+	}
 	if s.bus != nil {
 		_ = s.bus.Publish(ctx, plugin.Event{
 			Topic:     TopicAgentCheckIn,
 			Source:    "dispatch",
 			Timestamp: time.Now(),
-			Payload: map[string]string{
-				"agent_id": agentID,
-				"hostname": req.Hostname,
-				"platform": req.Platform,
-			},
+			Payload:   payload,
 		})
 	}
 
