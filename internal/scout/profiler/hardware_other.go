@@ -41,7 +41,7 @@ func collectHardware(_ context.Context, logger *zap.Logger) (*scoutpb.HardwarePr
 
 // readCPUInfo parses /proc/cpuinfo for CPU model, physical cores, and logical CPUs.
 func readCPUInfo(logger *zap.Logger) (model string, physCores, logicalCPUs int32) {
-	logicalCPUs = int32(runtime.NumCPU())
+	logicalCPUs = int32(runtime.NumCPU()) //nolint:gosec // G115: NumCPU fits in int32
 
 	data, err := os.ReadFile("/proc/cpuinfo")
 	if err != nil {
@@ -110,7 +110,7 @@ func parseCPUInfo(content string, logicalCPUs int32) (model string, physCores, l
 	}
 
 	if len(uniqueCores) > 0 {
-		physCores = int32(len(uniqueCores))
+		physCores = int32(len(uniqueCores)) //nolint:gosec // G115: core count fits in int32
 	} else {
 		// Single-socket or container without physical/core IDs.
 		physCores = logical
@@ -166,7 +166,7 @@ func readBlockDevices(logger *zap.Logger) []*scoutpb.DiskInfo {
 			continue
 		}
 
-		basePath := filepath.Join("/sys/block", name)
+		basePath := "/sys/block/" + name
 
 		// Read size (in 512-byte sectors).
 		sizeData, err := os.ReadFile(filepath.Join(basePath, "size"))
@@ -232,7 +232,7 @@ func readNetworkInterfaces(logger *zap.Logger) []*scoutpb.NICInfo {
 			continue
 		}
 
-		basePath := filepath.Join("/sys/class/net", name)
+		basePath := "/sys/class/net/" + name
 		nic := &scoutpb.NICInfo{
 			Name: name,
 		}
