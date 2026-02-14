@@ -211,6 +211,8 @@
 
 ### Phase 1b: Windows Scout Agent
 
+**Status:** Core agent functionality shipped 2026-02-13 (PRs #179-182, #190-192). Scout reports metrics and system profiles to Dispatch via gRPC. Dashboard shows agent list, detail, and enrollment tokens. mTLS and certificate management deferred.
+
 **Goal:** First agent reporting metrics to server.
 
 #### Pre-Phase Tooling Research
@@ -223,16 +225,16 @@
 
 #### Scout Agent Implementation
 
-- [ ] Scout agent binary for Windows (skeleton exists, not functional)
+- [x] Scout agent binary for Windows (functional: metrics, profiling, enrollment -- PRs #179-182)
 - [ ] Internal CA for mTLS certificate management
-- [ ] Token-based enrollment with certificate signing
-- [ ] gRPC communication with mTLS
-- [ ] System metrics: CPU, memory, disk, network
-- [ ] System profiling: hardware specs, installed software, running services (#164)
+- [x] Token-based enrollment (enrollment tokens with max uses and expiry -- PRs #180, #192; mTLS cert signing deferred)
+- [x] gRPC communication (insecure transport -- PR #180; mTLS deferred)
+- [x] System metrics: CPU, memory, disk, network (PR #181)
+- [x] System profiling: hardware specs, installed software, running services (#164, PR #182)
 - [ ] Exponential backoff reconnection
 - [ ] Certificate auto-renewal (90-day certs, renew at day 60)
-- [x] Dispatch module: agent list, status, check-in tracking (stub with lifecycle tests)
-- [ ] Dashboard: agent status view, enrollment flow
+- [x] Dispatch module: agent list, status, check-in tracking (full implementation -- PR #179)
+- [x] Dashboard: agent status view, enrollment flow (PRs #190, #191, #192)
 - [ ] Proto management via buf (replace protoc)
 
 #### Device Management API (#162)
@@ -254,6 +256,8 @@
 
 ### Phase 2: Core Monitoring + Multi-Tenancy
 
+**Status:** Active development as of 2026-02-14. SNMP discovery (PRs #204-205), TCP/HTTP checks (#196, #202), webhook notifications (#203), monitoring dashboard (#206), and service mapping (#193-195) shipped. Multi-tenancy, Tailscale plugin, and PostgreSQL not yet started.
+
 **Goal:** Comprehensive monitoring with alerting. MSP-ready multi-tenancy.
 
 #### Pre-Phase Tooling Research
@@ -264,12 +268,12 @@
 - [ ] Evaluate Plausible Analytics: self-hosted vs cloud, deployment requirements
 - [ ] Research OpenTelemetry Go SDK integration patterns for tracing
 - [ ] Evaluate SBOM generation tooling (Syft) and signing (Cosign) for release pipeline
-- [ ] Research SNMP Go libraries (gosnmp) and MIB parsing
+- [x] Research SNMP Go libraries (gosnmp) and MIB parsing (gosnmp adopted -- PR #204)
 - [ ] Evaluate mDNS/UPnP discovery libraries (hashicorp/mdns, huin/goupnp)
 
 #### Discovery Enhancements
 
-- [ ] SNMP v2c/v3 discovery
+- [x] SNMP v2c/v3 discovery (gosnmp, credential-based -- PRs #204, #205)
 - [ ] mDNS/Bonjour discovery
 - [ ] UPnP/SSDP discovery
 - [ ] Tailscale plugin: tailnet device discovery via Tailscale API
@@ -284,10 +288,10 @@
 
 #### Monitoring (Pulse)
 
-- [x] Uptime monitoring (ICMP, TCP port, HTTP/HTTPS) (ICMP shipped in v0.2.0; TCP/HTTP deferred)
+- [x] Uptime monitoring (ICMP, TCP port, HTTP/HTTPS) (ICMP in v0.2.0; TCP/HTTP in PRs #196, #202)
 - [x] Sensible default thresholds (avoid alert fatigue)
 - [ ] Dependency-aware alerting (router down suppresses downstream alerts)
-- [ ] Alert notifications: email, webhook, Slack, PagerDuty (as notifier plugins)
+- [x] Alert notifications: webhook with HMAC-SHA256 signing (PR #203; email, Slack, PagerDuty TODO)
 - [ ] Metrics history and time-series graphs
 - [ ] Maintenance windows (suppress alerts during scheduled work)
 
@@ -328,12 +332,12 @@
 
 #### Service-to-Device Mapping (#165)
 
-- [ ] Service entity: maps discovered services (Docker, systemd, Windows) to host devices
-- [ ] Auto-populate from Docs module collectors + Scout system profiling
-- [ ] Correlate service resource usage with Pulse device metrics
-- [ ] Utilization grading per device (A-F rating based on efficiency)
-- [ ] Dashboard: service map view (device -> services -> utilization)
-- [ ] Dashboard: underutilized/overloaded device lists
+- [x] Service entity: maps discovered services (Docker, systemd, Windows) to host devices (PR #193)
+- [x] Auto-populate from Docs module collectors + Scout system profiling (PR #193)
+- [x] Correlate service resource usage with Pulse device metrics (PRs #194, #195)
+- [x] Utilization grading per device (A-F rating based on efficiency) (PR #195)
+- [x] Dashboard: service map view (device -> services -> utilization) (PR #195)
+- [x] Dashboard: underutilized/overloaded device lists (PR #195)
 - [ ] Service movement detection (service appears on new device)
 
 #### Infrastructure
@@ -345,11 +349,11 @@
 - [ ] OpenTelemetry tracing
 - [ ] Plugin developer SDK and documentation
 - [ ] Interface Catalog: document all plugin interface types (API, Event, Config, Data) with versioning policy
-- [ ] Dashboard: monitoring views, alert management, metric graphs
+- [x] Dashboard: monitoring views, alert management (PR #206; metric graphs TODO)
 - [ ] MFA/TOTP authentication support
 - [ ] SBOM generation (Syft) and SLSA provenance for releases
 - [ ] Cosign signing for Docker images
-- [ ] govulncheck + Trivy in CI pipeline
+- [x] govulncheck in CI pipeline (Trivy TODO)
 - [ ] IPv6 scanning and agent communication support
 - [ ] Per-tenant rate limiting
 - [ ] Public demo instance: read-only demo on free-tier cloud (Oracle Cloud ARM64 or similar) with synthetic data, linked from README and website
