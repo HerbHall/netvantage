@@ -27,6 +27,7 @@ type Module struct {
 	oui           *OUITable
 	orchestrator  *ScanOrchestrator
 	snmpCollector *SNMPCollector
+	mdns          *MDNSListener
 	credAccessor  CredentialAccessor
 	credProvider  roles.CredentialProvider
 	activeScans   sync.Map // scanID -> context.CancelFunc
@@ -75,6 +76,12 @@ func (m *Module) Init(ctx context.Context, deps plugin.Dependencies) error {
 		if d := deps.Config.GetDuration("device_lost_after"); d > 0 {
 			m.cfg.DeviceLostAfter = d
 		}
+		if deps.Config.IsSet("mdns_enabled") {
+			m.cfg.MDNSEnabled = deps.Config.GetBool("mdns_enabled")
+		}
+		if d := deps.Config.GetDuration("mdns_interval"); d > 0 {
+			m.cfg.MDNSInterval = d
+		}
 	}
 
 	// Run database migrations.
@@ -94,6 +101,11 @@ func (m *Module) Init(ctx context.Context, deps plugin.Dependencies) error {
 
 	m.orchestrator = NewScanOrchestrator(m.store, m.bus, m.oui, pinger, arp, m.logger)
 
+	// Initialize mDNS listener if enabled.
+	if m.cfg.MDNSEnabled {
+		m.mdns = NewMDNSListener(m.store, m.bus, m.logger.Named("mdns"), m.cfg.MDNSInterval)
+	}
+
 	m.logger.Info("recon module initialized")
 	return nil
 }
@@ -107,6 +119,18 @@ func (m *Module) Start(_ context.Context) error {
 	// Start device-lost checker background goroutine.
 	m.wg.Add(1)
 	go m.runDeviceLostChecker()
+
+	// Start mDNS listener background goroutine if configured.
+	if m.mdns != nil {
+		m.wg.Add(1)
+		go func() {
+			defer m.wg.Done()
+			m.mdns.Run(m.scanCtx)
+		}()
+		m.logger.Info("mDNS passive discovery enabled",
+			zap.Duration("interval", m.cfg.MDNSInterval),
+		)
+	}
 
 	m.logger.Info("recon module started")
 	return nil
@@ -168,6 +192,7 @@ func (m *Module) Health(_ context.Context) plugin.HealthStatus {
 	details := map[string]string{
 		"active_scans": strconv.Itoa(activeCount),
 		"arp_enabled":  strconv.FormatBool(m.cfg.ARPEnabled),
+		"mdns_enabled": strconv.FormatBool(m.cfg.MDNSEnabled),
 	}
 
 	return plugin.HealthStatus{
