@@ -843,3 +843,363 @@ func TestDeleteOldAlerts(t *testing.T) {
 		t.Errorf("dev-002 active alert ID = %q, want %q", dev2Active[0].ID, "alert-active-old")
 	}
 }
+
+// -- ListAllChecks --
+
+func TestListAllChecks(t *testing.T) {
+	s := testStore(t)
+	ctx := context.Background()
+
+	now := time.Now().Truncate(time.Second)
+
+	enabled := &Check{
+		ID:              "chk-enabled",
+		DeviceID:        "dev-001",
+		CheckType:       "icmp",
+		Target:          "192.168.1.1",
+		IntervalSeconds: 30,
+		Enabled:         true,
+		CreatedAt:       now,
+		UpdatedAt:       now,
+	}
+	insertTestCheck(t, s, enabled)
+
+	disabled := &Check{
+		ID:              "chk-disabled",
+		DeviceID:        "dev-002",
+		CheckType:       "tcp",
+		Target:          "192.168.1.2:22",
+		IntervalSeconds: 60,
+		Enabled:         false,
+		CreatedAt:       now.Add(time.Second),
+		UpdatedAt:       now.Add(time.Second),
+	}
+	insertTestCheck(t, s, disabled)
+
+	checks, err := s.ListAllChecks(ctx)
+	if err != nil {
+		t.Fatalf("ListAllChecks: %v", err)
+	}
+	if len(checks) != 2 {
+		t.Fatalf("expected 2 checks (enabled + disabled), got %d", len(checks))
+	}
+	if checks[0].ID != "chk-enabled" {
+		t.Errorf("checks[0].ID = %q, want %q", checks[0].ID, "chk-enabled")
+	}
+	if checks[1].ID != "chk-disabled" {
+		t.Errorf("checks[1].ID = %q, want %q", checks[1].ID, "chk-disabled")
+	}
+	if checks[1].Enabled {
+		t.Errorf("checks[1].Enabled = true, want false")
+	}
+}
+
+// -- UpdateCheck --
+
+func TestUpdateCheck(t *testing.T) {
+	s := testStore(t)
+	ctx := context.Background()
+
+	now := time.Now().Truncate(time.Second)
+	c := &Check{
+		ID:              "chk-001",
+		DeviceID:        "dev-001",
+		CheckType:       "icmp",
+		Target:          "192.168.1.1",
+		IntervalSeconds: 30,
+		Enabled:         true,
+		CreatedAt:       now,
+		UpdatedAt:       now,
+	}
+	insertTestCheck(t, s, c)
+
+	// Update the check.
+	c.CheckType = "tcp"
+	c.Target = "192.168.1.1:443"
+	c.IntervalSeconds = 60
+	c.Enabled = false
+	c.UpdatedAt = now.Add(time.Minute)
+
+	if err := s.UpdateCheck(ctx, c); err != nil {
+		t.Fatalf("UpdateCheck: %v", err)
+	}
+
+	got, err := s.GetCheck(ctx, "chk-001")
+	if err != nil {
+		t.Fatalf("GetCheck after update: %v", err)
+	}
+	if got == nil {
+		t.Fatal("GetCheck returned nil after update")
+	}
+	if got.CheckType != "tcp" {
+		t.Errorf("CheckType = %q, want %q", got.CheckType, "tcp")
+	}
+	if got.Target != "192.168.1.1:443" {
+		t.Errorf("Target = %q, want %q", got.Target, "192.168.1.1:443")
+	}
+	if got.IntervalSeconds != 60 {
+		t.Errorf("IntervalSeconds = %d, want %d", got.IntervalSeconds, 60)
+	}
+	if got.Enabled {
+		t.Errorf("Enabled = true, want false")
+	}
+}
+
+// -- DeleteCheck --
+
+func TestDeleteCheck(t *testing.T) {
+	s := testStore(t)
+	ctx := context.Background()
+
+	now := time.Now().Truncate(time.Second)
+	c := &Check{
+		ID:              "chk-001",
+		DeviceID:        "dev-001",
+		CheckType:       "icmp",
+		Target:          "192.168.1.1",
+		IntervalSeconds: 30,
+		Enabled:         true,
+		CreatedAt:       now,
+		UpdatedAt:       now,
+	}
+	insertTestCheck(t, s, c)
+
+	// Insert a result for the check.
+	r := &CheckResult{
+		CheckID:   "chk-001",
+		DeviceID:  "dev-001",
+		Success:   true,
+		LatencyMs: 10.0,
+		CheckedAt: now,
+	}
+	if err := s.InsertResult(ctx, r); err != nil {
+		t.Fatalf("InsertResult: %v", err)
+	}
+
+	// Delete the check -- should cascade delete results.
+	if err := s.DeleteCheck(ctx, "chk-001"); err != nil {
+		t.Fatalf("DeleteCheck: %v", err)
+	}
+
+	// Verify the check is gone.
+	got, err := s.GetCheck(ctx, "chk-001")
+	if err != nil {
+		t.Fatalf("GetCheck after delete: %v", err)
+	}
+	if got != nil {
+		t.Errorf("GetCheck after delete = %+v, want nil", got)
+	}
+
+	// Verify results are also gone.
+	results, err := s.ListResults(ctx, "dev-001", 100)
+	if err != nil {
+		t.Fatalf("ListResults after delete: %v", err)
+	}
+	if len(results) != 0 {
+		t.Errorf("expected 0 results after cascade delete, got %d", len(results))
+	}
+}
+
+// -- GetAlert --
+
+func TestGetAlert(t *testing.T) {
+	s := testStore(t)
+	ctx := context.Background()
+
+	now := time.Now().Truncate(time.Second)
+
+	c := &Check{
+		ID:              "chk-001",
+		DeviceID:        "dev-001",
+		CheckType:       "icmp",
+		Target:          "192.168.1.1",
+		IntervalSeconds: 30,
+		Enabled:         true,
+		CreatedAt:       now,
+		UpdatedAt:       now,
+	}
+	insertTestCheck(t, s, c)
+
+	a := &Alert{
+		ID:                  "alert-001",
+		CheckID:             "chk-001",
+		DeviceID:            "dev-001",
+		Severity:            "critical",
+		Message:             "Host unreachable",
+		TriggeredAt:         now,
+		ConsecutiveFailures: 5,
+	}
+	if err := s.InsertAlert(ctx, a); err != nil {
+		t.Fatalf("InsertAlert: %v", err)
+	}
+
+	got, err := s.GetAlert(ctx, "alert-001")
+	if err != nil {
+		t.Fatalf("GetAlert: %v", err)
+	}
+	if got == nil {
+		t.Fatal("GetAlert returned nil, want non-nil")
+	}
+	if got.ID != "alert-001" {
+		t.Errorf("ID = %q, want %q", got.ID, "alert-001")
+	}
+	if got.Severity != "critical" {
+		t.Errorf("Severity = %q, want %q", got.Severity, "critical")
+	}
+	if got.AcknowledgedAt != nil {
+		t.Errorf("AcknowledgedAt = %v, want nil", got.AcknowledgedAt)
+	}
+}
+
+func TestGetAlert_NotFound(t *testing.T) {
+	s := testStore(t)
+	ctx := context.Background()
+
+	got, err := s.GetAlert(ctx, "nonexistent")
+	if err != nil {
+		t.Fatalf("GetAlert: %v", err)
+	}
+	if got != nil {
+		t.Errorf("GetAlert = %+v, want nil", got)
+	}
+}
+
+// -- ListAlerts with filters --
+
+func TestListAlerts_WithFilters(t *testing.T) {
+	s := testStore(t)
+	ctx := context.Background()
+
+	now := time.Now().Truncate(time.Second)
+
+	// Insert checks for two devices.
+	c1 := &Check{
+		ID: "chk-001", DeviceID: "dev-001", CheckType: "icmp",
+		Target: "192.168.1.1", IntervalSeconds: 30, Enabled: true,
+		CreatedAt: now, UpdatedAt: now,
+	}
+	c2 := &Check{
+		ID: "chk-002", DeviceID: "dev-002", CheckType: "icmp",
+		Target: "192.168.1.2", IntervalSeconds: 30, Enabled: true,
+		CreatedAt: now, UpdatedAt: now,
+	}
+	insertTestCheck(t, s, c1)
+	insertTestCheck(t, s, c2)
+
+	// Active critical alert for dev-001.
+	a1 := &Alert{
+		ID: "alert-001", CheckID: "chk-001", DeviceID: "dev-001",
+		Severity: "critical", Message: "Host down",
+		TriggeredAt: now, ConsecutiveFailures: 5,
+	}
+	// Active warning alert for dev-002.
+	a2 := &Alert{
+		ID: "alert-002", CheckID: "chk-002", DeviceID: "dev-002",
+		Severity: "warning", Message: "High latency",
+		TriggeredAt: now.Add(time.Second), ConsecutiveFailures: 3,
+	}
+	// Resolved alert for dev-001.
+	resolvedAt := now.Add(5 * time.Minute)
+	a3 := &Alert{
+		ID: "alert-003", CheckID: "chk-001", DeviceID: "dev-001",
+		Severity: "info", Message: "Resolved issue",
+		TriggeredAt: now.Add(-10 * time.Minute), ResolvedAt: &resolvedAt,
+		ConsecutiveFailures: 1,
+	}
+	if err := s.InsertAlert(ctx, a1); err != nil {
+		t.Fatalf("InsertAlert a1: %v", err)
+	}
+	if err := s.InsertAlert(ctx, a2); err != nil {
+		t.Fatalf("InsertAlert a2: %v", err)
+	}
+	if err := s.InsertAlert(ctx, a3); err != nil {
+		t.Fatalf("InsertAlert a3: %v", err)
+	}
+
+	// Test: active only (default).
+	alerts, err := s.ListAlerts(ctx, AlertFilters{ActiveOnly: true})
+	if err != nil {
+		t.Fatalf("ListAlerts active: %v", err)
+	}
+	if len(alerts) != 2 {
+		t.Fatalf("active alerts: expected 2, got %d", len(alerts))
+	}
+
+	// Test: filter by device_id.
+	alerts, err = s.ListAlerts(ctx, AlertFilters{DeviceID: "dev-001", ActiveOnly: false})
+	if err != nil {
+		t.Fatalf("ListAlerts device_id: %v", err)
+	}
+	if len(alerts) != 2 {
+		t.Fatalf("dev-001 alerts: expected 2 (1 active + 1 resolved), got %d", len(alerts))
+	}
+
+	// Test: filter by severity.
+	alerts, err = s.ListAlerts(ctx, AlertFilters{Severity: "critical", ActiveOnly: false})
+	if err != nil {
+		t.Fatalf("ListAlerts severity: %v", err)
+	}
+	if len(alerts) != 1 {
+		t.Fatalf("critical alerts: expected 1, got %d", len(alerts))
+	}
+	if alerts[0].ID != "alert-001" {
+		t.Errorf("critical alert ID = %q, want %q", alerts[0].ID, "alert-001")
+	}
+
+	// Test: limit.
+	alerts, err = s.ListAlerts(ctx, AlertFilters{ActiveOnly: false, Limit: 1})
+	if err != nil {
+		t.Fatalf("ListAlerts limit: %v", err)
+	}
+	if len(alerts) != 1 {
+		t.Fatalf("limited alerts: expected 1, got %d", len(alerts))
+	}
+}
+
+// -- AcknowledgeAlert --
+
+func TestAcknowledgeAlert(t *testing.T) {
+	s := testStore(t)
+	ctx := context.Background()
+
+	now := time.Now().Truncate(time.Second)
+
+	c := &Check{
+		ID: "chk-001", DeviceID: "dev-001", CheckType: "icmp",
+		Target: "192.168.1.1", IntervalSeconds: 30, Enabled: true,
+		CreatedAt: now, UpdatedAt: now,
+	}
+	insertTestCheck(t, s, c)
+
+	a := &Alert{
+		ID: "alert-001", CheckID: "chk-001", DeviceID: "dev-001",
+		Severity: "warning", Message: "High latency",
+		TriggeredAt: now, ConsecutiveFailures: 3,
+	}
+	if err := s.InsertAlert(ctx, a); err != nil {
+		t.Fatalf("InsertAlert: %v", err)
+	}
+
+	// Verify not acknowledged yet.
+	got, err := s.GetAlert(ctx, "alert-001")
+	if err != nil {
+		t.Fatalf("GetAlert: %v", err)
+	}
+	if got.AcknowledgedAt != nil {
+		t.Fatal("AcknowledgedAt should be nil before acknowledging")
+	}
+
+	// Acknowledge.
+	if err := s.AcknowledgeAlert(ctx, "alert-001"); err != nil {
+		t.Fatalf("AcknowledgeAlert: %v", err)
+	}
+
+	// Verify acknowledged.
+	got, err = s.GetAlert(ctx, "alert-001")
+	if err != nil {
+		t.Fatalf("GetAlert after acknowledge: %v", err)
+	}
+	if got.AcknowledgedAt == nil {
+		t.Fatal("AcknowledgedAt should be set after acknowledging")
+	}
+}

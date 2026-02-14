@@ -344,3 +344,71 @@ export interface FleetSummary {
   underutilized?: string[]
   overloaded?: string[]
 }
+
+// ============================================================================
+// Monitoring Types (Pulse)
+// ============================================================================
+
+/** Check type classification. */
+export type CheckType = 'icmp' | 'tcp' | 'http'
+
+/** Monitoring check for a device. */
+export interface Check {
+  id: string
+  device_id: string
+  check_type: CheckType
+  target: string
+  interval_seconds: number
+  enabled: boolean
+  created_at: string
+  updated_at: string
+}
+
+/** Result from a single health check execution. */
+export interface CheckResult {
+  id: number
+  check_id: string
+  device_id: string
+  success: boolean
+  latency_ms: number
+  packet_loss: number
+  error_message?: string
+  checked_at: string
+}
+
+/** Monitoring alert triggered by consecutive check failures. */
+export interface Alert {
+  id: string
+  check_id: string
+  device_id: string
+  severity: string
+  message: string
+  triggered_at: string
+  resolved_at?: string
+  acknowledged_at?: string
+  consecutive_failures: number
+}
+
+/** Request body for creating a new check. */
+export interface CreateCheckRequest {
+  device_id: string
+  check_type: CheckType
+  target: string
+  interval_seconds?: number
+}
+
+/** Request body for updating a check. */
+export interface UpdateCheckRequest {
+  target?: string
+  check_type?: CheckType
+  interval_seconds?: number
+  enabled?: boolean
+}
+
+/** Composite monitoring status for a device. */
+export interface MonitoringStatus {
+  device_id: string
+  healthy: boolean
+  message: string
+  checked_at?: string
+}
