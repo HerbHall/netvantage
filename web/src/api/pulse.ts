@@ -9,6 +9,9 @@ import type {
   NotificationChannel,
   CreateNotificationRequest,
   UpdateNotificationRequest,
+  MetricSeries,
+  MetricName,
+  MetricRange,
 } from './types'
 
 /**
@@ -161,4 +164,21 @@ export async function deleteChannel(id: string): Promise<void> {
  */
 export async function testChannel(id: string): Promise<void> {
   return api.post<void>(`/pulse/notifications/${id}/test`, {})
+}
+
+// ============================================================================
+// Metrics History
+// ============================================================================
+
+/**
+ * Get time-series metric data for a device.
+ */
+export async function getDeviceMetrics(
+  deviceId: string,
+  metric: MetricName,
+  range: MetricRange
+): Promise<MetricSeries> {
+  return api.get<MetricSeries>(
+    `/pulse/metrics/${deviceId}?metric=${metric}&range=${range}`
+  )
 }

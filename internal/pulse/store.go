@@ -7,6 +7,20 @@ import (
 	"time"
 )
 
+// MetricDataPoint represents a single aggregated metric value at a point in time.
+type MetricDataPoint struct {
+	Timestamp time.Time `json:"timestamp"`
+	Value     float64   `json:"value"`
+}
+
+// MetricSeries represents a named time-series of aggregated metric data.
+type MetricSeries struct {
+	DeviceID string            `json:"device_id"`
+	Metric   string            `json:"metric"`
+	Range    string            `json:"range"`
+	Points   []MetricDataPoint `json:"points"`
+}
+
 // Check represents a registered monitoring target.
 type Check struct {
 	ID              string    `json:"id"`
@@ -291,6 +305,124 @@ func (s *PulseStore) DeleteOldResults(ctx context.Context, before time.Time) (in
 		return 0, fmt.Errorf("delete old results: %w", err)
 	}
 	return result.RowsAffected()
+}
+
+// -- Metrics Queries --
+
+// validMetrics is the set of supported metric names for QueryMetrics.
+var validMetrics = map[string]bool{
+	"latency":      true,
+	"packet_loss":  true,
+	"success_rate": true,
+}
+
+// validRanges maps time range strings to their Go durations.
+var validRanges = map[string]time.Duration{
+	"1h":  1 * time.Hour,
+	"6h":  6 * time.Hour,
+	"24h": 24 * time.Hour,
+	"7d":  7 * 24 * time.Hour,
+	"30d": 30 * 24 * time.Hour,
+}
+
+// metricBucket accumulates values for a single time bucket during aggregation.
+type metricBucket struct {
+	latencySum    float64
+	packetLossSum float64
+	successCount  int
+	total         int
+}
+
+// QueryMetrics returns aggregated time-series data for a device, with
+// automatic downsampling based on the requested time range.
+// Bucketing is performed in Go to avoid SQLite date-format parsing issues.
+func (s *PulseStore) QueryMetrics(ctx context.Context, deviceID, metric, timeRange string) (*MetricSeries, error) {
+	if !validMetrics[metric] {
+		return nil, fmt.Errorf("unknown metric %q: must be latency, packet_loss, or success_rate", metric)
+	}
+
+	duration, ok := validRanges[timeRange]
+	if !ok {
+		return nil, fmt.Errorf("unknown range %q: must be 1h, 6h, 24h, 7d, or 30d", timeRange)
+	}
+
+	since := time.Now().UTC().Add(-duration)
+
+	// Determine bucket size (seconds) based on range.
+	var bucketSec int64
+	switch {
+	case duration <= 24*time.Hour:
+		bucketSec = 60 // 1-minute buckets
+	case duration <= 7*24*time.Hour:
+		bucketSec = 300 // 5-minute buckets
+	default:
+		bucketSec = 3600 // 1-hour buckets
+	}
+
+	// Fetch raw results within the time range.
+	rows, err := s.db.QueryContext(ctx, `
+		SELECT latency_ms, packet_loss, success, checked_at
+		FROM pulse_check_results
+		WHERE device_id = ? AND checked_at >= ?
+		ORDER BY checked_at ASC`,
+		deviceID, since,
+	)
+	if err != nil {
+		return nil, fmt.Errorf("query metrics: %w", err)
+	}
+	defer rows.Close()
+
+	// Aggregate results into time buckets in Go.
+	buckets := make(map[int64]*metricBucket)
+	var bucketKeys []int64
+	for rows.Next() {
+		var latency, packetLoss float64
+		var successInt int
+		var checkedAt time.Time
+		if err := rows.Scan(&latency, &packetLoss, &successInt, &checkedAt); err != nil {
+			return nil, fmt.Errorf("scan metric row: %w", err)
+		}
+		key := (checkedAt.Unix() / bucketSec) * bucketSec
+		b, exists := buckets[key]
+		if !exists {
+			b = &metricBucket{}
+			buckets[key] = b
+			bucketKeys = append(bucketKeys, key)
+		}
+		b.latencySum += latency
+		b.packetLossSum += packetLoss
+		b.successCount += successInt
+		b.total++
+	}
+	if err := rows.Err(); err != nil {
+		return nil, fmt.Errorf("iterate metric rows: %w", err)
+	}
+
+	// Convert buckets to data points (already ordered by checkedAt ASC).
+	points := make([]MetricDataPoint, 0, len(bucketKeys))
+	for _, key := range bucketKeys {
+		b := buckets[key]
+		var value float64
+		switch metric {
+		case "latency":
+			value = b.latencySum / float64(b.total)
+		case "packet_loss":
+			value = b.packetLossSum / float64(b.total)
+		case "success_rate":
+			value = float64(b.successCount) * 100.0 / float64(b.total)
+		}
+		points = append(points, MetricDataPoint{
+			Timestamp: time.Unix(key, 0).UTC(),
+			Value:     value,
+		})
+	}
+
+	return &MetricSeries{
+		DeviceID: deviceID,
+		Metric:   metric,
+		Range:    timeRange,
+		Points:   points,
+	}, nil
 }
 
 // -- Alerts --
