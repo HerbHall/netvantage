@@ -45,9 +45,62 @@ web/            React dashboard (Phase 2)
 configs/        Example configuration files
 ```
 
+```mermaid
+graph TD
+    subgraph "Entry Points (cmd/)"
+        Server["cmd/subnetree/"]
+        Agent["cmd/scout/"]
+    end
+
+    subgraph "Internal Modules (internal/)"
+        Recon["recon<br/>Network Discovery"]
+        Pulse["pulse<br/>Health Monitoring"]
+        Dispatch["dispatch<br/>Agent Management"]
+        Vault["vault<br/>Credential Storage"]
+        Gateway["gateway<br/>Remote Access"]
+        Insight["insight<br/>Analytics"]
+        Webhook["webhook<br/>Notifications"]
+        Docs["docs<br/>Documentation"]
+        LLM["llm<br/>AI Integration"]
+    end
+
+    subgraph "Public SDK (pkg/)"
+        Plugin["plugin/<br/>Plugin Interface"]
+        Roles["roles/<br/>Role Definitions"]
+        Models["models/<br/>Shared Types"]
+    end
+
+    subgraph "Frontend (web/)"
+        React["React + TypeScript<br/>Vite + shadcn/ui"]
+    end
+
+    Server --> Recon
+    Server --> Pulse
+    Server --> Dispatch
+    Server --> Vault
+    Server --> Gateway
+    Server --> Insight
+    Server --> Webhook
+    Server --> Docs
+    Server --> LLM
+    Recon -.->|implements| Plugin
+    Pulse -.->|implements| Plugin
+```
+
 ## Development Workflow
 
 **Every issue is developed on its own branch. No commits directly to `main`.**
+
+```mermaid
+graph LR
+    Fork["Fork Repo"] --> Branch["Create Branch"]
+    Branch --> Code["Write Code"]
+    Code --> Test["Run Tests"]
+    Test --> Push["Push Branch"]
+    Push --> PR["Open PR"]
+    PR --> Review["CI + Review"]
+    Review --> Merge["Merge to main"]
+```
 
 1. **Fork** the repository and create a branch from `main`
 2. **Branch naming** -- include the issue number when applicable:
@@ -92,6 +145,21 @@ chore: update golangci-lint to v1.62
 
 ## Pull Request Process
 
+```mermaid
+flowchart TD
+    A[Open PR] --> B{CI Passes?}
+    B -->|No| C[Fix Issues]
+    C --> B
+    B -->|Yes| D{CLA Signed?}
+    D -->|No| E[Sign CLA]
+    E --> D
+    D -->|Yes| F[Request Review]
+    F --> G{Approved?}
+    G -->|Changes Requested| H[Address Feedback]
+    H --> G
+    G -->|Approved| I[Merge to main]
+```
+
 1. Fill out the PR template completely
 2. Ensure CI passes (build, test, lint, license check)
 3. Request review from a maintainer
@@ -119,6 +187,32 @@ Have an idea? Start a [discussion](https://github.com/HerbHall/subnetree/discuss
 ### Plugin Ideas
 
 Want to build a plugin? Check the [Plugin SDK documentation](pkg/plugin/) and open a [plugin idea issue](https://github.com/HerbHall/subnetree/issues/new?template=plugin_idea.md).
+
+## Plugin Development
+
+SubNetree's architecture is plugin-based. Every major feature is a plugin that implements the `plugin.Plugin` interface from `pkg/plugin/`.
+
+```mermaid
+sequenceDiagram
+    participant Main as cmd/subnetree/main.go
+    participant Registry as Plugin Registry
+    participant Plugin as Your Plugin
+
+    Main->>Registry: Register(plugin)
+    Registry->>Plugin: Info() → metadata, roles, API version
+    Registry->>Registry: Validate API version
+    Main->>Plugin: Init(ctx, deps)
+    Note over Plugin: Access store, event bus, logger
+    Main->>Plugin: Start(ctx)
+    Note over Plugin: Begin background work
+    Main->>Plugin: Stop(ctx)
+    Note over Plugin: Cleanup, flush data
+```
+
+- Plugins implement `Info()`, `Init()`, `Start()`, and `Stop()` methods
+- Optional interfaces extend plugin capabilities: `HTTPProvider` (REST routes), `HealthChecker` (health reporting), `EventSubscriber` (event bus subscriptions)
+- Plugins are registered at compile time in `cmd/subnetree/main.go`
+- See [`pkg/plugin/`](pkg/plugin/) for the full SDK documentation
 
 ## Licensing
 
