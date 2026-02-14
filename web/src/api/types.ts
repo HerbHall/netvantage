@@ -469,3 +469,27 @@ export interface SNMPDiscoverRequest {
   target: string
   credential_id: string
 }
+
+// ============================================================================
+// Metrics History Types
+// ============================================================================
+
+/** Single data point in a time-series metric response. */
+export interface MetricDataPoint {
+  timestamp: string
+  value: number
+}
+
+/** Time-series metric response from Pulse metrics endpoint. */
+export interface MetricSeries {
+  device_id: string
+  metric: string
+  range: string
+  points: MetricDataPoint[]
+}
+
+/** Supported metric names for device monitoring history. */
+export type MetricName = 'latency' | 'packet_loss' | 'success_rate'
+
+/** Supported time ranges for metric queries. */
+export type MetricRange = '1h' | '6h' | '24h' | '7d' | '30d'

@@ -41,6 +41,7 @@ import {
   Settings2,
   AppWindow,
   Layers,
+  TrendingUp,
   type LucideIcon,
 } from 'lucide-react'
 import { toast } from 'sonner'
@@ -56,8 +57,10 @@ import {
   type DeviceStatusEvent,
 } from '@/api/devices'
 import { getDeviceServices, getDeviceUtilization, updateDesiredState } from '@/api/services'
+import { getDeviceMetrics } from '@/api/pulse'
 import { getSNMPSystemInfo, getSNMPInterfaces } from '@/api/recon'
-import type { DeviceType, DeviceStatus, Scan, Service, ServiceType, DesiredState } from '@/api/types'
+import type { DeviceType, DeviceStatus, Scan, Service, ServiceType, DesiredState, MetricName, MetricRange } from '@/api/types'
+import { TimeSeriesChart } from '@/components/time-series-chart'
 import { cn } from '@/lib/utils'
 
 // Device type icons (shared with device-card)
@@ -124,6 +127,8 @@ export function DeviceDetailPage() {
   const [editedCategory, setEditedCategory] = useState('')
   const [editedRole, setEditedRole] = useState('')
   const [editedOwner, setEditedOwner] = useState('')
+  const [selectedMetric, setSelectedMetric] = useState<MetricName>('latency')
+  const [selectedRange, setSelectedRange] = useState<MetricRange>('24h')
 
   // Fetch device details
   const {
@@ -162,6 +167,14 @@ export function DeviceDetailPage() {
     queryKey: ['device-utilization', id],
     queryFn: () => getDeviceUtilization(id!),
     enabled: !!id && !!device?.agent_id,
+  })
+
+  // Fetch metric history for charts
+  const { data: metrics, isLoading: metricsLoading } = useQuery({
+    queryKey: ['device-metrics', id, selectedMetric, selectedRange],
+    queryFn: () => getDeviceMetrics(id!, selectedMetric, selectedRange),
+    enabled: !!id,
+    refetchInterval: 60_000,
   })
 
   // Update desired state mutation
@@ -615,6 +628,16 @@ export function DeviceDetailPage() {
           </CardContent>
         </Card>
       </div>
+
+      {/* Metrics */}
+      <MetricsSection
+        metrics={metrics}
+        metricsLoading={metricsLoading}
+        selectedMetric={selectedMetric}
+        selectedRange={selectedRange}
+        onMetricChange={setSelectedMetric}
+        onRangeChange={setSelectedRange}
+      />
 
       {/* Scout Agent Link */}
       {device.agent_id && (
@@ -1605,6 +1628,87 @@ function SNMPInterfacesSection({ deviceId }: { deviceId: string }) {
             </tbody>
           </table>
         </div>
+      </CardContent>
+    </Card>
+  )
+}
+
+// ============================================================================
+// Metrics Section
+// ============================================================================
+
+const metricLabels: Record<MetricName, string> = {
+  latency: 'Latency',
+  packet_loss: 'Packet Loss',
+  success_rate: 'Success Rate',
+}
+
+const rangeLabels: Record<MetricRange, string> = {
+  '1h': '1H',
+  '6h': '6H',
+  '24h': '24H',
+  '7d': '7D',
+  '30d': '30D',
+}
+
+function MetricsSection({
+  metrics,
+  metricsLoading,
+  selectedMetric,
+  selectedRange,
+  onMetricChange,
+  onRangeChange,
+}: {
+  metrics?: import('@/api/types').MetricSeries
+  metricsLoading: boolean
+  selectedMetric: MetricName
+  selectedRange: MetricRange
+  onMetricChange: (m: MetricName) => void
+  onRangeChange: (r: MetricRange) => void
+}) {
+  return (
+    <Card>
+      <CardHeader className="pb-3">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+          <CardTitle className="text-sm font-medium flex items-center gap-2">
+            <TrendingUp className="h-4 w-4 text-muted-foreground" />
+            Metrics
+          </CardTitle>
+          <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
+            <div className="flex gap-1">
+              {(['latency', 'packet_loss', 'success_rate'] as const).map((m) => (
+                <Button
+                  key={m}
+                  size="sm"
+                  variant={selectedMetric === m ? 'default' : 'outline'}
+                  onClick={() => onMetricChange(m)}
+                >
+                  {metricLabels[m]}
+                </Button>
+              ))}
+            </div>
+            <div className="flex gap-1">
+              {(['1h', '6h', '24h', '7d', '30d'] as const).map((r) => (
+                <Button
+                  key={r}
+                  size="sm"
+                  variant={selectedRange === r ? 'default' : 'outline'}
+                  onClick={() => onRangeChange(r)}
+                >
+                  {rangeLabels[r]}
+                </Button>
+              ))}
+            </div>
+          </div>
+        </div>
+      </CardHeader>
+      <CardContent>
+        <TimeSeriesChart
+          data={metrics?.points || []}
+          metric={selectedMetric}
+          range={selectedRange}
+          loading={metricsLoading}
+        />
       </CardContent>
     </Card>
   )
