@@ -57,10 +57,11 @@ Requirements are split into `docs/requirements/` with per-section files. Read ON
 These principles govern every development decision. When in doubt, refer here:
 
 1. **Ease of use first.** No tech degree required. Intuitive for non-technical users, powerful for experts. If it needs a manual to understand, simplify the UI.
-2. **Sensible defaults, deep customization.** Ship preconfigured for instant deployment. Every aspect is user-configurable. Defaults get you running; customization makes it yours.
-3. **Stability and security are non-negotiable.** Every release must be stable enough for production infrastructure and secure enough to trust with credentials. If a feature compromises either, it does not ship.
-4. **Plugin-powered architecture.** Every major feature is a plugin. The core is minimal. Users and developers can replace, extend, or supplement any module.
-5. **Progressive disclosure.** Simple by default, advanced on demand. Never overwhelm a first-time user.
+2. **Three-tier documentation.** README is a landing page (~2,000 words max). The docs site (MkDocs Material on GitHub Pages) holds all guides, tutorials, and references organized by skill level. In-repo `/docs/` is for contributors only. See `.claude/rules/novice-ux-principles.md` and [28-documentation-requirements.md](docs/requirements/28-documentation-requirements.md) for the full model.
+3. **Sensible defaults, deep customization.** Ship preconfigured for instant deployment. Every aspect is user-configurable. Defaults get you running; customization makes it yours.
+4. **Stability and security are non-negotiable.** Every release must be stable enough for production infrastructure and secure enough to trust with credentials. If a feature compromises either, it does not ship.
+5. **Plugin-powered architecture.** Every major feature is a plugin. The core is minimal. Users and developers can replace, extend, or supplement any module.
+6. **Progressive disclosure.** Simple by default, advanced on demand. Never overwhelm a first-time user.
 
 ## Architecture
 
