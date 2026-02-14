@@ -804,6 +804,49 @@ definitions:
       total_devices:
         type: integer
     type: object
+  internal_recon.SNMPDiscoverRequest:
+    properties:
+      credential_id:
+        example: cred-snmp-001
+        type: string
+      target:
+        example: 192.168.1.1
+        type: string
+    type: object
+  internal_recon.SNMPInterfaceResponse:
+    properties:
+      admin_status:
+        type: integer
+      description:
+        type: string
+      index:
+        type: integer
+      mtu:
+        type: integer
+      oper_status:
+        type: integer
+      phys_address:
+        type: string
+      speed:
+        type: integer
+      type:
+        type: integer
+    type: object
+  internal_recon.SNMPSystemInfoResponse:
+    properties:
+      contact:
+        type: string
+      description:
+        type: string
+      location:
+        type: string
+      name:
+        type: string
+      object_id:
+        type: string
+      up_time_ms:
+        type: integer
+    type: object
   internal_recon.ScanRequest:
     properties:
       subnet:
@@ -2512,6 +2555,108 @@ paths:
       security:
       - BearerAuth: []
       summary: Get scan
+      tags:
+      - recon
+  /recon/snmp/discover:
+    post:
+      consumes:
+      - application/json
+      description: Discover a device via SNMP using the given credentials.
+      parameters:
+      - description: SNMP target and credentials
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/internal_recon.SNMPDiscoverRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Discovered devices
+          schema:
+            items:
+              $ref: '#/definitions/github_com_HerbHall_subnetree_pkg_models.Device'
+            type: array
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/github_com_HerbHall_subnetree_pkg_models.APIProblem'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/github_com_HerbHall_subnetree_pkg_models.APIProblem'
+      security:
+      - BearerAuth: []
+      summary: SNMP discover
+      tags:
+      - recon
+  /recon/snmp/interfaces/{device_id}:
+    get:
+      description: Query SNMP interface table from a device.
+      parameters:
+      - description: Device ID
+        in: path
+        name: device_id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Interface list
+          schema:
+            items:
+              $ref: '#/definitions/internal_recon.SNMPInterfaceResponse'
+            type: array
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/github_com_HerbHall_subnetree_pkg_models.APIProblem'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/github_com_HerbHall_subnetree_pkg_models.APIProblem'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/github_com_HerbHall_subnetree_pkg_models.APIProblem'
+      security:
+      - BearerAuth: []
+      summary: SNMP interfaces
+      tags:
+      - recon
+  /recon/snmp/system/{device_id}:
+    get:
+      description: Query SNMP system information from a device.
+      parameters:
+      - description: Device ID
+        in: path
+        name: device_id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: System information
+          schema:
+            $ref: '#/definitions/internal_recon.SNMPSystemInfoResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/github_com_HerbHall_subnetree_pkg_models.APIProblem'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/github_com_HerbHall_subnetree_pkg_models.APIProblem'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/github_com_HerbHall_subnetree_pkg_models.APIProblem'
+      security:
+      - BearerAuth: []
+      summary: SNMP system info
       tags:
       - recon
   /recon/topology:

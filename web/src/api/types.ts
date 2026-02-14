@@ -412,3 +412,35 @@ export interface MonitoringStatus {
   message: string
   checked_at?: string
 }
+
+// ============================================================================
+// SNMP Types
+// ============================================================================
+
+/** SNMP system information from device query. */
+export interface SNMPSystemInfo {
+  description: string
+  object_id: string
+  up_time_ms: number
+  contact: string
+  name: string
+  location: string
+}
+
+/** SNMP network interface from device query. */
+export interface SNMPInterface {
+  index: number
+  description: string
+  type: number
+  mtu: number
+  speed: number
+  phys_address: string
+  admin_status: number
+  oper_status: number
+}
+
+/** Request body for SNMP discover endpoint. */
+export interface SNMPDiscoverRequest {
+  target: string
+  credential_id: string
+}

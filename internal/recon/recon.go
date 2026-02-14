@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/HerbHall/subnetree/pkg/plugin"
+	"github.com/HerbHall/subnetree/pkg/roles"
 	"go.uber.org/zap"
 )
 
@@ -27,6 +28,7 @@ type Module struct {
 	orchestrator  *ScanOrchestrator
 	snmpCollector *SNMPCollector
 	credAccessor  CredentialAccessor
+	credProvider  roles.CredentialProvider
 	activeScans   sync.Map // scanID -> context.CancelFunc
 	wg            sync.WaitGroup
 	scanCtx       context.Context
@@ -149,6 +151,9 @@ func (m *Module) Routes() []plugin.Route {
 		{Method: "GET", Path: "/devices/{id}/scans", Handler: m.handleDeviceScans},
 		{Method: "GET", Path: "/inventory/summary", Handler: m.handleInventorySummary},
 		{Method: "PATCH", Path: "/devices/bulk", Handler: m.handleBulkUpdateDevices},
+		{Method: "POST", Path: "/snmp/discover", Handler: m.handleSNMPDiscover},
+		{Method: "GET", Path: "/snmp/system/{device_id}", Handler: m.handleSNMPSystemInfo},
+		{Method: "GET", Path: "/snmp/interfaces/{device_id}", Handler: m.handleSNMPInterfaces},
 	}
 }
 
