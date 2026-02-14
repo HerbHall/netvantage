@@ -56,6 +56,7 @@ import {
   type DeviceStatusEvent,
 } from '@/api/devices'
 import { getDeviceServices, getDeviceUtilization, updateDesiredState } from '@/api/services'
+import { getSNMPSystemInfo, getSNMPInterfaces } from '@/api/recon'
 import type { DeviceType, DeviceStatus, Scan, Service, ServiceType, DesiredState } from '@/api/types'
 import { cn } from '@/lib/utils'
 
@@ -650,6 +651,14 @@ export function DeviceDetailPage() {
           }
           isPending={desiredStateMutation.isPending}
         />
+      )}
+
+      {/* SNMP Information (only for SNMP-discovered devices) */}
+      {device.discovery_method === 'snmp' && id && (
+        <>
+          <SNMPSystemInfoSection deviceId={id} />
+          <SNMPInterfacesSection deviceId={id} />
+        </>
       )}
 
       {/* Inventory Details */}
@@ -1370,6 +1379,232 @@ function DeviceServicesSection({
             </table>
           </div>
         )}
+      </CardContent>
+    </Card>
+  )
+}
+
+// ============================================================================
+// SNMP Helpers
+// ============================================================================
+
+function formatSpeed(bitsPerSec: number): string {
+  if (bitsPerSec >= 1_000_000_000) return `${(bitsPerSec / 1_000_000_000).toFixed(0)} Gbps`
+  if (bitsPerSec >= 1_000_000) return `${(bitsPerSec / 1_000_000).toFixed(0)} Mbps`
+  if (bitsPerSec >= 1_000) return `${(bitsPerSec / 1_000).toFixed(0)} Kbps`
+  return `${bitsPerSec} bps`
+}
+
+function formatUptime(ms: number): string {
+  const seconds = Math.floor(ms / 1000)
+  const days = Math.floor(seconds / 86400)
+  const hours = Math.floor((seconds % 86400) / 3600)
+  const minutes = Math.floor((seconds % 3600) / 60)
+  if (days > 0) return `${days}d ${hours}h ${minutes}m`
+  if (hours > 0) return `${hours}h ${minutes}m`
+  return `${minutes}m`
+}
+
+const IF_TYPE_NAMES: Record<number, string> = {
+  6: 'Ethernet',
+  24: 'Loopback',
+  53: 'PPP',
+  71: 'WiFi',
+  131: 'Tunnel',
+  135: 'L2 VLAN',
+  161: 'IEEE 802.3ad',
+}
+
+const ifStatusConfig: Record<number, { bg: string; text: string; label: string }> = {
+  1: { bg: 'bg-green-500', text: 'text-green-600 dark:text-green-400', label: 'Up' },
+  2: { bg: 'bg-red-500', text: 'text-red-600 dark:text-red-400', label: 'Down' },
+  3: { bg: 'bg-amber-500', text: 'text-amber-600 dark:text-amber-400', label: 'Testing' },
+}
+
+// ============================================================================
+// SNMP Components
+// ============================================================================
+
+function SNMPSystemInfoSection({ deviceId }: { deviceId: string }) {
+  const { data: sysInfo, isLoading, isError } = useQuery({
+    queryKey: ['snmp-system', deviceId],
+    queryFn: () => getSNMPSystemInfo(deviceId),
+    enabled: !!deviceId,
+    retry: false,
+  })
+
+  if (isError) return null
+  if (isLoading) {
+    return (
+      <Card>
+        <CardHeader className="pb-3">
+          <CardTitle className="text-sm font-medium flex items-center gap-2">
+            <Radar className="h-4 w-4 text-muted-foreground" />
+            SNMP System Info
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="space-y-3 animate-pulse">
+            <div className="h-4 w-3/4 bg-muted rounded" />
+            <div className="h-4 w-1/2 bg-muted rounded" />
+            <div className="h-4 w-2/3 bg-muted rounded" />
+          </div>
+        </CardContent>
+      </Card>
+    )
+  }
+
+  if (!sysInfo) return null
+
+  return (
+    <Card>
+      <CardHeader className="pb-3">
+        <CardTitle className="text-sm font-medium flex items-center gap-2">
+          <Radar className="h-4 w-4 text-muted-foreground" />
+          SNMP System Info
+        </CardTitle>
+      </CardHeader>
+      <CardContent>
+        <div className="grid gap-3 sm:grid-cols-2">
+          {sysInfo.name && (
+            <div>
+              <p className="text-xs text-muted-foreground mb-0.5">Name</p>
+              <p className="text-sm font-medium">{sysInfo.name}</p>
+            </div>
+          )}
+          {sysInfo.description && (
+            <div className="sm:col-span-2">
+              <p className="text-xs text-muted-foreground mb-0.5">Description</p>
+              <p className="text-sm">{sysInfo.description}</p>
+            </div>
+          )}
+          {sysInfo.location && (
+            <div>
+              <p className="text-xs text-muted-foreground mb-0.5">Location</p>
+              <p className="text-sm">{sysInfo.location}</p>
+            </div>
+          )}
+          {sysInfo.contact && (
+            <div>
+              <p className="text-xs text-muted-foreground mb-0.5">Contact</p>
+              <p className="text-sm">{sysInfo.contact}</p>
+            </div>
+          )}
+          {sysInfo.object_id && (
+            <div>
+              <p className="text-xs text-muted-foreground mb-0.5">Object ID</p>
+              <p className="text-sm font-mono text-xs">{sysInfo.object_id}</p>
+            </div>
+          )}
+          {sysInfo.up_time_ms > 0 && (
+            <div>
+              <p className="text-xs text-muted-foreground mb-0.5">Uptime</p>
+              <p className="text-sm">{formatUptime(sysInfo.up_time_ms)}</p>
+            </div>
+          )}
+        </div>
+      </CardContent>
+    </Card>
+  )
+}
+
+function SNMPInterfacesSection({ deviceId }: { deviceId: string }) {
+  const { data: interfaces, isLoading, isError } = useQuery({
+    queryKey: ['snmp-interfaces', deviceId],
+    queryFn: () => getSNMPInterfaces(deviceId),
+    enabled: !!deviceId,
+    retry: false,
+  })
+
+  if (isError) return null
+  if (isLoading) {
+    return (
+      <Card>
+        <CardHeader className="pb-3">
+          <CardTitle className="text-sm font-medium flex items-center gap-2">
+            <Network className="h-4 w-4 text-muted-foreground" />
+            Network Interfaces
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="space-y-3 animate-pulse">
+            <div className="h-4 w-full bg-muted rounded" />
+            <div className="h-4 w-full bg-muted rounded" />
+            <div className="h-4 w-3/4 bg-muted rounded" />
+          </div>
+        </CardContent>
+      </Card>
+    )
+  }
+
+  if (!interfaces || interfaces.length === 0) return null
+
+  const sorted = [...interfaces].sort((a, b) => a.index - b.index)
+
+  return (
+    <Card>
+      <CardHeader className="pb-3">
+        <CardTitle className="text-sm font-medium flex items-center gap-2">
+          <Network className="h-4 w-4 text-muted-foreground" />
+          Network Interfaces
+          <span className="text-xs text-muted-foreground font-normal">({sorted.length})</span>
+        </CardTitle>
+      </CardHeader>
+      <CardContent>
+        <div className="rounded-lg border overflow-hidden">
+          <table className="w-full text-sm">
+            <thead className="bg-muted/50">
+              <tr>
+                <th className="px-4 py-2 text-left font-medium">#</th>
+                <th className="px-4 py-2 text-left font-medium">Description</th>
+                <th className="px-4 py-2 text-left font-medium">Type</th>
+                <th className="px-4 py-2 text-right font-medium">Speed</th>
+                <th className="px-4 py-2 text-left font-medium">MAC</th>
+                <th className="px-4 py-2 text-left font-medium">Admin</th>
+                <th className="px-4 py-2 text-left font-medium">Oper</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y">
+              {sorted.map((iface) => {
+                const typeName = IF_TYPE_NAMES[iface.type] || `Type ${iface.type}`
+                const adminCfg = ifStatusConfig[iface.admin_status] || ifStatusConfig[2]
+                const operCfg = ifStatusConfig[iface.oper_status] || ifStatusConfig[2]
+
+                return (
+                  <tr key={iface.index} className="hover:bg-muted/30 transition-colors">
+                    <td className="px-4 py-2 text-muted-foreground">{iface.index}</td>
+                    <td className="px-4 py-2">
+                      <span className="font-medium">{iface.description || '-'}</span>
+                    </td>
+                    <td className="px-4 py-2 text-muted-foreground text-xs">{typeName}</td>
+                    <td className="px-4 py-2 text-right text-muted-foreground">
+                      {iface.speed > 0 ? formatSpeed(iface.speed) : '-'}
+                    </td>
+                    <td className="px-4 py-2">
+                      {iface.phys_address ? (
+                        <span className="text-xs font-mono">{iface.phys_address}</span>
+                      ) : (
+                        '-'
+                      )}
+                    </td>
+                    <td className="px-4 py-2">
+                      <div className="flex items-center gap-1.5">
+                        <span className={cn('h-1.5 w-1.5 rounded-full', adminCfg.bg)} />
+                        <span className={cn('text-xs', adminCfg.text)}>{adminCfg.label}</span>
+                      </div>
+                    </td>
+                    <td className="px-4 py-2">
+                      <div className="flex items-center gap-1.5">
+                        <span className={cn('h-1.5 w-1.5 rounded-full', operCfg.bg)} />
+                        <span className={cn('text-xs', operCfg.text)}>{operCfg.label}</span>
+                      </div>
+                    </td>
+                  </tr>
+                )
+              })}
+            </tbody>
+          </table>
+        </div>
       </CardContent>
     </Card>
   )

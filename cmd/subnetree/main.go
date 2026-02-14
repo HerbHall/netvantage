@@ -257,6 +257,7 @@ func main() {
 	}
 	if reconMod != nil && vaultMod != nil {
 		reconMod.SetCredentialAccessor(recon.NewVaultCredentialAdapter(&vaultDecryptAdapter{vault: vaultMod}))
+		reconMod.SetCredentialProvider(vaultMod)
 		logger.Info("SNMP credential adapter wired", zap.String("component", "recon"))
 	}
 

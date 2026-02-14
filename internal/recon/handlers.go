@@ -1,6 +1,7 @@
 package recon
 
 import (
+	"context"
 	"database/sql"
 	"encoding/json"
 	"errors"
@@ -10,6 +11,7 @@ import (
 	"time"
 
 	"github.com/HerbHall/subnetree/pkg/models"
+	"github.com/HerbHall/subnetree/pkg/roles"
 	"github.com/google/uuid"
 	"go.uber.org/zap"
 )
@@ -657,4 +659,268 @@ func queryInt(r *http.Request, key string, defaultVal int) int {
 		return defaultVal
 	}
 	return v
+}
+
+// ============================================================================
+// SNMP Handlers
+// ============================================================================
+
+// SNMPDiscoverRequest is the request body for POST /snmp/discover.
+type SNMPDiscoverRequest struct {
+	Target       string `json:"target" example:"192.168.1.1"`
+	CredentialID string `json:"credential_id" example:"cred-snmp-001"`
+}
+
+// SNMPSystemInfoResponse wraps SNMPSystemInfo for JSON serialization.
+type SNMPSystemInfoResponse struct {
+	Description string `json:"description"`
+	ObjectID    string `json:"object_id"`
+	UpTimeMs    int64  `json:"up_time_ms"`
+	Contact     string `json:"contact"`
+	Name        string `json:"name"`
+	Location    string `json:"location"`
+}
+
+// SNMPInterfaceResponse wraps SNMPInterface for JSON serialization.
+type SNMPInterfaceResponse struct {
+	Index       int    `json:"index"`
+	Description string `json:"description"`
+	Type        int    `json:"type"`
+	MTU         int    `json:"mtu"`
+	Speed       uint64 `json:"speed"`
+	PhysAddress string `json:"phys_address"`
+	AdminStatus int    `json:"admin_status"`
+	OperStatus  int    `json:"oper_status"`
+}
+
+// handleSNMPDiscover triggers SNMP discovery for a specific target.
+//
+//	@Summary		SNMP discover
+//	@Description	Discover a device via SNMP using the given credentials.
+//	@Tags			recon
+//	@Accept			json
+//	@Produce		json
+//	@Security		BearerAuth
+//	@Param			request	body		SNMPDiscoverRequest	true	"SNMP target and credentials"
+//	@Success		200		{array}		models.Device		"Discovered devices"
+//	@Failure		400		{object}	models.APIProblem
+//	@Failure		500		{object}	models.APIProblem
+//	@Router			/recon/snmp/discover [post]
+func (m *Module) handleSNMPDiscover(w http.ResponseWriter, r *http.Request) {
+	var req SNMPDiscoverRequest
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		writeError(w, http.StatusBadRequest, "invalid JSON body")
+		return
+	}
+	if req.Target == "" {
+		writeError(w, http.StatusBadRequest, "target is required")
+		return
+	}
+	if req.CredentialID == "" {
+		writeError(w, http.StatusBadRequest, "credential_id is required")
+		return
+	}
+	if m.snmpCollector == nil {
+		writeError(w, http.StatusServiceUnavailable, "SNMP collector not available")
+		return
+	}
+	if m.credAccessor == nil {
+		writeError(w, http.StatusServiceUnavailable, "credential accessor not available")
+		return
+	}
+
+	ctx, cancel := context.WithTimeout(r.Context(), 15*time.Second)
+	defer cancel()
+
+	discovered, err := m.snmpCollector.Discover(ctx, req.Target, m.credAccessor, req.CredentialID)
+	if err != nil {
+		m.logger.Error("SNMP discovery failed",
+			zap.String("target", req.Target),
+			zap.Error(err),
+		)
+		writeError(w, http.StatusInternalServerError, "SNMP discovery failed: "+err.Error())
+		return
+	}
+
+	// Upsert each discovered device to the store.
+	devices := make([]models.Device, 0, len(discovered))
+	for i := range discovered {
+		if _, upsertErr := m.store.UpsertDevice(ctx, &discovered[i]); upsertErr != nil {
+			m.logger.Error("failed to upsert SNMP-discovered device",
+				zap.String("hostname", discovered[i].Hostname),
+				zap.Error(upsertErr),
+			)
+			continue
+		}
+		devices = append(devices, discovered[i])
+	}
+
+	writeJSON(w, http.StatusOK, devices)
+}
+
+// handleSNMPSystemInfo retrieves SNMP system information for a device.
+//
+//	@Summary		SNMP system info
+//	@Description	Query SNMP system information from a device.
+//	@Tags			recon
+//	@Produce		json
+//	@Security		BearerAuth
+//	@Param			device_id	path		string					true	"Device ID"
+//	@Success		200			{object}	SNMPSystemInfoResponse	"System information"
+//	@Failure		400		{object}	models.APIProblem
+//	@Failure		404		{object}	models.APIProblem
+//	@Failure		500		{object}	models.APIProblem
+//	@Router			/recon/snmp/system/{device_id} [get]
+func (m *Module) handleSNMPSystemInfo(w http.ResponseWriter, r *http.Request) {
+	deviceID := r.PathValue("device_id")
+	if deviceID == "" {
+		writeError(w, http.StatusBadRequest, "device_id is required")
+		return
+	}
+
+	device, err := m.store.GetDevice(r.Context(), deviceID)
+	if err != nil {
+		writeError(w, http.StatusNotFound, "device not found")
+		return
+	}
+
+	credID, err := m.findSNMPCredential(r.Context(), deviceID)
+	if err != nil {
+		writeError(w, http.StatusBadRequest, "no SNMP credentials configured for device")
+		return
+	}
+
+	if len(device.IPAddresses) == 0 {
+		writeError(w, http.StatusBadRequest, "device has no IP addresses")
+		return
+	}
+	ip := device.IPAddresses[0]
+
+	if m.snmpCollector == nil {
+		writeError(w, http.StatusServiceUnavailable, "SNMP collector not available")
+		return
+	}
+
+	ctx, cancel := context.WithTimeout(r.Context(), 10*time.Second)
+	defer cancel()
+
+	info, err := m.snmpCollector.GetSystemInfo(ctx, ip, m.credAccessor, credID)
+	if err != nil {
+		m.logger.Error("SNMP system info query failed",
+			zap.String("device_id", deviceID),
+			zap.String("ip", ip),
+			zap.Error(err),
+		)
+		writeError(w, http.StatusInternalServerError, "SNMP system info query failed: "+err.Error())
+		return
+	}
+
+	resp := SNMPSystemInfoResponse{
+		Description: info.Description,
+		ObjectID:    info.ObjectID,
+		UpTimeMs:    info.UpTime.Milliseconds(),
+		Contact:     info.Contact,
+		Name:        info.Name,
+		Location:    info.Location,
+	}
+	writeJSON(w, http.StatusOK, resp)
+}
+
+// handleSNMPInterfaces retrieves SNMP interface table for a device.
+//
+//	@Summary		SNMP interfaces
+//	@Description	Query SNMP interface table from a device.
+//	@Tags			recon
+//	@Produce		json
+//	@Security		BearerAuth
+//	@Param			device_id	path		string					true	"Device ID"
+//	@Success		200			{array}		SNMPInterfaceResponse	"Interface list"
+//	@Failure		400		{object}	models.APIProblem
+//	@Failure		404		{object}	models.APIProblem
+//	@Failure		500		{object}	models.APIProblem
+//	@Router			/recon/snmp/interfaces/{device_id} [get]
+func (m *Module) handleSNMPInterfaces(w http.ResponseWriter, r *http.Request) {
+	deviceID := r.PathValue("device_id")
+	if deviceID == "" {
+		writeError(w, http.StatusBadRequest, "device_id is required")
+		return
+	}
+
+	device, err := m.store.GetDevice(r.Context(), deviceID)
+	if err != nil {
+		writeError(w, http.StatusNotFound, "device not found")
+		return
+	}
+
+	credID, err := m.findSNMPCredential(r.Context(), deviceID)
+	if err != nil {
+		writeError(w, http.StatusBadRequest, "no SNMP credentials configured for device")
+		return
+	}
+
+	if len(device.IPAddresses) == 0 {
+		writeError(w, http.StatusBadRequest, "device has no IP addresses")
+		return
+	}
+	ip := device.IPAddresses[0]
+
+	if m.snmpCollector == nil {
+		writeError(w, http.StatusServiceUnavailable, "SNMP collector not available")
+		return
+	}
+
+	ctx, cancel := context.WithTimeout(r.Context(), 10*time.Second)
+	defer cancel()
+
+	interfaces, err := m.snmpCollector.GetInterfaces(ctx, ip, m.credAccessor, credID)
+	if err != nil {
+		m.logger.Error("SNMP interfaces query failed",
+			zap.String("device_id", deviceID),
+			zap.String("ip", ip),
+			zap.Error(err),
+		)
+		writeError(w, http.StatusInternalServerError, "SNMP interfaces query failed: "+err.Error())
+		return
+	}
+
+	resp := make([]SNMPInterfaceResponse, len(interfaces))
+	for i := range interfaces {
+		resp[i] = SNMPInterfaceResponse{
+			Index:       interfaces[i].Index,
+			Description: interfaces[i].Description,
+			Type:        interfaces[i].Type,
+			MTU:         interfaces[i].MTU,
+			Speed:       interfaces[i].Speed,
+			PhysAddress: interfaces[i].PhysAddress,
+			AdminStatus: interfaces[i].AdminStatus,
+			OperStatus:  interfaces[i].OperStatus,
+		}
+	}
+
+	writeJSON(w, http.StatusOK, resp)
+}
+
+// findSNMPCredential looks up the first SNMP credential associated with a device.
+func (m *Module) findSNMPCredential(ctx context.Context, deviceID string) (string, error) {
+	if m.credProvider == nil {
+		return "", errors.New("credential provider not configured")
+	}
+
+	creds, err := m.credProvider.CredentialsForDevice(ctx, deviceID)
+	if err != nil {
+		return "", err
+	}
+
+	for i := range creds {
+		if creds[i].Type == "snmp_v2c" || creds[i].Type == "snmp_v3" {
+			return creds[i].ID, nil
+		}
+	}
+	return "", errors.New("no SNMP credentials found for device")
+}
+
+// SetCredentialProvider sets the credential provider for SNMP device lookups.
+// Called from the composition root after all plugins are initialized.
+func (m *Module) SetCredentialProvider(cp roles.CredentialProvider) {
+	m.credProvider = cp
 }
