@@ -25,6 +25,9 @@ coverage.html
 *.swo
 *~
 
+# Claude Code local settings (user-specific, modified every session)
+.claude/settings.local.json
+
 # OS
 .DS_Store
 Thumbs.db
