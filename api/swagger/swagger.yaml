@@ -654,6 +654,26 @@ definitions:
       success:
         type: boolean
     type: object
+  internal_pulse.MetricDataPoint:
+    properties:
+      timestamp:
+        type: string
+      value:
+        type: number
+    type: object
+  internal_pulse.MetricSeries:
+    properties:
+      device_id:
+        type: string
+      metric:
+        type: string
+      points:
+        items:
+          $ref: '#/definitions/internal_pulse.MetricDataPoint'
+        type: array
+      range:
+        type: string
+    type: object
   internal_pulse.NotificationChannel:
     properties:
       config:
@@ -1908,6 +1928,57 @@ paths:
       security:
       - BearerAuth: []
       summary: Toggle check
+      tags:
+      - pulse
+  /pulse/metrics/{device_id}:
+    get:
+      description: Returns time-series metrics for a device with automatic downsampling.
+      parameters:
+      - description: Device ID
+        in: path
+        name: device_id
+        required: true
+        type: string
+      - description: Metric name
+        enum:
+        - latency
+        - packet_loss
+        - success_rate
+        in: query
+        name: metric
+        required: true
+        type: string
+      - default: 24h
+        description: Time range
+        enum:
+        - 1h
+        - 6h
+        - 24h
+        - 7d
+        - 30d
+        in: query
+        name: range
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/internal_pulse.MetricSeries'
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Device metrics
       tags:
       - pulse
   /pulse/notifications:

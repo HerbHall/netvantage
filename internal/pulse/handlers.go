@@ -54,6 +54,7 @@ func (m *Module) Routes() []plugin.Route {
 		{Method: "DELETE", Path: "/checks/{id}", Handler: m.handleDeleteCheck},
 		{Method: "PATCH", Path: "/checks/{id}/toggle", Handler: m.handleToggleCheck},
 		{Method: "GET", Path: "/results/{device_id}", Handler: m.handleDeviceResults},
+		{Method: "GET", Path: "/metrics/{device_id}", Handler: m.handleDeviceMetrics},
 		{Method: "GET", Path: "/alerts", Handler: m.handleListAlerts},
 		{Method: "GET", Path: "/alerts/{id}", Handler: m.handleGetAlert},
 		{Method: "POST", Path: "/alerts/{id}/acknowledge", Handler: m.handleAcknowledgeAlert},
@@ -587,6 +588,68 @@ func (m *Module) handleDeviceStatus(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	pulseWriteJSON(w, http.StatusOK, status)
+}
+
+// -- Metrics handler --
+
+// handleDeviceMetrics returns time-series metrics for a device with automatic downsampling.
+//
+//	@Summary		Device metrics
+//	@Description	Returns time-series metrics for a device with automatic downsampling.
+//	@Tags			pulse
+//	@Produce		json
+//	@Security		BearerAuth
+//	@Param			device_id path string true "Device ID"
+//	@Param			metric query string true "Metric name" Enums(latency, packet_loss, success_rate)
+//	@Param			range query string false "Time range" Enums(1h, 6h, 24h, 7d, 30d) default(24h)
+//	@Success		200 {object} MetricSeries
+//	@Failure		400 {object} map[string]any
+//	@Failure		500 {object} map[string]any
+//	@Router			/pulse/metrics/{device_id} [get]
+func (m *Module) handleDeviceMetrics(w http.ResponseWriter, r *http.Request) {
+	if m.store == nil {
+		pulseWriteError(w, http.StatusServiceUnavailable, "pulse store not available")
+		return
+	}
+
+	deviceID := r.PathValue("device_id")
+	if deviceID == "" {
+		pulseWriteError(w, http.StatusBadRequest, "device_id is required")
+		return
+	}
+
+	metric := r.URL.Query().Get("metric")
+	if metric == "" {
+		pulseWriteError(w, http.StatusBadRequest, "metric query parameter is required")
+		return
+	}
+	if !validMetrics[metric] {
+		pulseWriteError(w, http.StatusBadRequest, "metric must be latency, packet_loss, or success_rate")
+		return
+	}
+
+	timeRange := r.URL.Query().Get("range")
+	if timeRange == "" {
+		timeRange = "24h"
+	}
+	if _, ok := validRanges[timeRange]; !ok {
+		pulseWriteError(w, http.StatusBadRequest, "range must be 1h, 6h, 24h, 7d, or 30d")
+		return
+	}
+
+	series, err := m.store.QueryMetrics(r.Context(), deviceID, metric, timeRange)
+	if err != nil {
+		m.logger.Warn("failed to query metrics",
+			zap.String("device_id", deviceID),
+			zap.String("metric", metric),
+			zap.String("range", timeRange),
+			zap.Error(err),
+		)
+		pulseWriteError(w, http.StatusInternalServerError, "failed to query metrics")
+		return
+	}
+
+	pulseWriteJSON(w, http.StatusOK, series)
 }
 
 // -- helpers --

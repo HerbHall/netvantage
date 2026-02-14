@@ -1272,6 +1272,80 @@
                 }
             }
         },
+        "/pulse/metrics/{device_id}": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Returns time-series metrics for a device with automatic downsampling.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "pulse"
+                ],
+                "summary": "Device metrics",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Device ID",
+                        "name": "device_id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "enum": [
+                            "latency",
+                            "packet_loss",
+                            "success_rate"
+                        ],
+                        "type": "string",
+                        "description": "Metric name",
+                        "name": "metric",
+                        "in": "query",
+                        "required": true
+                    },
+                    {
+                        "enum": [
+                            "1h",
+                            "6h",
+                            "24h",
+                            "7d",
+                            "30d"
+                        ],
+                        "type": "string",
+                        "default": "24h",
+                        "description": "Time range",
+                        "name": "range",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/internal_pulse.MetricSeries"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    }
+                }
+            }
+        },
         "/pulse/notifications": {
             "get": {
                 "security": [
@@ -4245,6 +4319,37 @@
                 },
                 "success": {
                     "type": "boolean"
+                }
+            }
+        },
+        "internal_pulse.MetricDataPoint": {
+            "type": "object",
+            "properties": {
+                "timestamp": {
+                    "type": "string"
+                },
+                "value": {
+                    "type": "number"
+                }
+            }
+        },
+        "internal_pulse.MetricSeries": {
+            "type": "object",
+            "properties": {
+                "device_id": {
+                    "type": "string"
+                },
+                "metric": {
+                    "type": "string"
+                },
+                "points": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/internal_pulse.MetricDataPoint"
+                    }
+                },
+                "range": {
+                    "type": "string"
                 }
             }
         },
