@@ -597,6 +597,8 @@ definitions:
     type: object
   internal_pulse.Alert:
     properties:
+      acknowledged_at:
+        type: string
       check_id:
         type: string
       consecutive_failures:
@@ -651,6 +653,28 @@ definitions:
         type: number
       success:
         type: boolean
+    type: object
+  internal_pulse.createCheckRequest:
+    properties:
+      check_type:
+        type: string
+      device_id:
+        type: string
+      interval_seconds:
+        type: integer
+      target:
+        type: string
+    type: object
+  internal_pulse.updateCheckRequest:
+    properties:
+      check_type:
+        type: string
+      enabled:
+        type: boolean
+      interval_seconds:
+        type: integer
+      target:
+        type: string
     type: object
   internal_recon.BulkUpdateRequest:
     properties:
@@ -1492,7 +1516,26 @@ paths:
       - system
   /pulse/alerts:
     get:
-      description: Returns all active (unresolved) monitoring alerts.
+      description: Returns monitoring alerts with optional filters.
+      parameters:
+      - description: Filter by device ID
+        in: query
+        name: device_id
+        type: string
+      - description: Filter by severity (warning, critical)
+        in: query
+        name: severity
+        type: string
+      - default: true
+        description: Only active (unresolved) alerts
+        in: query
+        name: active
+        type: boolean
+      - default: 50
+        description: Maximum alerts
+        in: query
+        name: limit
+        type: integer
       produces:
       - application/json
       responses:
@@ -1512,13 +1555,13 @@ paths:
       summary: List alerts
       tags:
       - pulse
-  /pulse/alerts/{device_id}:
+  /pulse/alerts/{id}:
     get:
-      description: Returns active (unresolved) alerts for a specific device.
+      description: Returns a single monitoring alert by ID.
       parameters:
-      - description: Device ID
+      - description: Alert ID
         in: path
-        name: device_id
+        name: id
         required: true
         type: string
       produces:
@@ -1527,9 +1570,12 @@ paths:
         "200":
           description: OK
           schema:
-            items:
-              $ref: '#/definitions/internal_pulse.Alert'
-            type: array
+            $ref: '#/definitions/internal_pulse.Alert'
+        "404":
+          description: Not Found
+          schema:
+            additionalProperties: true
+            type: object
         "500":
           description: Internal Server Error
           schema:
@@ -1537,12 +1583,74 @@ paths:
             type: object
       security:
       - BearerAuth: []
-      summary: Device alerts
+      summary: Get alert
+      tags:
+      - pulse
+  /pulse/alerts/{id}/acknowledge:
+    post:
+      description: Marks an alert as acknowledged.
+      parameters:
+      - description: Alert ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/internal_pulse.Alert'
+        "404":
+          description: Not Found
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Acknowledge alert
+      tags:
+      - pulse
+  /pulse/alerts/{id}/resolve:
+    post:
+      description: Marks an alert as resolved.
+      parameters:
+      - description: Alert ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/internal_pulse.Alert'
+        "404":
+          description: Not Found
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Resolve alert
       tags:
       - pulse
   /pulse/checks:
     get:
-      description: Returns all enabled monitoring checks.
+      description: Returns all monitoring checks (enabled and disabled).
       produces:
       - application/json
       responses:
@@ -1560,6 +1668,39 @@ paths:
       security:
       - BearerAuth: []
       summary: List checks
+      tags:
+      - pulse
+    post:
+      consumes:
+      - application/json
+      description: Creates a new monitoring check for a device.
+      parameters:
+      - description: Check definition
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/internal_pulse.createCheckRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/internal_pulse.Check'
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Create check
       tags:
       - pulse
   /pulse/checks/{device_id}:
@@ -1591,6 +1732,102 @@ paths:
       security:
       - BearerAuth: []
       summary: Device checks
+      tags:
+      - pulse
+  /pulse/checks/{id}:
+    delete:
+      description: Deletes a monitoring check and cascade-deletes its results.
+      parameters:
+      - description: Check ID
+        in: path
+        name: id
+        required: true
+        type: string
+      responses:
+        "204":
+          description: No Content
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Delete check
+      tags:
+      - pulse
+    put:
+      consumes:
+      - application/json
+      description: Updates fields on an existing monitoring check.
+      parameters:
+      - description: Check ID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Fields to update
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/internal_pulse.updateCheckRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/internal_pulse.Check'
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties: true
+            type: object
+        "404":
+          description: Not Found
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Update check
+      tags:
+      - pulse
+  /pulse/checks/{id}/toggle:
+    patch:
+      description: Toggles the enabled/disabled state of a monitoring check.
+      parameters:
+      - description: Check ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/internal_pulse.Check'
+        "404":
+          description: Not Found
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Toggle check
       tags:
       - pulse
   /pulse/results/{device_id}:

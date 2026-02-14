@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"net/http"
 	"net/http/httptest"
+	"strings"
 	"testing"
 	"time"
 
@@ -52,6 +53,21 @@ func TestHandleListChecks_WithData(t *testing.T) {
 		t.Fatalf("insert check: %v", err)
 	}
 
+	// Insert a disabled check -- ListAllChecks should return both.
+	disabledCheck := &Check{
+		ID:              "check-2",
+		DeviceID:        "dev-2",
+		CheckType:       "tcp",
+		Target:          "192.168.1.2:22",
+		IntervalSeconds: 60,
+		Enabled:         false,
+		CreatedAt:       now.Add(time.Second),
+		UpdatedAt:       now.Add(time.Second),
+	}
+	if err := m.store.InsertCheck(context.Background(), disabledCheck); err != nil {
+		t.Fatalf("insert disabled check: %v", err)
+	}
+
 	req := httptest.NewRequest(http.MethodGet, "/checks", http.NoBody)
 	w := httptest.NewRecorder()
 
@@ -65,8 +81,8 @@ func TestHandleListChecks_WithData(t *testing.T) {
 	if err := json.NewDecoder(w.Body).Decode(&checks); err != nil {
 		t.Fatalf("decode response: %v", err)
 	}
-	if len(checks) != 1 {
-		t.Fatalf("len(checks) = %d, want 1", len(checks))
+	if len(checks) != 2 {
+		t.Fatalf("len(checks) = %d, want 2", len(checks))
 	}
 	if checks[0].ID != "check-1" {
 		t.Errorf("checks[0].ID = %q, want %q", checks[0].ID, "check-1")
@@ -82,6 +98,260 @@ func TestHandleListChecks_NilStore(t *testing.T) {
 
 	if w.Code != http.StatusServiceUnavailable {
 		t.Errorf("status = %d, want %d", w.Code, http.StatusServiceUnavailable)
+	}
+}
+
+// -- handleCreateCheck tests --
+
+func TestHandleCreateCheck_Success(t *testing.T) {
+	m, _ := newTestModule(t)
+
+	body := `{"device_id":"dev-1","check_type":"icmp","target":"192.168.1.1","interval_seconds":60}`
+	req := httptest.NewRequest(http.MethodPost, "/checks", strings.NewReader(body))
+	w := httptest.NewRecorder()
+
+	m.handleCreateCheck(w, req)
+
+	if w.Code != http.StatusCreated {
+		t.Errorf("status = %d, want %d", w.Code, http.StatusCreated)
+	}
+
+	var check Check
+	if err := json.NewDecoder(w.Body).Decode(&check); err != nil {
+		t.Fatalf("decode response: %v", err)
+	}
+	if check.DeviceID != "dev-1" {
+		t.Errorf("check.DeviceID = %q, want %q", check.DeviceID, "dev-1")
+	}
+	if check.CheckType != "icmp" {
+		t.Errorf("check.CheckType = %q, want %q", check.CheckType, "icmp")
+	}
+	if check.Target != "192.168.1.1" {
+		t.Errorf("check.Target = %q, want %q", check.Target, "192.168.1.1")
+	}
+	if check.IntervalSeconds != 60 {
+		t.Errorf("check.IntervalSeconds = %d, want %d", check.IntervalSeconds, 60)
+	}
+	if !check.Enabled {
+		t.Error("check.Enabled = false, want true")
+	}
+	if check.ID == "" {
+		t.Error("check.ID is empty, want non-empty")
+	}
+}
+
+func TestHandleCreateCheck_DefaultInterval(t *testing.T) {
+	m, _ := newTestModule(t)
+
+	body := `{"device_id":"dev-1","check_type":"icmp","target":"192.168.1.1"}`
+	req := httptest.NewRequest(http.MethodPost, "/checks", strings.NewReader(body))
+	w := httptest.NewRecorder()
+
+	m.handleCreateCheck(w, req)
+
+	if w.Code != http.StatusCreated {
+		t.Errorf("status = %d, want %d", w.Code, http.StatusCreated)
+	}
+
+	var check Check
+	if err := json.NewDecoder(w.Body).Decode(&check); err != nil {
+		t.Fatalf("decode response: %v", err)
+	}
+	if check.IntervalSeconds != 30 {
+		t.Errorf("check.IntervalSeconds = %d, want %d (default)", check.IntervalSeconds, 30)
+	}
+}
+
+func TestHandleCreateCheck_InvalidType(t *testing.T) {
+	m, _ := newTestModule(t)
+
+	body := `{"device_id":"dev-1","check_type":"snmp","target":"192.168.1.1"}`
+	req := httptest.NewRequest(http.MethodPost, "/checks", strings.NewReader(body))
+	w := httptest.NewRecorder()
+
+	m.handleCreateCheck(w, req)
+
+	if w.Code != http.StatusBadRequest {
+		t.Errorf("status = %d, want %d", w.Code, http.StatusBadRequest)
+	}
+}
+
+func TestHandleCreateCheck_InvalidTarget_TCP(t *testing.T) {
+	m, _ := newTestModule(t)
+
+	body := `{"device_id":"dev-1","check_type":"tcp","target":"no-port"}`
+	req := httptest.NewRequest(http.MethodPost, "/checks", strings.NewReader(body))
+	w := httptest.NewRecorder()
+
+	m.handleCreateCheck(w, req)
+
+	if w.Code != http.StatusBadRequest {
+		t.Errorf("status = %d, want %d", w.Code, http.StatusBadRequest)
+	}
+}
+
+func TestHandleCreateCheck_InvalidTarget_HTTP(t *testing.T) {
+	m, _ := newTestModule(t)
+
+	body := `{"device_id":"dev-1","check_type":"http","target":"not-a-url"}`
+	req := httptest.NewRequest(http.MethodPost, "/checks", strings.NewReader(body))
+	w := httptest.NewRecorder()
+
+	m.handleCreateCheck(w, req)
+
+	if w.Code != http.StatusBadRequest {
+		t.Errorf("status = %d, want %d", w.Code, http.StatusBadRequest)
+	}
+}
+
+// -- handleUpdateCheck tests --
+
+func TestHandleUpdateCheck_Success(t *testing.T) {
+	m, _ := newTestModule(t)
+
+	now := time.Now().UTC().Truncate(time.Second)
+	check := &Check{
+		ID:              "check-1",
+		DeviceID:        "dev-1",
+		CheckType:       "icmp",
+		Target:          "192.168.1.1",
+		IntervalSeconds: 30,
+		Enabled:         true,
+		CreatedAt:       now,
+		UpdatedAt:       now,
+	}
+	if err := m.store.InsertCheck(context.Background(), check); err != nil {
+		t.Fatalf("insert check: %v", err)
+	}
+
+	body := `{"target":"10.0.0.1","interval_seconds":120}`
+	req := httptest.NewRequest(http.MethodPut, "/checks/check-1", strings.NewReader(body))
+	req.SetPathValue("id", "check-1")
+	w := httptest.NewRecorder()
+
+	m.handleUpdateCheck(w, req)
+
+	if w.Code != http.StatusOK {
+		t.Errorf("status = %d, want %d", w.Code, http.StatusOK)
+	}
+
+	var updated Check
+	if err := json.NewDecoder(w.Body).Decode(&updated); err != nil {
+		t.Fatalf("decode response: %v", err)
+	}
+	if updated.Target != "10.0.0.1" {
+		t.Errorf("updated.Target = %q, want %q", updated.Target, "10.0.0.1")
+	}
+	if updated.IntervalSeconds != 120 {
+		t.Errorf("updated.IntervalSeconds = %d, want %d", updated.IntervalSeconds, 120)
+	}
+}
+
+func TestHandleUpdateCheck_NotFound(t *testing.T) {
+	m, _ := newTestModule(t)
+
+	body := `{"target":"10.0.0.1"}`
+	req := httptest.NewRequest(http.MethodPut, "/checks/nonexistent", strings.NewReader(body))
+	req.SetPathValue("id", "nonexistent")
+	w := httptest.NewRecorder()
+
+	m.handleUpdateCheck(w, req)
+
+	if w.Code != http.StatusNotFound {
+		t.Errorf("status = %d, want %d", w.Code, http.StatusNotFound)
+	}
+}
+
+// -- handleDeleteCheck tests --
+
+func TestHandleDeleteCheck_Success(t *testing.T) {
+	m, _ := newTestModule(t)
+
+	now := time.Now().UTC().Truncate(time.Second)
+	check := &Check{
+		ID:              "check-1",
+		DeviceID:        "dev-1",
+		CheckType:       "icmp",
+		Target:          "192.168.1.1",
+		IntervalSeconds: 30,
+		Enabled:         true,
+		CreatedAt:       now,
+		UpdatedAt:       now,
+	}
+	if err := m.store.InsertCheck(context.Background(), check); err != nil {
+		t.Fatalf("insert check: %v", err)
+	}
+
+	req := httptest.NewRequest(http.MethodDelete, "/checks/check-1", http.NoBody)
+	req.SetPathValue("id", "check-1")
+	w := httptest.NewRecorder()
+
+	m.handleDeleteCheck(w, req)
+
+	if w.Code != http.StatusNoContent {
+		t.Errorf("status = %d, want %d", w.Code, http.StatusNoContent)
+	}
+
+	// Verify it's gone.
+	got, err := m.store.GetCheck(context.Background(), "check-1")
+	if err != nil {
+		t.Fatalf("GetCheck after delete: %v", err)
+	}
+	if got != nil {
+		t.Errorf("check still exists after delete")
+	}
+}
+
+// -- handleToggleCheck tests --
+
+func TestHandleToggleCheck_Success(t *testing.T) {
+	m, _ := newTestModule(t)
+
+	now := time.Now().UTC().Truncate(time.Second)
+	check := &Check{
+		ID:              "check-1",
+		DeviceID:        "dev-1",
+		CheckType:       "icmp",
+		Target:          "192.168.1.1",
+		IntervalSeconds: 30,
+		Enabled:         true,
+		CreatedAt:       now,
+		UpdatedAt:       now,
+	}
+	if err := m.store.InsertCheck(context.Background(), check); err != nil {
+		t.Fatalf("insert check: %v", err)
+	}
+
+	req := httptest.NewRequest(http.MethodPatch, "/checks/check-1/toggle", http.NoBody)
+	req.SetPathValue("id", "check-1")
+	w := httptest.NewRecorder()
+
+	m.handleToggleCheck(w, req)
+
+	if w.Code != http.StatusOK {
+		t.Errorf("status = %d, want %d", w.Code, http.StatusOK)
+	}
+
+	var toggled Check
+	if err := json.NewDecoder(w.Body).Decode(&toggled); err != nil {
+		t.Fatalf("decode response: %v", err)
+	}
+	if toggled.Enabled {
+		t.Error("toggled.Enabled = true, want false (was true before toggle)")
+	}
+}
+
+func TestHandleToggleCheck_NotFound(t *testing.T) {
+	m, _ := newTestModule(t)
+
+	req := httptest.NewRequest(http.MethodPatch, "/checks/nonexistent/toggle", http.NoBody)
+	req.SetPathValue("id", "nonexistent")
+	w := httptest.NewRecorder()
+
+	m.handleToggleCheck(w, req)
+
+	if w.Code != http.StatusNotFound {
+		t.Errorf("status = %d, want %d", w.Code, http.StatusNotFound)
 	}
 }
 
@@ -407,66 +677,19 @@ func TestHandleListAlerts_WithData(t *testing.T) {
 	}
 }
 
-func TestHandleListAlerts_NilStore(t *testing.T) {
-	m := &Module{logger: zap.NewNop()}
-	req := httptest.NewRequest(http.MethodGet, "/alerts", http.NoBody)
-	w := httptest.NewRecorder()
-
-	m.handleListAlerts(w, req)
-
-	if w.Code != http.StatusServiceUnavailable {
-		t.Errorf("status = %d, want %d", w.Code, http.StatusServiceUnavailable)
-	}
-}
-
-// -- handleDeviceAlerts tests --
-
-func TestHandleDeviceAlerts_Empty(t *testing.T) {
-	m, _ := newTestModule(t)
-
-	req := httptest.NewRequest(http.MethodGet, "/alerts/dev-1", http.NoBody)
-	req.SetPathValue("device_id", "dev-1")
-	w := httptest.NewRecorder()
-
-	m.handleDeviceAlerts(w, req)
-
-	if w.Code != http.StatusOK {
-		t.Errorf("status = %d, want %d", w.Code, http.StatusOK)
-	}
-
-	var alerts []Alert
-	if err := json.NewDecoder(w.Body).Decode(&alerts); err != nil {
-		t.Fatalf("decode response: %v", err)
-	}
-	if len(alerts) != 0 {
-		t.Errorf("len(alerts) = %d, want 0", len(alerts))
-	}
-}
-
-func TestHandleDeviceAlerts_WithData(t *testing.T) {
+func TestHandleListAlerts_WithFilters(t *testing.T) {
 	m, _ := newTestModule(t)
 
 	now := time.Now().UTC().Truncate(time.Second)
-	// Insert checks first (foreign key constraint).
 	check1 := &Check{
-		ID:              "check-1",
-		DeviceID:        "dev-1",
-		CheckType:       "icmp",
-		Target:          "192.168.1.1",
-		IntervalSeconds: 60,
-		Enabled:         true,
-		CreatedAt:       now,
-		UpdatedAt:       now,
+		ID: "check-1", DeviceID: "dev-1", CheckType: "icmp",
+		Target: "192.168.1.1", IntervalSeconds: 60, Enabled: true,
+		CreatedAt: now, UpdatedAt: now,
 	}
 	check2 := &Check{
-		ID:              "check-2",
-		DeviceID:        "dev-2",
-		CheckType:       "icmp",
-		Target:          "192.168.1.2",
-		IntervalSeconds: 60,
-		Enabled:         true,
-		CreatedAt:       now,
-		UpdatedAt:       now,
+		ID: "check-2", DeviceID: "dev-2", CheckType: "icmp",
+		Target: "192.168.1.2", IntervalSeconds: 60, Enabled: true,
+		CreatedAt: now, UpdatedAt: now,
 	}
 	if err := m.store.InsertCheck(context.Background(), check1); err != nil {
 		t.Fatalf("insert check1: %v", err)
@@ -476,24 +699,14 @@ func TestHandleDeviceAlerts_WithData(t *testing.T) {
 	}
 
 	alert1 := &Alert{
-		ID:                  "alert-1",
-		CheckID:             "check-1",
-		DeviceID:            "dev-1",
-		Severity:            "warning",
-		Message:             "Device dev-1 unreachable",
-		TriggeredAt:         now,
-		ResolvedAt:          nil,
-		ConsecutiveFailures: 3,
+		ID: "alert-1", CheckID: "check-1", DeviceID: "dev-1",
+		Severity: "warning", Message: "Device dev-1 unreachable",
+		TriggeredAt: now, ConsecutiveFailures: 3,
 	}
 	alert2 := &Alert{
-		ID:                  "alert-2",
-		CheckID:             "check-2",
-		DeviceID:            "dev-2",
-		Severity:            "critical",
-		Message:             "Device dev-2 unreachable",
-		TriggeredAt:         now,
-		ResolvedAt:          nil,
-		ConsecutiveFailures: 5,
+		ID: "alert-2", CheckID: "check-2", DeviceID: "dev-2",
+		Severity: "critical", Message: "Device dev-2 unreachable",
+		TriggeredAt: now.Add(time.Second), ConsecutiveFailures: 5,
 	}
 	if err := m.store.InsertAlert(context.Background(), alert1); err != nil {
 		t.Fatalf("insert alert1: %v", err)
@@ -502,11 +715,10 @@ func TestHandleDeviceAlerts_WithData(t *testing.T) {
 		t.Fatalf("insert alert2: %v", err)
 	}
 
-	req := httptest.NewRequest(http.MethodGet, "/alerts/dev-1", http.NoBody)
-	req.SetPathValue("device_id", "dev-1")
+	// Filter by device_id.
+	req := httptest.NewRequest(http.MethodGet, "/alerts?device_id=dev-1", http.NoBody)
 	w := httptest.NewRecorder()
-
-	m.handleDeviceAlerts(w, req)
+	m.handleListAlerts(w, req)
 
 	if w.Code != http.StatusOK {
 		t.Errorf("status = %d, want %d", w.Code, http.StatusOK)
@@ -522,31 +734,179 @@ func TestHandleDeviceAlerts_WithData(t *testing.T) {
 	if alerts[0].DeviceID != "dev-1" {
 		t.Errorf("alerts[0].DeviceID = %q, want %q", alerts[0].DeviceID, "dev-1")
 	}
-}
 
-func TestHandleDeviceAlerts_EmptyDeviceID(t *testing.T) {
-	m, _ := newTestModule(t)
+	// Filter by severity.
+	req = httptest.NewRequest(http.MethodGet, "/alerts?severity=critical", http.NoBody)
+	w = httptest.NewRecorder()
+	m.handleListAlerts(w, req)
 
-	req := httptest.NewRequest(http.MethodGet, "/alerts/", http.NoBody)
-	w := httptest.NewRecorder()
+	if w.Code != http.StatusOK {
+		t.Errorf("status = %d, want %d", w.Code, http.StatusOK)
+	}
 
-	m.handleDeviceAlerts(w, req)
-
-	if w.Code != http.StatusBadRequest {
-		t.Errorf("status = %d, want %d", w.Code, http.StatusBadRequest)
+	if err := json.NewDecoder(w.Body).Decode(&alerts); err != nil {
+		t.Fatalf("decode response: %v", err)
+	}
+	if len(alerts) != 1 {
+		t.Fatalf("len(alerts) = %d, want 1", len(alerts))
+	}
+	if alerts[0].Severity != "critical" {
+		t.Errorf("alerts[0].Severity = %q, want %q", alerts[0].Severity, "critical")
 	}
 }
 
-func TestHandleDeviceAlerts_NilStore(t *testing.T) {
+func TestHandleListAlerts_NilStore(t *testing.T) {
 	m := &Module{logger: zap.NewNop()}
-	req := httptest.NewRequest(http.MethodGet, "/alerts/dev-1", http.NoBody)
-	req.SetPathValue("device_id", "dev-1")
+	req := httptest.NewRequest(http.MethodGet, "/alerts", http.NoBody)
 	w := httptest.NewRecorder()
 
-	m.handleDeviceAlerts(w, req)
+	m.handleListAlerts(w, req)
 
 	if w.Code != http.StatusServiceUnavailable {
 		t.Errorf("status = %d, want %d", w.Code, http.StatusServiceUnavailable)
+	}
+}
+
+// -- handleGetAlert tests --
+
+func TestHandleGetAlert_Found(t *testing.T) {
+	m, _ := newTestModule(t)
+
+	now := time.Now().UTC().Truncate(time.Second)
+	check := &Check{
+		ID: "check-1", DeviceID: "dev-1", CheckType: "icmp",
+		Target: "192.168.1.1", IntervalSeconds: 60, Enabled: true,
+		CreatedAt: now, UpdatedAt: now,
+	}
+	if err := m.store.InsertCheck(context.Background(), check); err != nil {
+		t.Fatalf("insert check: %v", err)
+	}
+
+	alert := &Alert{
+		ID: "alert-1", CheckID: "check-1", DeviceID: "dev-1",
+		Severity: "critical", Message: "Host down",
+		TriggeredAt: now, ConsecutiveFailures: 5,
+	}
+	if err := m.store.InsertAlert(context.Background(), alert); err != nil {
+		t.Fatalf("insert alert: %v", err)
+	}
+
+	req := httptest.NewRequest(http.MethodGet, "/alerts/alert-1", http.NoBody)
+	req.SetPathValue("id", "alert-1")
+	w := httptest.NewRecorder()
+
+	m.handleGetAlert(w, req)
+
+	if w.Code != http.StatusOK {
+		t.Errorf("status = %d, want %d", w.Code, http.StatusOK)
+	}
+
+	var got Alert
+	if err := json.NewDecoder(w.Body).Decode(&got); err != nil {
+		t.Fatalf("decode response: %v", err)
+	}
+	if got.ID != "alert-1" {
+		t.Errorf("alert.ID = %q, want %q", got.ID, "alert-1")
+	}
+}
+
+func TestHandleGetAlert_NotFound(t *testing.T) {
+	m, _ := newTestModule(t)
+
+	req := httptest.NewRequest(http.MethodGet, "/alerts/nonexistent", http.NoBody)
+	req.SetPathValue("id", "nonexistent")
+	w := httptest.NewRecorder()
+
+	m.handleGetAlert(w, req)
+
+	if w.Code != http.StatusNotFound {
+		t.Errorf("status = %d, want %d", w.Code, http.StatusNotFound)
+	}
+}
+
+// -- handleAcknowledgeAlert tests --
+
+func TestHandleAcknowledgeAlert_Success(t *testing.T) {
+	m, _ := newTestModule(t)
+
+	now := time.Now().UTC().Truncate(time.Second)
+	check := &Check{
+		ID: "check-1", DeviceID: "dev-1", CheckType: "icmp",
+		Target: "192.168.1.1", IntervalSeconds: 60, Enabled: true,
+		CreatedAt: now, UpdatedAt: now,
+	}
+	if err := m.store.InsertCheck(context.Background(), check); err != nil {
+		t.Fatalf("insert check: %v", err)
+	}
+
+	alert := &Alert{
+		ID: "alert-1", CheckID: "check-1", DeviceID: "dev-1",
+		Severity: "warning", Message: "High latency",
+		TriggeredAt: now, ConsecutiveFailures: 3,
+	}
+	if err := m.store.InsertAlert(context.Background(), alert); err != nil {
+		t.Fatalf("insert alert: %v", err)
+	}
+
+	req := httptest.NewRequest(http.MethodPost, "/alerts/alert-1/acknowledge", http.NoBody)
+	req.SetPathValue("id", "alert-1")
+	w := httptest.NewRecorder()
+
+	m.handleAcknowledgeAlert(w, req)
+
+	if w.Code != http.StatusOK {
+		t.Errorf("status = %d, want %d", w.Code, http.StatusOK)
+	}
+
+	var got Alert
+	if err := json.NewDecoder(w.Body).Decode(&got); err != nil {
+		t.Fatalf("decode response: %v", err)
+	}
+	if got.AcknowledgedAt == nil {
+		t.Error("acknowledged_at should be set after acknowledging")
+	}
+}
+
+// -- handleResolveAlert tests --
+
+func TestHandleResolveAlert_Success(t *testing.T) {
+	m, _ := newTestModule(t)
+
+	now := time.Now().UTC().Truncate(time.Second)
+	check := &Check{
+		ID: "check-1", DeviceID: "dev-1", CheckType: "icmp",
+		Target: "192.168.1.1", IntervalSeconds: 60, Enabled: true,
+		CreatedAt: now, UpdatedAt: now,
+	}
+	if err := m.store.InsertCheck(context.Background(), check); err != nil {
+		t.Fatalf("insert check: %v", err)
+	}
+
+	alert := &Alert{
+		ID: "alert-1", CheckID: "check-1", DeviceID: "dev-1",
+		Severity: "critical", Message: "Host down",
+		TriggeredAt: now, ConsecutiveFailures: 5,
+	}
+	if err := m.store.InsertAlert(context.Background(), alert); err != nil {
+		t.Fatalf("insert alert: %v", err)
+	}
+
+	req := httptest.NewRequest(http.MethodPost, "/alerts/alert-1/resolve", http.NoBody)
+	req.SetPathValue("id", "alert-1")
+	w := httptest.NewRecorder()
+
+	m.handleResolveAlert(w, req)
+
+	if w.Code != http.StatusOK {
+		t.Errorf("status = %d, want %d", w.Code, http.StatusOK)
+	}
+
+	var got Alert
+	if err := json.NewDecoder(w.Body).Decode(&got); err != nil {
+		t.Fatalf("decode response: %v", err)
+	}
+	if got.ResolvedAt == nil {
+		t.Error("resolved_at should be set after resolving")
 	}
 }
 

@@ -58,5 +58,13 @@ func migrations() []plugin.Migration {
 				return nil
 			},
 		},
+		{
+			Version:     2,
+			Description: "add acknowledged_at to pulse_alerts",
+			Up: func(tx *sql.Tx) error {
+				_, err := tx.Exec(`ALTER TABLE pulse_alerts ADD COLUMN acknowledged_at DATETIME`)
+				return err
+			},
+		},
 	}
 }
