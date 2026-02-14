@@ -254,6 +254,48 @@
 - [x] Dashboard Documentation tab with timeline, diff viewer, collector controls
 - [ ] Additional collectors: systemd, Home Assistant, Plex (future)
 
+### Documentation and UX (Cross-Cutting)
+
+**Status:** Three-tier model adopted 2026-02-14. Issues #213-#225 created. MkDocs site not yet scaffolded.
+
+**Goal:** Follow the three-tier documentation model (README landing page, MkDocs docs site, in-repo contributor docs). Remove barriers for first-time homelab users while keeping experienced users efficient.
+
+**Source:** Novice UX Review (2026-02-14), competitive research of 9 high-adoption OSS projects.
+
+**Reference:** [28-documentation-requirements.md](28-documentation-requirements.md), `.claude/rules/novice-ux-principles.md`
+
+#### P0 - Infrastructure
+
+- [ ] Set up MkDocs Material scaffolding (`mkdocs.yml`, `docs-site/` directory)
+- [ ] Deploy docs site to GitHub Pages (`herbhall.github.io/subnetree`)
+- [ ] Verify Docker image is pullable on GHCR (#215)
+- [ ] Simplify Quick Start to single recommended Docker path (#214)
+
+#### P1 - README and First Experience
+
+- [ ] Trim README to ~2,000 words landing page with docs site links (#219)
+- [ ] Add "What You'll Need" prerequisites section to README (#213)
+- [ ] Replace jargon with user-benefit language in README (#220)
+- [ ] Separate user vs dev docker-compose files (#217)
+
+#### P2 - Docs Site Content
+
+- [ ] Getting Started: Installation page (tabbed Docker/Binary/Source) (#216)
+- [ ] Getting Started: First Scan walkthrough
+- [ ] Getting Started: Dashboard Tour
+- [ ] Getting Started: FAQ
+- [ ] Operations: Troubleshooting with common novice issues (#218)
+- [ ] Operations: Platform-specific notes (#223)
+- [ ] User Guide: Common tasks for day-2 operations (#221)
+- [ ] Expand example config with novice-friendly comments (#222)
+- [ ] Add .env.example for Docker Compose users (#224)
+
+#### P3 - Polish
+
+- [ ] Update comparison table setup time to be realistic (#225)
+- [ ] Migrate existing `docs/guides/` content to docs site
+- [ ] Auto-generated API reference from OpenAPI spec
+
 ### Phase 2: Core Monitoring + Multi-Tenancy
 
 **Status:** Active development as of 2026-02-14. SNMP discovery (PRs #204-205), TCP/HTTP checks (#196, #202), webhook notifications (#203), monitoring dashboard (#206), and service mapping (#193-195) shipped. Multi-tenancy, Tailscale plugin, and PostgreSQL not yet started.
@@ -264,7 +306,7 @@
 
 - [ ] Evaluate PostgreSQL + TimescaleDB: migration tooling (golang-migrate), hypertable performance, connection pooling
 - [ ] Research Docker multi-arch build pipeline (buildx, QEMU, manifest lists)
-- [ ] Scaffold Hugo + Docsy documentation site, configure GitHub Pages deployment
+- [ ] Scaffold MkDocs Material documentation site, configure GitHub Pages deployment (see Cross-Cutting section)
 - [ ] Evaluate Plausible Analytics: self-hosted vs cloud, deployment requirements
 - [ ] Research OpenTelemetry Go SDK integration patterns for tracing
 - [ ] Evaluate SBOM generation tooling (Syft) and signing (Cosign) for release pipeline
