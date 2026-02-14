@@ -5,6 +5,7 @@
 [![Go Version](https://img.shields.io/github/go-mod/go-version/HerbHall/subnetree)](https://go.dev/)
 [![Go Report Card](https://goreportcard.com/badge/github.com/HerbHall/subnetree)](https://goreportcard.com/report/github.com/HerbHall/subnetree)
 [![codecov](https://codecov.io/gh/HerbHall/subnetree/branch/main/graph/badge.svg)](https://codecov.io/gh/HerbHall/subnetree)
+[![Docker Image](https://img.shields.io/badge/docker-ghcr.io%2Fherbhall%2Fsubnetree-blue?logo=docker)](https://github.com/HerbHall/subnetree/pkgs/container/subnetree)
 [![License](https://img.shields.io/badge/license-BSL%201.1-blue)](LICENSE)
 
 > **v0.2.1**: All core modules are functional. Discovery, monitoring, analytics, credential vault, and remote access all work. Contributions and feedback welcome!
@@ -41,10 +42,10 @@ HomeLabbers juggle dozens of tools: UnRAID for storage, Proxmox for VMs, Home As
 
 ### Coming Next
 
-- Scout agents for detailed host metrics (v0.3.0)
-- Enhanced discovery: SNMP, mDNS, UPnP, LLDP/CDP (v0.4.0)
-- Additional LLM providers: OpenAI, Anthropic (v0.3.0+)
-- Multi-tenant support for MSPs (v0.5.0)
+- Enhanced discovery: mDNS, UPnP, LLDP/CDP
+- Additional LLM providers: OpenAI, Anthropic
+- Multi-tenant support for MSPs
+- Tailscale integration
 
 See the [phased roadmap](docs/requirements/21-phased-roadmap.md) for the full plan.
 
@@ -261,11 +262,10 @@ api/
 
 ## Roadmap
 
-- **v0.2.1** (shipped): All core modules -- monitoring, analytics, vault, gateway, LLM
-- **v0.3.0**: Windows Scout agent + gRPC mTLS + Dispatch
-- **v0.4.0**: Enhanced discovery (SNMP, mDNS, UPnP, LLDP/CDP) + alerting
-- **v0.5.0**: Multi-tenant support for MSPs
-- **v1.0.0**: PostgreSQL, MFA, OIDC, HomeLab integrations (Home Assistant, UnRAID, Proxmox)
+- **v0.2.1** (shipped): Core modules -- monitoring, analytics, vault, gateway, LLM
+- **v0.3.0** (next): Scout agents, mTLS, SNMP discovery, service mapping, monitoring dashboard
+- **v0.4.0**: Enhanced discovery (mDNS, UPnP, LLDP/CDP), multi-tenant support
+- **v1.0.0**: PostgreSQL, MFA, OIDC, HomeLab integrations
 
 ## Troubleshooting
 
