@@ -7,16 +7,35 @@
 [![codecov](https://codecov.io/gh/HerbHall/subnetree/branch/main/graph/badge.svg)](https://codecov.io/gh/HerbHall/subnetree)
 [![Docker Image](https://img.shields.io/badge/docker-ghcr.io%2Fherbhall%2Fsubnetree-blue?logo=docker)](https://github.com/HerbHall/subnetree/pkgs/container/subnetree)
 [![License](https://img.shields.io/badge/license-BSL%201.1-blue)](LICENSE)
+[![Last Commit](https://img.shields.io/github/last-commit/HerbHall/subnetree)](https://github.com/HerbHall/subnetree/commits/main)
+[![Contributors](https://img.shields.io/github/contributors/HerbHall/subnetree)](https://github.com/HerbHall/subnetree/graphs/contributors)
+[![GitHub Discussions](https://img.shields.io/github/discussions/HerbHall/subnetree)](https://github.com/HerbHall/subnetree/discussions)
 
 > All core modules are functional. Discovery, monitoring, analytics, credential vault, and remote access all work. Contributions and feedback welcome!
 
 **Your HomeLab command center.** SubNetree discovers devices on your network, monitors their status, and gives you one-click access to everything -- without typing passwords a thousand times a day.
 
+## Contents
+
+- [Why SubNetree?](#why-subnetree)
+- [Screenshots](#screenshots)
+- [What You'll Need](#what-youll-need)
+- [Quick Start](#quick-start)
+- [First Steps After Install](#first-steps-after-install)
+- [Features](#features)
+- [Guides](#guides)
+- [Troubleshooting](#troubleshooting)
+- [How SubNetree Compares](#how-subnetree-compares)
+- [Community](#community)
+- [Support the Project](#support-the-project)
+- [Development](#development)
+- [License](#license)
+
 ## Why SubNetree?
 
 HomeLabbers juggle dozens of tools: UnRAID for storage, Proxmox for VMs, Home Assistant for automation, plus routers, NAS boxes, and random IoT devices. SubNetree doesn't replace any of them -- it's your **dashboard and aggregator** that:
 
-- **Discovers everything** on your LAN automatically (ARP, ICMP -- with mDNS, SNMP, UPnP planned)
+- **Discovers everything** on your LAN automatically (ARP, ICMP, mDNS, SNMP -- with UPnP, LLDP/CDP planned)
 - **Shows status at a glance** from multiple platforms in one place
 - **Launches anything** with one click -- web UIs, SSH -- credentials handled
 - **Extends via plugins** to monitor whatever you need
@@ -84,6 +103,15 @@ sudo ./install.sh --server http://your-subnetree-server:8080 --start
 
 See [deploy/scout/](deploy/scout/) for the systemd service file and install script.
 
+## First Steps After Install
+
+1. **Open the dashboard** -- navigate to [http://localhost:8080](http://localhost:8080)
+2. **Create your admin account** -- the setup wizard appears on first visit
+3. **Run your first scan** -- click "Start Scan" on the Dashboard to discover devices on your network
+4. **Explore your network** -- browse the device list, click devices for details, or switch to the Topology view
+5. **Set up monitoring** -- go to Monitoring to configure health checks and alerts for your devices
+6. **Secure your credentials** -- open the Vault to store SSH passwords, API keys, and other credentials with AES-256 encryption
+
 ## Features
 
 ### Discovery and Mapping
@@ -130,7 +158,7 @@ See [deploy/scout/](deploy/scout/) for the systemd service file and install scri
 
 ### Coming Next
 
-- Enhanced discovery: mDNS, UPnP, LLDP/CDP
+- Enhanced discovery: UPnP, LLDP/CDP
 - Additional LLM providers: OpenAI, Anthropic
 - Multi-tenant support for MSPs
 - Tailscale integration
@@ -310,9 +338,9 @@ api/
 
 ### Roadmap
 
-- **v0.2.1** (shipped): Core modules -- monitoring, analytics, vault, gateway, LLM
-- **v0.3.0** (next): Scout agents, mTLS, SNMP discovery, service mapping, monitoring dashboard
-- **v0.4.0**: Enhanced discovery (mDNS, UPnP, LLDP/CDP), multi-tenant support
+- **v0.3.0** (shipped): Scout agents, mTLS, service mapping, monitoring dashboard
+- **v0.4.0** (current): mDNS discovery, metrics history, alert suppression, vault UI, Linux Scout
+- **v0.5.0** (next): LLM BYOK providers, enhanced discovery (UPnP, LLDP/CDP), multi-tenant support
 - **v1.0.0**: PostgreSQL, MFA, OIDC, HomeLab integrations
 
 ## License
