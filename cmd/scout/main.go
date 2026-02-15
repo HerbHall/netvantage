@@ -20,6 +20,7 @@ func main() {
 	keyPath := flag.String("key", "", "Path to agent TLS private key")
 	caCert := flag.String("ca-cert", "", "Path to CA certificate for TLS verification")
 	insecureFlag := flag.Bool("insecure", false, "Use insecure gRPC transport (dev/testing only)")
+	autoRestart := flag.Bool("auto-restart", false, "Enable auto-restart on version rejection (requires init system support)")
 	flag.Parse()
 
 	logger, err := zap.NewProduction()
@@ -43,6 +44,7 @@ func main() {
 		KeyPath:       *keyPath,
 		CACertPath:    *caCert,
 		Insecure:      useInsecure,
+		AutoRestart:   *autoRestart,
 	}
 
 	ctx, cancel := context.WithCancel(context.Background())

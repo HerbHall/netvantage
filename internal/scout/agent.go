@@ -17,6 +17,7 @@ import (
 	"github.com/HerbHall/subnetree/internal/ca"
 	"github.com/HerbHall/subnetree/internal/scout/metrics"
 	"github.com/HerbHall/subnetree/internal/scout/profiler"
+	"github.com/HerbHall/subnetree/internal/scout/restarter"
 	"go.uber.org/zap"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
@@ -33,16 +34,24 @@ type Agent struct {
 	client    scoutpb.ScoutServiceClient
 	collector metrics.Collector
 	profiler  *profiler.Profiler
+	restarter restarter.Restarter
 }
 
 // NewAgent creates a new Scout agent instance.
 func NewAgent(config *Config, logger *zap.Logger) *Agent {
-	return &Agent{
+	a := &Agent{
 		config:    config,
 		logger:    logger,
 		collector: metrics.NewCollector(logger),
 		profiler:  profiler.NewProfiler(logger.Named("profiler")),
 	}
+	if config.AutoRestart {
+		a.restarter = restarter.Detect()
+		if a.restarter != nil {
+			logger.Info("auto-restart enabled", zap.String("init_system", a.restarter.Name()))
+		}
+	}
+	return a
 }
 
 // Run starts the agent and blocks until the context is cancelled.
@@ -379,6 +388,23 @@ func (a *Agent) checkIn(ctx context.Context) {
 	if !resp.Acknowledged {
 		a.logger.Warn("check-in not acknowledged",
 			zap.String("version_status", resp.VersionStatus.String()),
+			zap.String("message", resp.UpgradeMessage),
+		)
+	}
+
+	// Handle version status for auto-restart.
+	if resp.VersionStatus == scoutpb.VersionStatus_VERSION_REJECTED && a.restarter != nil {
+		a.logger.Warn("version rejected, initiating restart",
+			zap.String("init_system", a.restarter.Name()),
+			zap.String("message", resp.UpgradeMessage),
+		)
+		if err := a.restarter.Restart(ctx); err != nil {
+			a.logger.Error("restart failed", zap.Error(err))
+		}
+		return
+	}
+	if resp.VersionStatus == scoutpb.VersionStatus_VERSION_DEPRECATED {
+		a.logger.Warn("agent version deprecated, upgrade recommended",
 			zap.String("message", resp.UpgradeMessage),
 		)
 	}
