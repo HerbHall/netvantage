@@ -219,6 +219,16 @@ func (s *ReconStore) GetDeviceByIP(ctx context.Context, ip string) (*models.Devi
 		FROM recon_devices WHERE ip_addresses LIKE ?`, "%\""+ip+"\"%"))
 }
 
+// GetDeviceByHostname returns the first device matching the given hostname.
+func (s *ReconStore) GetDeviceByHostname(ctx context.Context, hostname string) (*models.Device, error) {
+	return s.scanDevice(s.db.QueryRowContext(ctx, `SELECT
+		id, hostname, ip_addresses, mac_address, manufacturer,
+		device_type, os, status, discovery_method, agent_id,
+		first_seen, last_seen, notes, tags, custom_fields,
+		location, category, primary_role, owner
+		FROM recon_devices WHERE hostname = ?`, hostname))
+}
+
 // ListDevices returns a paginated list of devices.
 func (s *ReconStore) ListDevices(ctx context.Context, opts ListDevicesOptions) ([]models.Device, int, error) {
 	if opts.Limit <= 0 {
