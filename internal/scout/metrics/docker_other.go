@@ -64,7 +64,7 @@ func collectDockerStats(ctx context.Context, logger *zap.Logger) []*scoutpb.Dock
 		return nil
 	}
 
-	var results []*scoutpb.DockerContainerStats
+	results := make([]*scoutpb.DockerContainerStats, 0, len(containers))
 	for _, c := range containers {
 		stats := fetchContainerStats(ctx, client, logger, c.ID)
 		if stats == nil {

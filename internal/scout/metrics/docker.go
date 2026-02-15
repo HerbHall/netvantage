@@ -134,7 +134,7 @@ func statsToProto(containerID, name string, stats *dockerStats) *scoutpb.DockerC
 		NetworkTxBytes:   txBytes,
 		BlockReadBytes:   readBytes,
 		BlockWriteBytes:  writeBytes,
-		Pids:             uint32(stats.PidsStats.Current),
+		Pids:             uint32(stats.PidsStats.Current), //nolint:gosec // G115: PID count fits in uint32
 	}
 }
 
