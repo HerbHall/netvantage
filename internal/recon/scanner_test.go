@@ -325,6 +325,96 @@ func TestScanOrchestrator_ResolveHostname(t *testing.T) {
 	}
 }
 
+func TestScanOrchestrator_TopologyLinks(t *testing.T) {
+	pinger := &mockPingScanner{
+		results: []HostResult{
+			{IP: "192.168.1.1", Alive: true, RTT: 1 * time.Millisecond, Method: "icmp"},
+			{IP: "192.168.1.10", Alive: true, RTT: 5 * time.Millisecond, Method: "icmp"},
+			{IP: "192.168.1.20", Alive: true, RTT: 8 * time.Millisecond, Method: "icmp"},
+		},
+	}
+	arp := &mockARPReader{
+		table: map[string]string{
+			"192.168.1.1":  "AA:BB:CC:00:00:01",
+			"192.168.1.10": "AA:BB:CC:00:00:0A",
+			"192.168.1.20": "AA:BB:CC:00:00:14",
+		},
+	}
+	oui := &mockOUI{table: map[string]string{}}
+
+	orch, reconStore, _ := setupOrchestrator(t, pinger, arp, oui)
+	ctx := context.Background()
+
+	scan := &models.ScanResult{ID: "scan-topo", Subnet: "192.168.1.0/24", Status: "running"}
+	if err := reconStore.CreateScan(ctx, scan); err != nil {
+		t.Fatalf("CreateScan: %v", err)
+	}
+
+	orch.RunScan(ctx, "scan-topo", "192.168.1.0/24")
+
+	// Verify scan completed.
+	got, err := reconStore.GetScan(ctx, "scan-topo")
+	if err != nil {
+		t.Fatalf("GetScan: %v", err)
+	}
+	if got.Status != "completed" {
+		t.Fatalf("scan status = %q, want completed", got.Status)
+	}
+
+	// Verify topology links were created.
+	links, err := reconStore.GetTopologyLinks(ctx)
+	if err != nil {
+		t.Fatalf("GetTopologyLinks: %v", err)
+	}
+	if len(links) != 2 {
+		t.Fatalf("topology link count = %d, want 2", len(links))
+	}
+
+	// Look up the gateway device to verify link targets.
+	gateway, err := reconStore.GetDeviceByIP(ctx, "192.168.1.1")
+	if err != nil || gateway == nil {
+		t.Fatalf("GetDeviceByIP(gateway): err=%v, device=%v", err, gateway)
+	}
+
+	for _, link := range links {
+		if link.TargetDeviceID != gateway.ID {
+			t.Errorf("link target = %q, want gateway %q", link.TargetDeviceID, gateway.ID)
+		}
+		if link.LinkType != "arp" {
+			t.Errorf("link type = %q, want arp", link.LinkType)
+		}
+		if link.SourceDeviceID == gateway.ID {
+			t.Errorf("link source should not be the gateway")
+		}
+	}
+}
+
+func TestFirstUsableIP(t *testing.T) {
+	tests := []struct {
+		cidr string
+		want string
+	}{
+		{"192.168.1.0/24", "192.168.1.1"},
+		{"10.0.0.0/8", "10.0.0.1"},
+		{"172.16.0.0/16", "172.16.0.1"},
+		{"192.168.100.0/24", "192.168.100.1"},
+		{"10.10.10.0/30", "10.10.10.1"},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.cidr, func(t *testing.T) {
+			_, ipNet, err := net.ParseCIDR(tt.cidr)
+			if err != nil {
+				t.Fatalf("ParseCIDR: %v", err)
+			}
+			got := firstUsableIP(ipNet)
+			if got != tt.want {
+				t.Errorf("firstUsableIP(%s) = %q, want %q", tt.cidr, got, tt.want)
+			}
+		})
+	}
+}
+
 func TestExpandSubnet(t *testing.T) {
 	tests := []struct {
 		cidr      string
