@@ -2337,6 +2337,86 @@ const docTemplate = `{
                 }
             }
         },
+        "/recon/devices/export": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Downloads all devices in CSV format for spreadsheet import or backup.",
+                "produces": [
+                    "text/csv"
+                ],
+                "tags": [
+                    "recon"
+                ],
+                "summary": "Export devices as CSV",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "file"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_HerbHall_subnetree_pkg_models.APIProblem"
+                        }
+                    }
+                }
+            }
+        },
+        "/recon/devices/import": {
+            "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Uploads a CSV file to create or update devices. Duplicates detected by MAC address or hostname.",
+                "consumes": [
+                    "multipart/form-data"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "recon"
+                ],
+                "summary": "Import devices from CSV",
+                "parameters": [
+                    {
+                        "type": "file",
+                        "description": "CSV file",
+                        "name": "file",
+                        "in": "formData",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/internal_recon.ImportResult"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_HerbHall_subnetree_pkg_models.APIProblem"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_HerbHall_subnetree_pkg_models.APIProblem"
+                        }
+                    }
+                }
+            }
+        },
         "/recon/devices/{id}": {
             "get": {
                 "security": [
@@ -5270,6 +5350,26 @@ const docTemplate = `{
                 },
                 "timestamp": {
                     "type": "string"
+                }
+            }
+        },
+        "internal_recon.ImportResult": {
+            "type": "object",
+            "properties": {
+                "created": {
+                    "type": "integer"
+                },
+                "errors": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "skipped": {
+                    "type": "integer"
+                },
+                "updated": {
+                    "type": "integer"
                 }
             }
         },

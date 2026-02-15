@@ -997,6 +997,19 @@ definitions:
       timestamp:
         type: string
     type: object
+  internal_recon.ImportResult:
+    properties:
+      created:
+        type: integer
+      errors:
+        items:
+          type: string
+        type: array
+      skipped:
+        type: integer
+      updated:
+        type: integer
+    type: object
   internal_recon.InventorySummary:
     properties:
       by_category:
@@ -2977,6 +2990,57 @@ paths:
       security:
       - BearerAuth: []
       summary: Bulk update devices
+      tags:
+      - recon
+  /recon/devices/export:
+    get:
+      description: Downloads all devices in CSV format for spreadsheet import or backup.
+      produces:
+      - text/csv
+      responses:
+        "200":
+          description: OK
+          schema:
+            type: file
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/github_com_HerbHall_subnetree_pkg_models.APIProblem'
+      security:
+      - BearerAuth: []
+      summary: Export devices as CSV
+      tags:
+      - recon
+  /recon/devices/import:
+    post:
+      consumes:
+      - multipart/form-data
+      description: Uploads a CSV file to create or update devices. Duplicates detected
+        by MAC address or hostname.
+      parameters:
+      - description: CSV file
+        in: formData
+        name: file
+        required: true
+        type: file
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/internal_recon.ImportResult'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/github_com_HerbHall_subnetree_pkg_models.APIProblem'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/github_com_HerbHall_subnetree_pkg_models.APIProblem'
+      security:
+      - BearerAuth: []
+      summary: Import devices from CSV
       tags:
       - recon
   /recon/inventory/summary:
