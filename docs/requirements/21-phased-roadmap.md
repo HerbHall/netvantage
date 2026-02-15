@@ -207,8 +207,8 @@
 - [x] README: clarify licensing wording to "free for personal, home-lab, and non-competing production use"
 - [x] Seed GitHub Issues: 5–10 issues labeled `good first issue` and `help wanted` (e.g., "add device type icon mapping", "write Prometheus exporter example plugin", "add ARM64 CI build target")
 - [x] Seed GitHub Discussions: introductory post, roadmap discussion thread, "plugin ideas" thread, "show your setup" thread
-- [ ] Community channel: create Discord server (or Matrix space) for real-time contributor discussion, linked from README and CONTRIBUTING.md
-- [ ] Blog post / announcement: publish initial announcement on personal blog, r/homelab, r/selfhosted, Hacker News (after v0.1.0-alpha has working dashboard + discovery)
+- [ ] Community channel: create Discord server (or Matrix space) for real-time contributor discussion, linked from README and CONTRIBUTING.md *(deferred: build stable feature-rich product first)*
+- [ ] Blog post / announcement: publish initial announcement on personal blog, r/homelab, r/selfhosted, Hacker News *(deferred: announce when product is stable and feature-rich)*
 - [x] CODE_OF_CONDUCT.md: Contributor Covenant (standard, expected by contributors and evaluators)
 
 ### Phase 1b: Windows Scout Agent
@@ -309,7 +309,7 @@
 - [ ] Evaluate PostgreSQL + TimescaleDB: migration tooling (golang-migrate), hypertable performance, connection pooling
 - [x] Research Docker multi-arch build pipeline (buildx, QEMU, manifest lists) (GoReleaser + buildx in v0.1.0-alpha)
 - [x] Scaffold MkDocs Material documentation site, configure GitHub Pages deployment (PR #270)
-- [ ] Evaluate Plausible Analytics: self-hosted vs cloud, deployment requirements
+- [ ] Evaluate Plausible Analytics: self-hosted vs cloud, deployment requirements *(deferred: needs community/website traffic first)*
 - [ ] Research OpenTelemetry Go SDK integration patterns for tracing
 - [x] Evaluate SBOM generation tooling (Syft) and signing (Cosign) for release pipeline (Syft in GoReleaser since v0.1.0-alpha)
 - [x] Research SNMP Go libraries (gosnmp) and MIB parsing (gosnmp adopted -- PR #204)
@@ -419,12 +419,12 @@ Framework for hardware-aware growth recommendations. SubNetree uses Scout's hard
 - [x] govulncheck in CI pipeline (Trivy TODO)
 - [ ] IPv6 scanning and agent communication support
 - [ ] Per-tenant rate limiting
-- [ ] Public demo instance: read-only demo on free-tier cloud (Oracle Cloud ARM64 or similar) with synthetic data, linked from README and website
-- [ ] Project website (GitHub Pages or similar): documentation hub, blog, supporter showcase, demo link
-- [ ] Opt-in telemetry: anonymous usage ping (weekly, disabled by default, payload documented and viewable in UI)
-- [ ] Telemetry endpoint: simple HTTPS collector for installation count, MAU, feature usage tracking
-- [ ] Google Search Console: register project website for organic search traffic tracking
-- [ ] Plausible Analytics (self-hosted or cloud): privacy-friendly website analytics for project site
+- [ ] Public demo instance: read-only demo on free-tier cloud (Oracle Cloud ARM64 or similar) with synthetic data, linked from README and website *(deferred: launch when product is stable and feature-rich)*
+- [ ] Project website (GitHub Pages or similar): documentation hub, blog, supporter showcase, demo link *(deferred: build after product maturity)*
+- [ ] Opt-in telemetry: anonymous usage ping (weekly, disabled by default, payload documented and viewable in UI) *(deferred: needs community adoption first)*
+- [ ] Telemetry endpoint: simple HTTPS collector for installation count, MAU, feature usage tracking *(deferred: needs community adoption first)*
+- [ ] Google Search Console: register project website for organic search traffic tracking *(deferred: needs website and community)*
+- [ ] Plausible Analytics (self-hosted or cloud): privacy-friendly website analytics for project site *(deferred: needs website and community)*
 - [ ] Architecture Decision Records (ADRs): establish `docs/adr/` directory with template, document key decisions retroactively
 - [ ] SonarQube Community (optional): technical debt tracking if Go Report Card + golangci-lint prove insufficient
 - [ ] Modularity Metrics: establish baseline measures for plugin efficiency (shared components), flexibility (valid configurations), and agility (changes required for new features)
@@ -525,10 +525,10 @@ Builds on Phase 2 framework. Adds remote catalog, usage-pattern triggers, and ri
 
 #### Recommendation Catalog Maintenance
 
-- [ ] Community-contributed catalog entries (PRs to catalog repo, reviewed before merge)
+- [ ] Community-contributed catalog entries (PRs to catalog repo, reviewed before merge) *(deferred: needs community adoption)*
 - [ ] Catalog versioning with changelog (users see "3 new tools added since last update")
 - [ ] Integration status badges in catalog (none/planned/basic/full with links to setup docs)
-- [ ] Anonymous opt-in usage telemetry to inform catalog priorities (which tools are users actually pairing with SubNetree)
+- [ ] Anonymous opt-in usage telemetry to inform catalog priorities (which tools are users actually pairing with SubNetree) *(deferred: needs community adoption)*
 
 #### HomeLab Platform Integrations
 
