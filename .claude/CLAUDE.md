@@ -176,9 +176,9 @@ Every GitHub issue must be developed on its own branch:
 
 Development is coordinated with HomeLab research via `D:\DevSpace\.coordination\`:
 
-- **Check for new findings**: `/dev-mode` automatically surfaces unprocessed `RF-NNN` entries at session start
-- **File a research request**: `/dev-mode 2` creates an `RN-NNN` entry in `research-needs.md`
-- **End-of-session update**: `/dev-mode 5` updates `status.md` with development progress
+- **Check for new findings**: `/dashboard` automatically surfaces unprocessed `RF-NNN` entries at session start
+- **File a research request**: `/dashboard` option 10 creates an `RN-NNN` entry in `research-needs.md`
+- **End-of-session update**: `/dashboard` option 11 updates `status.md` with development progress
 - **Full sync**: `/coordination-sync 1` updates all coordination files
 
 The `UserPromptSubmit` hook in `.claude/settings.json` automatically reminds about coordination context during regular dev prompts.
@@ -189,7 +189,7 @@ These installed skills are particularly relevant for SubNetree development:
 
 | Skill / Command | When to Use |
 |----------------|-------------|
-| `/dev-mode` | Start a development session (checks research findings first) |
+| `/dashboard` | Session control station -- start here (checks research findings first) |
 | `/create-plan` | Before starting any multi-file feature implementation |
 | `/run-plan` | Executing a phase from an existing plan |
 | `/coordination-sync` | Sync coordination files between SubNetree and HomeLab |
