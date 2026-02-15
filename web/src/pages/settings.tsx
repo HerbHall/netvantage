@@ -10,6 +10,7 @@ import {
   CheckCircle2,
   RotateCcw,
   Palette,
+  Brain,
   Key,
   Copy,
   Check,
@@ -26,12 +27,13 @@ import {
 } from '@/api/settings'
 import type { NetworkInterface } from '@/api/settings'
 import { createEnrollmentToken } from '@/api/agents'
+import { LLMConfig as LLMConfigPanel } from '@/components/settings/llm-config'
 import { ThemeSelector } from '@/components/settings/theme-selector'
 import { ThemeImportExport } from '@/components/settings/theme-import-export'
 import { ThemeEditor } from '@/components/settings/theme-editor'
 import type { ThemeDefinition } from '@/api/themes'
 
-type SettingsTab = 'network' | 'appearance' | 'agents'
+type SettingsTab = 'network' | 'appearance' | 'llm' | 'agents'
 
 export function SettingsPage() {
   const [activeTab, setActiveTab] = useState<SettingsTab>('network')
@@ -61,6 +63,12 @@ export function SettingsPage() {
           label="Appearance"
         />
         <TabButton
+          active={activeTab === 'llm'}
+          onClick={() => setActiveTab('llm')}
+          icon={<Brain className="h-4 w-4" />}
+          label="AI / LLM"
+        />
+        <TabButton
           active={activeTab === 'agents'}
           onClick={() => setActiveTab('agents')}
           icon={<Key className="h-4 w-4" />}
@@ -71,6 +79,7 @@ export function SettingsPage() {
       {/* Tab content */}
       {activeTab === 'network' && <NetworkTab />}
       {activeTab === 'appearance' && <AppearanceTab />}
+      {activeTab === 'llm' && <LLMConfigPanel />}
       {activeTab === 'agents' && <AgentsTab />}
     </div>
   )
