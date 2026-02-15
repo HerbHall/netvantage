@@ -192,6 +192,8 @@ func (m *Module) Routes() []plugin.Route {
 		{Method: "GET", Path: "/topology", Handler: m.handleTopology},
 		{Method: "GET", Path: "/devices", Handler: m.handleListDevices},
 		{Method: "POST", Path: "/devices", Handler: m.handleCreateDevice},
+		{Method: "GET", Path: "/devices/export", Handler: m.handleExportCSV},
+		{Method: "POST", Path: "/devices/import", Handler: m.handleImportCSV},
 		{Method: "GET", Path: "/devices/{id}", Handler: m.handleGetDevice},
 		{Method: "PUT", Path: "/devices/{id}", Handler: m.handleUpdateDevice},
 		{Method: "DELETE", Path: "/devices/{id}", Handler: m.handleDeleteDevice},

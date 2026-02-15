@@ -3,8 +3,10 @@ package recon
 import (
 	"context"
 	"database/sql"
+	"encoding/csv"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"net"
 	"net/http"
 	"strconv"
@@ -258,6 +260,165 @@ func (m *Module) handleTopology(w http.ResponseWriter, r *http.Request) {
 	}
 
 	writeJSON(w, http.StatusOK, graph)
+}
+
+// ImportResult contains the results of a CSV import operation.
+type ImportResult struct {
+	Created int      `json:"created"`
+	Updated int      `json:"updated"`
+	Skipped int      `json:"skipped"`
+	Errors  []string `json:"errors,omitempty"`
+}
+
+// handleExportCSV exports all devices as a CSV file.
+//
+//	@Summary		Export devices as CSV
+//	@Description	Downloads all devices in CSV format for spreadsheet import or backup.
+//	@Tags			recon
+//	@Produce		text/csv
+//	@Security		BearerAuth
+//	@Success		200	{file}	file
+//	@Failure		500	{object}	models.APIProblem
+//	@Router			/recon/devices/export [get]
+func (m *Module) handleExportCSV(w http.ResponseWriter, r *http.Request) {
+	devices, _, err := m.store.ListDevices(r.Context(), ListDevicesOptions{Limit: 100000})
+	if err != nil {
+		m.logger.Error("failed to list devices for export", zap.Error(err))
+		writeError(w, http.StatusInternalServerError, "failed to export devices")
+		return
+	}
+
+	w.Header().Set("Content-Type", "text/csv")
+	w.Header().Set("Content-Disposition", `attachment; filename="subnetree-devices.csv"`)
+
+	writer := csv.NewWriter(w)
+	defer writer.Flush()
+
+	_ = writer.Write(csvHeaders())
+
+	for i := range devices {
+		_ = writer.Write(deviceToCSVRow(devices[i]))
+	}
+}
+
+// handleImportCSV imports devices from a CSV file.
+//
+//	@Summary		Import devices from CSV
+//	@Description	Uploads a CSV file to create or update devices. Duplicates detected by MAC address or hostname.
+//	@Tags			recon
+//	@Accept			multipart/form-data
+//	@Produce		json
+//	@Security		BearerAuth
+//	@Param			file	formData	file	true	"CSV file"
+//	@Success		200		{object}	ImportResult
+//	@Failure		400		{object}	models.APIProblem
+//	@Failure		500		{object}	models.APIProblem
+//	@Router			/recon/devices/import [post]
+func (m *Module) handleImportCSV(w http.ResponseWriter, r *http.Request) {
+	// Limit upload to 10 MB.
+	r.Body = http.MaxBytesReader(w, r.Body, 10<<20)
+
+	file, _, err := r.FormFile("file")
+	if err != nil {
+		writeError(w, http.StatusBadRequest, "missing or invalid file field")
+		return
+	}
+	defer file.Close()
+
+	reader := csv.NewReader(file)
+
+	// Read and validate header.
+	header, err := reader.Read()
+	if err != nil {
+		writeError(w, http.StatusBadRequest, "failed to read CSV header")
+		return
+	}
+	if len(header) < 2 {
+		writeError(w, http.StatusBadRequest, "invalid CSV: too few columns")
+		return
+	}
+
+	result := ImportResult{}
+	rowNum := 1 // 1-indexed, header is row 1
+
+	for {
+		row, readErr := reader.Read()
+		if readErr != nil {
+			break // EOF or error
+		}
+		rowNum++
+
+		device, parseErr := csvRowToDevice(row)
+		if parseErr != nil {
+			result.Errors = append(result.Errors, fmt.Sprintf("row %d: %v", rowNum, parseErr))
+			result.Skipped++
+			continue
+		}
+
+		if device.Hostname == "" {
+			result.Errors = append(result.Errors, fmt.Sprintf("row %d: hostname is required", rowNum))
+			result.Skipped++
+			continue
+		}
+
+		// Check for existing device by MAC.
+		if device.MACAddress != "" {
+			existing, _ := m.store.GetDeviceByMAC(r.Context(), device.MACAddress)
+			if existing != nil {
+				tags := device.Tags
+				dtStr := string(device.DeviceType)
+				_ = m.store.UpdateDevice(r.Context(), existing.ID, UpdateDeviceParams{
+					Notes:       &device.Notes,
+					Tags:        &tags,
+					DeviceType:  &dtStr,
+					Location:    &device.Location,
+					Category:    &device.Category,
+					PrimaryRole: &device.PrimaryRole,
+					Owner:       &device.Owner,
+				})
+				result.Updated++
+				continue
+			}
+		}
+
+		// Check for existing device by hostname.
+		existing, _ := m.store.GetDeviceByHostname(r.Context(), device.Hostname)
+		if existing != nil {
+			tags := device.Tags
+			dtStr := string(device.DeviceType)
+			_ = m.store.UpdateDevice(r.Context(), existing.ID, UpdateDeviceParams{
+				Notes:       &device.Notes,
+				Tags:        &tags,
+				DeviceType:  &dtStr,
+				Location:    &device.Location,
+				Category:    &device.Category,
+				PrimaryRole: &device.PrimaryRole,
+				Owner:       &device.Owner,
+			})
+			result.Updated++
+			continue
+		}
+
+		// Create new device.
+		if device.ID == "" {
+			device.ID = uuid.New().String()
+		}
+		if device.Status == "" {
+			device.Status = models.DeviceStatusUnknown
+		}
+		if device.DiscoveryMethod == "" {
+			device.DiscoveryMethod = models.DiscoveryManual
+		}
+
+		if createErr := m.store.InsertManualDevice(r.Context(), &device); createErr != nil {
+			result.Errors = append(result.Errors, fmt.Sprintf("row %d: %v", rowNum, createErr))
+			result.Skipped++
+			continue
+		}
+		result.Created++
+	}
+
+	writeJSON(w, http.StatusOK, result)
 }
 
 // DeviceListResponse is the paginated response for GET /devices.
