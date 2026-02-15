@@ -2,6 +2,7 @@ import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
 import type { ThemeDefinition } from '@/api/themes'
 import { flattenTokens } from '@/lib/theme-defaults'
+import { getDefaultThemeId } from '@/lib/theme-preference'
 
 interface ThemeState {
   /** ID of the active theme */
@@ -50,7 +51,7 @@ function removeTokensFromDOM(varNames: string[]) {
 export const useThemeStore = create<ThemeState>()(
   persist(
     (set, get) => ({
-      activeThemeId: 'builtin-forest-dark',
+      activeThemeId: getDefaultThemeId(),
       activeTheme: null,
       draftOverrides: null,
       isHydrated: false,

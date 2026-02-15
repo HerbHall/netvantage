@@ -3,6 +3,8 @@ import { useNavigate } from 'react-router-dom'
 import { useAuthStore } from '@/stores/auth'
 import { setupApi, loginApi, checkSetupRequired } from '@/api/auth'
 import { getNetworkInterfaces, setScanInterface, type NetworkInterface } from '@/api/settings'
+import { setActiveTheme } from '@/api/themes'
+import { detectColorScheme } from '@/lib/theme-preference'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -13,9 +15,9 @@ import {
   CardHeader,
   CardTitle,
 } from '@/components/ui/card'
-import { Eye, EyeOff } from 'lucide-react'
+import { Eye, EyeOff, Moon, Sun } from 'lucide-react'
 
-type Step = 1 | 2 | 3
+type Step = 1 | 2 | 3 | 4
 
 interface FormData {
   username: string
@@ -23,6 +25,7 @@ interface FormData {
   password: string
   confirmPassword: string
   selectedInterface: string // Empty string means auto-detect
+  selectedThemeMode: 'dark' | 'light'
 }
 
 interface FormErrors {
@@ -55,7 +58,8 @@ function StepIndicator({ currentStep }: { currentStep: Step }) {
   const steps = [
     { num: 1, label: 'Account' },
     { num: 2, label: 'Network' },
-    { num: 3, label: 'Complete' },
+    { num: 3, label: 'Theme' },
+    { num: 4, label: 'Complete' },
   ]
 
   return (
@@ -99,6 +103,7 @@ export function SetupPage() {
     password: '',
     confirmPassword: '',
     selectedInterface: '',
+    selectedThemeMode: detectColorScheme(),
   })
   const [errors, setErrors] = useState<FormErrors>({})
   const [apiError, setApiError] = useState('')
@@ -204,6 +209,8 @@ export function SetupPage() {
       }
     } else if (step === 2) {
       setStep(3)
+    } else if (step === 3) {
+      setStep(4)
     }
   }
 
@@ -211,6 +218,7 @@ export function SetupPage() {
     setApiError('')
     if (step === 2) setStep(1)
     else if (step === 3) setStep(2)
+    else if (step === 4) setStep(3)
   }
 
   async function handleComplete() {
@@ -218,8 +226,13 @@ export function SetupPage() {
     setLoading(true)
     try {
       // Account was already created and logged in during step 1 -> 2 transition
-      // Just save the selected interface (empty string means auto-detect)
+      // Save the selected interface (empty string means auto-detect)
       await setScanInterface(formData.selectedInterface)
+      // Save the selected theme preference
+      const themeId = formData.selectedThemeMode === 'dark'
+        ? 'builtin-forest-dark'
+        : 'builtin-forest-light'
+      await setActiveTheme(themeId)
       navigate('/dashboard', { replace: true })
     } catch (err) {
       setApiError(err instanceof Error ? err.message : 'Setup failed')
@@ -267,7 +280,8 @@ export function SetupPage() {
         <CardDescription>
           {step === 1 && 'Create your administrator account to get started.'}
           {step === 2 && 'Configure network scanning settings.'}
-          {step === 3 && 'Review your settings and complete setup.'}
+          {step === 3 && 'Choose your preferred appearance.'}
+          {step === 4 && 'Review your settings and complete setup.'}
         </CardDescription>
       </CardHeader>
       <CardContent>
@@ -541,6 +555,86 @@ export function SetupPage() {
 
         {step === 3 && (
           <div className="space-y-4">
+            <div className="space-y-3">
+              <h3 className="font-medium text-foreground">Theme Preference</h3>
+              <p className="text-sm text-muted-foreground">
+                Select a color scheme that matches your preference. This is based on your
+                system setting, but you can change it anytime.
+              </p>
+
+              <div className="grid grid-cols-2 gap-3">
+                {/* Dark mode card */}
+                <button
+                  type="button"
+                  onClick={() => updateField('selectedThemeMode', 'dark')}
+                  className={`flex flex-col items-center gap-3 rounded-lg border p-4 transition-colors ${
+                    formData.selectedThemeMode === 'dark'
+                      ? 'border-primary bg-primary/5'
+                      : 'border-muted hover:border-muted-foreground/50'
+                  }`}
+                >
+                  <Moon className="h-8 w-8 text-muted-foreground" />
+                  <div className="text-center">
+                    <p className="font-medium text-foreground">Dark</p>
+                    <p className="mt-0.5 text-xs text-muted-foreground">
+                      Easy on the eyes
+                    </p>
+                  </div>
+                  {/* Color swatch preview */}
+                  <div className="flex gap-1.5">
+                    <div className="h-4 w-4 rounded-full" style={{ backgroundColor: '#0c1a0e' }} title="Background" />
+                    <div className="h-4 w-4 rounded-full" style={{ backgroundColor: '#1a2e1c' }} title="Card" />
+                    <div className="h-4 w-4 rounded-full" style={{ backgroundColor: '#4ade80' }} title="Accent" />
+                    <div className="h-4 w-4 rounded-full" style={{ backgroundColor: '#f5f0e8' }} title="Text" />
+                  </div>
+                </button>
+
+                {/* Light mode card */}
+                <button
+                  type="button"
+                  onClick={() => updateField('selectedThemeMode', 'light')}
+                  className={`flex flex-col items-center gap-3 rounded-lg border p-4 transition-colors ${
+                    formData.selectedThemeMode === 'light'
+                      ? 'border-primary bg-primary/5'
+                      : 'border-muted hover:border-muted-foreground/50'
+                  }`}
+                >
+                  <Sun className="h-8 w-8 text-muted-foreground" />
+                  <div className="text-center">
+                    <p className="font-medium text-foreground">Light</p>
+                    <p className="mt-0.5 text-xs text-muted-foreground">
+                      Clean and bright
+                    </p>
+                  </div>
+                  {/* Color swatch preview */}
+                  <div className="flex gap-1.5">
+                    <div className="h-4 w-4 rounded-full border border-muted" style={{ backgroundColor: '#f5f5f0' }} title="Background" />
+                    <div className="h-4 w-4 rounded-full border border-muted" style={{ backgroundColor: '#ffffff' }} title="Card" />
+                    <div className="h-4 w-4 rounded-full" style={{ backgroundColor: '#16a34a' }} title="Accent" />
+                    <div className="h-4 w-4 rounded-full" style={{ backgroundColor: '#1a2e1c' }} title="Text" />
+                  </div>
+                </button>
+              </div>
+            </div>
+
+            <p className="text-sm text-muted-foreground">
+              You can change this later in{' '}
+              <span className="font-medium text-foreground">Settings → Themes</span>.
+            </p>
+
+            <div className="flex gap-3">
+              <Button type="button" variant="outline" onClick={handleBack} className="flex-1">
+                Back
+              </Button>
+              <Button type="button" onClick={handleNext} className="flex-1">
+                Next
+              </Button>
+            </div>
+          </div>
+        )}
+
+        {step === 4 && (
+          <div className="space-y-4">
             <div className="rounded-lg bg-muted/50 p-4 space-y-3">
               <h3 className="font-medium text-foreground">Setup Summary</h3>
               <div className="space-y-2 text-sm">
@@ -560,6 +654,12 @@ export function SetupPage() {
                   <span className="text-muted-foreground">Network Interface</span>
                   <span className="font-medium">
                     {formData.selectedInterface || 'Auto-detect'}
+                  </span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">Theme</span>
+                  <span className="font-medium capitalize">
+                    {formData.selectedThemeMode}
                   </span>
                 </div>
               </div>
