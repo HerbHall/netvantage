@@ -22,6 +22,7 @@ import (
 
 	_ "github.com/HerbHall/subnetree/api/swagger"
 	"github.com/HerbHall/subnetree/internal/auth"
+	"github.com/HerbHall/subnetree/internal/catalog"
 	"github.com/HerbHall/subnetree/internal/config"
 	"github.com/HerbHall/subnetree/internal/dashboard"
 	"github.com/HerbHall/subnetree/internal/dispatch"
@@ -42,6 +43,7 @@ import (
 	"github.com/HerbHall/subnetree/internal/version"
 	"github.com/HerbHall/subnetree/internal/webhook"
 	"github.com/HerbHall/subnetree/internal/ws"
+	pkgcatalog "github.com/HerbHall/subnetree/pkg/catalog"
 	"github.com/HerbHall/subnetree/pkg/plugin"
 	"go.uber.org/zap"
 )
@@ -298,7 +300,13 @@ func main() {
 		return db.DB().PingContext(ctx)
 	})
 	dashboardHandler := dashboard.Handler()
-	extraRoutes := []server.SimpleRouteRegistrar{settingsHandler, wsHandler, svcmapHandler}
+
+	// Create catalog recommendation handler.
+	cat := pkgcatalog.NewCatalog()
+	catalogEngine := catalog.NewEngine(cat)
+	catalogHandler := catalog.NewHandler(catalogEngine, logger.Named("catalog"))
+
+	extraRoutes := []server.SimpleRouteRegistrar{settingsHandler, wsHandler, svcmapHandler, catalogHandler}
 	if sshHandler != nil {
 		extraRoutes = append(extraRoutes, sshHandler)
 	}

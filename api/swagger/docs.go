@@ -228,6 +228,95 @@ const docTemplate = `{
                 }
             }
         },
+        "/catalog/entries": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Returns the full tool catalog for client-side filtering.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "catalog"
+                ],
+                "summary": "List all catalog entries",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/github_com_HerbHall_subnetree_pkg_catalog.CatalogEntry"
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    }
+                }
+            }
+        },
+        "/catalog/recommendations": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Returns recommended homelab tools filtered by hardware tier and optional category, sorted by memory requirements ascending.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "catalog"
+                ],
+                "summary": "Get tool recommendations",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "default": 1,
+                        "description": "Hardware tier (0=SBC, 1=Mini PC, 2=NAS, 3=Cluster, 4=SMB)",
+                        "name": "tier",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Filter by category (monitoring, infrastructure, dns, etc.)",
+                        "name": "category",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/internal_catalog.RecommendationResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    }
+                }
+            }
+        },
         "/dispatch/agents": {
             "get": {
                 "security": [
@@ -3973,6 +4062,132 @@ const docTemplate = `{
                 }
             }
         },
+        "github_com_HerbHall_subnetree_pkg_catalog.CatalogEntry": {
+            "type": "object",
+            "properties": {
+                "category": {
+                    "$ref": "#/definitions/github_com_HerbHall_subnetree_pkg_catalog.Category"
+                },
+                "description": {
+                    "type": "string"
+                },
+                "docker_image": {
+                    "type": "string"
+                },
+                "github_url": {
+                    "type": "string"
+                },
+                "integration_notes": {
+                    "type": "string"
+                },
+                "integration_status": {
+                    "$ref": "#/definitions/github_com_HerbHall_subnetree_pkg_catalog.IntegrationStatus"
+                },
+                "language": {
+                    "type": "string"
+                },
+                "license": {
+                    "type": "string"
+                },
+                "min_ram_mb": {
+                    "type": "integer"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "protocols": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "stars": {
+                    "type": "integer"
+                },
+                "supported_tiers": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/github_com_HerbHall_subnetree_pkg_catalog.HardwareTier"
+                    }
+                },
+                "tags": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "website": {
+                    "type": "string"
+                }
+            }
+        },
+        "github_com_HerbHall_subnetree_pkg_catalog.Category": {
+            "type": "string",
+            "enum": [
+                "monitoring",
+                "infrastructure",
+                "dns",
+                "home-automation",
+                "notifications",
+                "dashboard",
+                "cmdb",
+                "documentation",
+                "network"
+            ],
+            "x-enum-varnames": [
+                "CategoryMonitoring",
+                "CategoryInfrastructure",
+                "CategoryDNS",
+                "CategoryHomeAutomation",
+                "CategoryNotifications",
+                "CategoryDashboard",
+                "CategoryCMDB",
+                "CategoryDocumentation",
+                "CategoryNetwork"
+            ]
+        },
+        "github_com_HerbHall_subnetree_pkg_catalog.HardwareTier": {
+            "type": "integer",
+            "enum": [
+                0,
+                1,
+                2,
+                3,
+                4
+            ],
+            "x-enum-comments": {
+                "TierCluster": "Proxmox cluster",
+                "TierMiniPC": "Intel N100 (8-32 GB)",
+                "TierNAS": "Synology/QNAP (Scout only)",
+                "TierSBC": "Pi, SBC (1 GB)",
+                "TierSMB": "Small business server"
+            },
+            "x-enum-varnames": [
+                "TierSBC",
+                "TierMiniPC",
+                "TierNAS",
+                "TierCluster",
+                "TierSMB"
+            ]
+        },
+        "github_com_HerbHall_subnetree_pkg_catalog.IntegrationStatus": {
+            "type": "string",
+            "enum": [
+                "shipped",
+                "planned",
+                "possible"
+            ],
+            "x-enum-comments": {
+                "IntegrationPlanned": "On roadmap",
+                "IntegrationPossible": "Feasible, not scheduled",
+                "IntegrationShipped": "Already works"
+            },
+            "x-enum-varnames": [
+                "IntegrationShipped",
+                "IntegrationPlanned",
+                "IntegrationPossible"
+            ]
+        },
         "github_com_HerbHall_subnetree_pkg_models.APIProblem": {
             "type": "object",
             "properties": {
@@ -4604,6 +4819,23 @@ const docTemplate = `{
                 "username": {
                     "type": "string",
                     "example": "admin"
+                }
+            }
+        },
+        "internal_catalog.RecommendationResponse": {
+            "type": "object",
+            "properties": {
+                "count": {
+                    "type": "integer"
+                },
+                "entries": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/github_com_HerbHall_subnetree_pkg_catalog.CatalogEntry"
+                    }
+                },
+                "tier": {
+                    "type": "integer"
                 }
             }
         },
