@@ -151,6 +151,101 @@ definitions:
         description: '"cpu", "memory", "disk"'
         type: string
     type: object
+  github_com_HerbHall_subnetree_pkg_catalog.CatalogEntry:
+    properties:
+      category:
+        $ref: '#/definitions/github_com_HerbHall_subnetree_pkg_catalog.Category'
+      description:
+        type: string
+      docker_image:
+        type: string
+      github_url:
+        type: string
+      integration_notes:
+        type: string
+      integration_status:
+        $ref: '#/definitions/github_com_HerbHall_subnetree_pkg_catalog.IntegrationStatus'
+      language:
+        type: string
+      license:
+        type: string
+      min_ram_mb:
+        type: integer
+      name:
+        type: string
+      protocols:
+        items:
+          type: string
+        type: array
+      stars:
+        type: integer
+      supported_tiers:
+        items:
+          $ref: '#/definitions/github_com_HerbHall_subnetree_pkg_catalog.HardwareTier'
+        type: array
+      tags:
+        items:
+          type: string
+        type: array
+      website:
+        type: string
+    type: object
+  github_com_HerbHall_subnetree_pkg_catalog.Category:
+    enum:
+    - monitoring
+    - infrastructure
+    - dns
+    - home-automation
+    - notifications
+    - dashboard
+    - cmdb
+    - documentation
+    - network
+    type: string
+    x-enum-varnames:
+    - CategoryMonitoring
+    - CategoryInfrastructure
+    - CategoryDNS
+    - CategoryHomeAutomation
+    - CategoryNotifications
+    - CategoryDashboard
+    - CategoryCMDB
+    - CategoryDocumentation
+    - CategoryNetwork
+  github_com_HerbHall_subnetree_pkg_catalog.HardwareTier:
+    enum:
+    - 0
+    - 1
+    - 2
+    - 3
+    - 4
+    type: integer
+    x-enum-comments:
+      TierCluster: Proxmox cluster
+      TierMiniPC: Intel N100 (8-32 GB)
+      TierNAS: Synology/QNAP (Scout only)
+      TierSBC: Pi, SBC (1 GB)
+      TierSMB: Small business server
+    x-enum-varnames:
+    - TierSBC
+    - TierMiniPC
+    - TierNAS
+    - TierCluster
+    - TierSMB
+  github_com_HerbHall_subnetree_pkg_catalog.IntegrationStatus:
+    enum:
+    - shipped
+    - planned
+    - possible
+    type: string
+    x-enum-comments:
+      IntegrationPlanned: On roadmap
+      IntegrationPossible: Feasible, not scheduled
+      IntegrationShipped: Already works
+    x-enum-varnames:
+    - IntegrationShipped
+    - IntegrationPlanned
+    - IntegrationPossible
   github_com_HerbHall_subnetree_pkg_models.APIProblem:
     properties:
       detail:
@@ -606,6 +701,17 @@ definitions:
       username:
         example: admin
         type: string
+    type: object
+  internal_catalog.RecommendationResponse:
+    properties:
+      count:
+        type: integer
+      entries:
+        items:
+          $ref: '#/definitions/github_com_HerbHall_subnetree_pkg_catalog.CatalogEntry'
+        type: array
+      tier:
+        type: integer
     type: object
   internal_dispatch.enrollTokenRequest:
     properties:
@@ -1344,6 +1450,64 @@ paths:
       summary: Check setup status
       tags:
       - auth
+  /catalog/entries:
+    get:
+      description: Returns the full tool catalog for client-side filtering.
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/github_com_HerbHall_subnetree_pkg_catalog.CatalogEntry'
+            type: array
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: List all catalog entries
+      tags:
+      - catalog
+  /catalog/recommendations:
+    get:
+      description: Returns recommended homelab tools filtered by hardware tier and
+        optional category, sorted by memory requirements ascending.
+      parameters:
+      - default: 1
+        description: Hardware tier (0=SBC, 1=Mini PC, 2=NAS, 3=Cluster, 4=SMB)
+        in: query
+        name: tier
+        type: integer
+      - description: Filter by category (monitoring, infrastructure, dns, etc.)
+        in: query
+        name: category
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/internal_catalog.RecommendationResponse'
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Get tool recommendations
+      tags:
+      - catalog
   /dispatch/agents:
     get:
       description: Returns all registered Scout agents.

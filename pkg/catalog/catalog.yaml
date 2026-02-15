@@ -1,0 +1,240 @@
+entries:
+  - name: "Home Assistant"
+    description: "Open-source home automation platform with thousands of integrations for smart devices."
+    category: "home-automation"
+    github_url: "https://github.com/home-assistant/core"
+    website: "https://www.home-assistant.io"
+    docker_image: "ghcr.io/home-assistant/home-assistant"
+    stars: 84825
+    license: "Apache-2.0"
+    language: "Python"
+    min_ram_mb: 200
+    supported_tiers: [0, 1, 3, 4]
+    protocols: ["REST", "MQTT", "webhooks"]
+    integration_status: "planned"
+    integration_notes: "MQTT publisher planned for v0.5.0 (#298)"
+    tags: ["iot", "smart-home", "automation"]
+
+  - name: "Uptime Kuma"
+    description: "Self-hosted monitoring tool with beautiful status pages and notification integrations."
+    category: "monitoring"
+    github_url: "https://github.com/louislam/uptime-kuma"
+    website: "https://uptime.kuma.pet"
+    docker_image: "louislam/uptime-kuma"
+    stars: 82832
+    license: "MIT"
+    language: "JavaScript"
+    min_ram_mb: 50
+    supported_tiers: [0, 1, 2, 3, 4]
+    protocols: ["REST", "webhooks"]
+    integration_status: "possible"
+    integration_notes: "Webhook bridge for bidirectional status sync"
+    tags: ["uptime", "status-page", "alerts"]
+
+  - name: "Grafana"
+    description: "Observability platform for metrics visualization with dashboards and alerting."
+    category: "monitoring"
+    github_url: "https://github.com/grafana/grafana"
+    website: "https://grafana.com"
+    docker_image: "grafana/grafana"
+    stars: 72139
+    license: "AGPL-3.0"
+    language: "TypeScript"
+    min_ram_mb: 50
+    supported_tiers: [1, 3, 4]
+    protocols: ["Prometheus", "REST"]
+    integration_status: "planned"
+    integration_notes: "Dashboard provisioning bundle planned for Phase 3"
+    tags: ["visualization", "dashboards", "alerting"]
+
+  - name: "Prometheus"
+    description: "Time-series monitoring system with powerful query language and alerting rules."
+    category: "monitoring"
+    github_url: "https://github.com/prometheus/prometheus"
+    website: "https://prometheus.io"
+    docker_image: "prom/prometheus"
+    stars: 62705
+    license: "Apache-2.0"
+    language: "Go"
+    min_ram_mb: 100
+    supported_tiers: [1, 3, 4]
+    protocols: ["Prometheus", "REST"]
+    integration_status: "shipped"
+    integration_notes: "SubNetree ships /metrics endpoint compatible with Prometheus scraping"
+    tags: ["metrics", "time-series", "alerting"]
+
+  - name: "Traefik"
+    description: "Cloud-native reverse proxy and load balancer with automatic service discovery."
+    category: "infrastructure"
+    github_url: "https://github.com/traefik/traefik"
+    website: "https://traefik.io"
+    docker_image: "traefik/traefik"
+    stars: 61650
+    license: "MIT"
+    language: "Go"
+    min_ram_mb: 30
+    supported_tiers: [0, 1, 3, 4]
+    protocols: ["REST"]
+    integration_status: "possible"
+    integration_notes: "Auto-discovery of Traefik-managed services via API"
+    tags: ["reverse-proxy", "load-balancer", "ingress"]
+
+  - name: "Pi-hole"
+    description: "Network-wide ad blocker and DNS sinkhole for your entire network."
+    category: "dns"
+    github_url: "https://github.com/pi-hole/pi-hole"
+    website: "https://pi-hole.net"
+    docker_image: "pihole/pihole"
+    stars: 55705
+    license: "EUPL-1.2"
+    language: "Shell"
+    min_ram_mb: 50
+    supported_tiers: [0, 1, 2, 3, 4]
+    protocols: ["REST"]
+    integration_status: "possible"
+    integration_notes: "DNS query stats and client discovery via Pi-hole API"
+    tags: ["dns", "ad-blocking", "privacy"]
+
+  - name: "Portainer"
+    description: "Container management platform with a web UI for Docker and Kubernetes."
+    category: "infrastructure"
+    github_url: "https://github.com/portainer/portainer"
+    website: "https://www.portainer.io"
+    docker_image: "portainer/portainer-ce"
+    stars: 36569
+    license: "Zlib"
+    language: "TypeScript"
+    min_ram_mb: 50
+    supported_tiers: [0, 1, 3, 4]
+    protocols: ["REST"]
+    integration_status: "possible"
+    integration_notes: "Container inventory correlation via Portainer API"
+    tags: ["containers", "docker", "kubernetes"]
+
+  - name: "AdGuard Home"
+    description: "Network-wide ad and tracker blocking DNS server with parental controls."
+    category: "dns"
+    github_url: "https://github.com/AdguardTeam/AdGuardHome"
+    website: "https://adguard.com/adguard-home.html"
+    docker_image: "adguard/adguardhome"
+    stars: 32582
+    license: "GPL-3.0"
+    language: "Go"
+    min_ram_mb: 30
+    supported_tiers: [0, 1, 2, 3, 4]
+    protocols: ["REST"]
+    integration_status: "possible"
+    integration_notes: "DNS client discovery and query analytics via AdGuard API"
+    tags: ["dns", "ad-blocking", "privacy"]
+
+  - name: "Nginx Proxy Manager"
+    description: "Easy-to-use reverse proxy with free SSL certificates and a web-based management UI."
+    category: "infrastructure"
+    github_url: "https://github.com/NginxProxyManager/nginx-proxy-manager"
+    website: "https://nginxproxymanager.com"
+    docker_image: "jc21/nginx-proxy-manager"
+    stars: 31673
+    license: "MIT"
+    language: "TypeScript"
+    min_ram_mb: 50
+    supported_tiers: [0, 1, 3, 4]
+    protocols: ["REST"]
+    integration_status: "possible"
+    integration_notes: "Proxy host discovery via NPM API"
+    tags: ["reverse-proxy", "ssl", "nginx"]
+
+  - name: "ntfy"
+    description: "Simple HTTP-based pub-sub notification service for sending push notifications."
+    category: "notifications"
+    github_url: "https://github.com/binwiederhier/ntfy"
+    website: "https://ntfy.sh"
+    docker_image: "binwiederhier/ntfy"
+    stars: 28763
+    license: "Apache-2.0"
+    language: "Go"
+    min_ram_mb: 10
+    supported_tiers: [0, 1, 2, 3, 4]
+    protocols: ["REST", "webhooks"]
+    integration_status: "planned"
+    integration_notes: "Alert forwarding planned for v0.5.0"
+    tags: ["notifications", "push", "alerts"]
+
+  - name: "Homepage"
+    description: "Highly customizable application dashboard with service health monitoring widgets."
+    category: "dashboard"
+    github_url: "https://github.com/gethomepage/homepage"
+    website: "https://gethomepage.dev"
+    docker_image: "ghcr.io/gethomepage/homepage"
+    stars: 28412
+    license: "GPL-3.0"
+    language: "JavaScript"
+    min_ram_mb: 50
+    supported_tiers: [0, 1, 3, 4]
+    protocols: ["REST"]
+    integration_status: "possible"
+    integration_notes: "SubNetree widget for Homepage via REST API"
+    tags: ["dashboard", "startpage", "widgets"]
+
+  - name: "NetBox"
+    description: "Infrastructure resource modeling application for IP address management and DCIM."
+    category: "cmdb"
+    github_url: "https://github.com/netbox-community/netbox"
+    website: "https://netbox.dev"
+    docker_image: "netboxcommunity/netbox"
+    stars: 19800
+    license: "Apache-2.0"
+    language: "Python"
+    min_ram_mb: 500
+    supported_tiers: [1, 3, 4]
+    protocols: ["REST", "webhooks"]
+    integration_status: "planned"
+    integration_notes: "Device export planned for Phase 3"
+    tags: ["ipam", "dcim", "inventory"]
+
+  - name: "Beszel"
+    description: "Lightweight server monitoring hub with Docker stats and automatic alerts."
+    category: "monitoring"
+    github_url: "https://github.com/henrygd/beszel"
+    website: "https://beszel.dev"
+    docker_image: "henrygd/beszel"
+    stars: 19358
+    license: "MIT"
+    language: "Go"
+    min_ram_mb: 23
+    supported_tiers: [0, 1, 2, 3, 4]
+    protocols: ["REST"]
+    integration_status: "possible"
+    integration_notes: "Metric correlation via Beszel API"
+    tags: ["monitoring", "docker", "lightweight"]
+
+  - name: "BookStack"
+    description: "Simple wiki and documentation platform organized into books, chapters, and pages."
+    category: "documentation"
+    github_url: "https://github.com/BookStackApp/BookStack"
+    website: "https://www.bookstackapp.com"
+    docker_image: "lscr.io/linuxserver/bookstack"
+    stars: 18256
+    license: "MIT"
+    language: "PHP"
+    min_ram_mb: 100
+    supported_tiers: [0, 1, 3, 4]
+    protocols: ["REST"]
+    integration_status: "planned"
+    integration_notes: "Documentation generation planned for Phase 3"
+    tags: ["wiki", "documentation", "knowledge-base"]
+
+  - name: "NetAlertX"
+    description: "Network presence and intruder detection scanner with device tracking and alerts."
+    category: "network"
+    github_url: "https://github.com/jokob-sk/NetAlertX"
+    website: "https://netalertx.com"
+    docker_image: "jokobsk/netalertx"
+    stars: 5787
+    license: "GPL-3.0"
+    language: "Python"
+    min_ram_mb: 100
+    supported_tiers: [0, 1, 3, 4]
+    protocols: ["REST", "webhooks"]
+    integration_status: "possible"
+    integration_notes: "Device discovery data sharing via REST APIs"
+    tags: ["network", "scanner", "intrusion-detection"]
