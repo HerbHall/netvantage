@@ -36,6 +36,10 @@ import {
   TopologyToolbar,
   type LayoutAlgorithm,
 } from '@/components/topology/topology-toolbar'
+import {
+  elkLayout,
+  type ElkDirection,
+} from '@/components/topology/elk-layout'
 import { TopologyFilters } from '@/components/topology/topology-filters'
 import { NodeDetailPanel } from '@/components/topology/node-detail-panel'
 import { EdgeInfoPopover } from '@/components/topology/edge-info-popover'
@@ -109,95 +113,19 @@ function circularLayout(nodes: APINode[]): DeviceNodeType[] {
   })
 }
 
-/**
- * Simple hierarchical (tree) layout via BFS.
- * Root nodes: routers/switches/firewalls, or nodes with the most connections.
- * Layers are assigned by BFS distance from roots.
- */
-function hierarchicalLayout(
-  nodes: APINode[],
-  edges: APIEdge[]
-): DeviceNodeType[] {
-  if (nodes.length === 0) return []
-
-  const adjacency = new Map<string, string[]>()
-  for (const n of nodes) {
-    adjacency.set(n.id, [])
-  }
-  for (const e of edges) {
-    adjacency.get(e.source)?.push(e.target)
-    adjacency.get(e.target)?.push(e.source)
-  }
-
-  const infraTypes = new Set(['router', 'switch', 'firewall', 'access_point'])
-  const roots = nodes.filter((n) => infraTypes.has(n.device_type))
-
-  if (roots.length === 0) {
-    const sorted = [...nodes].sort(
-      (a, b) =>
-        (adjacency.get(b.id)?.length ?? 0) -
-        (adjacency.get(a.id)?.length ?? 0)
-    )
-    roots.push(sorted[0])
-  }
-
-  const layers = new Map<string, number>()
-  const queue: string[] = []
-  for (const r of roots) {
-    if (!layers.has(r.id)) {
-      layers.set(r.id, 0)
-      queue.push(r.id)
-    }
-  }
-
-  let head = 0
-  while (head < queue.length) {
-    const current = queue[head++]
-    const currentLayer = layers.get(current)!
-    for (const neighbor of adjacency.get(current) ?? []) {
-      if (!layers.has(neighbor)) {
-        layers.set(neighbor, currentLayer + 1)
-        queue.push(neighbor)
-      }
-    }
-  }
-
-  for (const n of nodes) {
-    if (!layers.has(n.id)) {
-      layers.set(n.id, 0)
-    }
-  }
-
-  const layerGroups = new Map<number, APINode[]>()
-  for (const n of nodes) {
-    const layer = layers.get(n.id) ?? 0
-    if (!layerGroups.has(layer)) layerGroups.set(layer, [])
-    layerGroups.get(layer)!.push(n)
-  }
-
-  const layerSpacing = 150
-  const nodeSpacing = 180
-
-  return nodes.map((node): DeviceNodeType => {
-    const layer = layers.get(node.id) ?? 0
-    const group = layerGroups.get(layer)!
-    const indexInLayer = group.indexOf(node)
-    const layerWidth = (group.length - 1) * nodeSpacing
-    const x = 400 - layerWidth / 2 + indexInLayer * nodeSpacing
-    const y = 100 + layer * layerSpacing
-
-    return {
-      id: node.id,
-      type: 'device',
-      position: { x, y },
-      data: {
-        label: node.label,
-        deviceType: node.device_type,
-        status: node.status,
-        ip: node.ip_addresses?.[0] || 'No IP',
-      },
-    }
-  })
+/** Convert API nodes to flow nodes with temporary positions (used as fallback). */
+function toFlowNodes(nodes: APINode[]): DeviceNodeType[] {
+  return nodes.map((node): DeviceNodeType => ({
+    id: node.id,
+    type: 'device',
+    position: { x: 0, y: 0 },
+    data: {
+      label: node.label,
+      deviceType: node.device_type,
+      status: node.status,
+      ip: node.ip_addresses?.[0] || 'No IP',
+    },
+  }))
 }
 
 function gridLayout(nodes: APINode[]): DeviceNodeType[] {
@@ -243,14 +171,9 @@ function toFlowEdges(edges: APIEdge[]): TopologyEdgeType[] {
   )
 }
 
-function applyAlgorithmLayout(
-  algorithm: LayoutAlgorithm,
-  nodes: APINode[],
-  edges: APIEdge[]
-): DeviceNodeType[] {
+/** Apply a synchronous layout algorithm. Hierarchical uses async elkjs separately. */
+function applySyncLayout(algorithm: LayoutAlgorithm, nodes: APINode[]): DeviceNodeType[] {
   switch (algorithm) {
-    case 'hierarchical':
-      return hierarchicalLayout(nodes, edges)
     case 'grid':
       return gridLayout(nodes)
     case 'circular':
@@ -274,6 +197,7 @@ function nodeMatchesSearch(node: APINode, query: string): boolean {
 
 export function TopologyPage() {
   const [layout, setLayout] = useState<LayoutAlgorithm>('circular')
+  const [direction, setDirection] = useState<ElkDirection>('DOWN')
   const [showMinimap, setShowMinimap] = useState(false)
   const [showUtilization, setShowUtilization] = useState(false)
   const [savedLayouts, setSavedLayouts] = useState<SavedLayout[]>(() => listLayouts())
@@ -344,10 +268,30 @@ export function TopologyPage() {
     return matches
   }, [apiNodeMap, searchQuery])
 
-  const layoutNodes = useMemo<DeviceNodeType[]>(
-    () => topology ? applyAlgorithmLayout(layout, topology.nodes, topology.edges) : [],
-    [topology, layout]
-  )
+  // Synchronous layouts (circular / grid) computed via useMemo
+  const syncLayoutNodes = useMemo<DeviceNodeType[]>(() => {
+    if (!topology || topology.nodes.length === 0) return []
+    if (layout === 'hierarchical') return []
+    return applySyncLayout(layout, topology.nodes)
+  }, [topology, layout])
+
+  // Async elkjs layout for hierarchical mode
+  const [elkNodes, setElkNodes] = useState<DeviceNodeType[]>([])
+
+  useEffect(() => {
+    if (!topology || topology.nodes.length === 0 || layout !== 'hierarchical') {
+      return
+    }
+    const flowNodes = toFlowNodes(topology.nodes)
+    const flowEdges = toFlowEdges(topology.edges)
+    let cancelled = false
+    elkLayout(flowNodes, flowEdges, direction).then((positioned) => {
+      if (!cancelled) setElkNodes(positioned)
+    })
+    return () => { cancelled = true }
+  }, [topology, layout, direction])
+
+  const layoutNodes = layout === 'hierarchical' ? elkNodes : syncLayoutNodes
 
   const initialNodes = useMemo<DeviceNodeType[]>(() => {
     return layoutNodes.map((node) => ({
@@ -401,6 +345,7 @@ export function TopologyPage() {
   )
 
   const handleLayoutChange = useCallback((newLayout: LayoutAlgorithm) => { setLayout(newLayout) }, [])
+  const handleDirectionChange = useCallback((dir: ElkDirection) => { setDirection(dir) }, [])
   const handleMinimapToggle = useCallback(() => { setShowMinimap((prev) => !prev) }, [])
   const handleUtilizationToggle = useCallback(() => { setShowUtilization((prev) => !prev) }, [])
 
@@ -561,6 +506,7 @@ export function TopologyPage() {
         <Panel position="top-center">
           <TopologyToolbar
             layout={layout} onLayoutChange={handleLayoutChange}
+            direction={direction} onDirectionChange={handleDirectionChange}
             showMinimap={showMinimap} onMinimapToggle={handleMinimapToggle} flowRef={flowRef}
             showUtilization={showUtilization} onUtilizationToggle={handleUtilizationToggle}
             savedLayouts={savedLayouts} onSaveLayout={handleSaveLayout}

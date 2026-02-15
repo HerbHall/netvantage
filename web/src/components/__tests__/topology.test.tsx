@@ -589,6 +589,8 @@ describe('TopologyToolbar', () => {
   const defaultProps = {
     layout: 'circular' as const,
     onLayoutChange: vi.fn(),
+    direction: 'DOWN' as const,
+    onDirectionChange: vi.fn(),
     showMinimap: false,
     onMinimapToggle: vi.fn(),
     flowRef: { current: document.createElement('div') },

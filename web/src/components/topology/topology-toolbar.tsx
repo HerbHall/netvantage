@@ -15,14 +15,19 @@ import {
   Save,
   FolderOpen,
   Trash2,
+  ArrowDown,
+  ArrowRight,
 } from 'lucide-react'
 import type { SavedLayout } from './layout-storage'
+import type { ElkDirection } from './elk-layout'
 
 export type LayoutAlgorithm = 'circular' | 'hierarchical' | 'grid'
 
 interface TopologyToolbarProps {
   layout: LayoutAlgorithm
   onLayoutChange: (layout: LayoutAlgorithm) => void
+  direction: ElkDirection
+  onDirectionChange: (direction: ElkDirection) => void
   showMinimap: boolean
   onMinimapToggle: () => void
   flowRef: RefObject<HTMLDivElement | null>
@@ -53,6 +58,8 @@ function Separator() {
 export const TopologyToolbar = memo(function TopologyToolbar({
   layout,
   onLayoutChange,
+  direction,
+  onDirectionChange,
   showMinimap,
   onMinimapToggle,
   flowRef,
@@ -143,6 +150,22 @@ export const TopologyToolbar = memo(function TopologyToolbar({
           <span className="hidden sm:inline">{label}</span>
         </button>
       ))}
+
+      {/* Direction toggle (only visible for hierarchical layout) */}
+      {layout === 'hierarchical' && (
+        <button
+          onClick={() => onDirectionChange(direction === 'DOWN' ? 'RIGHT' : 'DOWN')}
+          title={direction === 'DOWN' ? 'Switch to horizontal layout' : 'Switch to vertical layout'}
+          className="rounded-md p-1.5 transition-colors hover:bg-[var(--nv-bg-hover)]"
+          style={{ color: 'var(--nv-text-accent)' }}
+        >
+          {direction === 'DOWN' ? (
+            <ArrowDown className="h-3.5 w-3.5" />
+          ) : (
+            <ArrowRight className="h-3.5 w-3.5" />
+          )}
+        </button>
+      )}
 
       <Separator />
 
