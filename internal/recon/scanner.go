@@ -174,6 +174,9 @@ func (o *ScanOrchestrator) RunScan(ctx context.Context, scanID, subnet string) {
 		}
 	}
 
+	// Infer topology links from ARP data.
+	o.inferTopologyLinks(ctx, subnet, alive)
+
 	// Update scan record.
 	scan := &models.ScanResult{
 		ID:      scanID,
@@ -206,6 +209,60 @@ func (o *ScanOrchestrator) resolveHostname(ip string) string {
 		return ""
 	}
 	return strings.TrimSuffix(names[0], ".")
+}
+
+// inferTopologyLinks creates topology edges between discovered devices and the
+// subnet gateway. The gateway is assumed to be the first usable IP in the CIDR.
+func (o *ScanOrchestrator) inferTopologyLinks(ctx context.Context, subnet string, hosts []HostResult) {
+	_, ipNet, err := net.ParseCIDR(subnet)
+	if err != nil {
+		return
+	}
+	gatewayIP := firstUsableIP(ipNet)
+
+	gateway, err := o.store.GetDeviceByIP(ctx, gatewayIP)
+	if err != nil || gateway == nil {
+		o.logger.Debug("gateway device not found, skipping link inference",
+			zap.String("gateway_ip", gatewayIP))
+		return
+	}
+
+	var linkCount int
+	for _, host := range hosts {
+		if host.IP == gatewayIP {
+			continue
+		}
+		device, err := o.store.GetDeviceByIP(ctx, host.IP)
+		if err != nil || device == nil {
+			continue
+		}
+		link := &TopologyLink{
+			SourceDeviceID: device.ID,
+			TargetDeviceID: gateway.ID,
+			LinkType:       "arp",
+		}
+		if err := o.store.UpsertTopologyLink(ctx, link); err != nil {
+			o.logger.Error("failed to upsert topology link", zap.Error(err))
+			continue
+		}
+		linkCount++
+	}
+	o.logger.Info("topology links inferred",
+		zap.Int("count", linkCount),
+		zap.String("gateway", gatewayIP))
+}
+
+// firstUsableIP returns the first usable host address in a subnet
+// (network address + 1).
+func firstUsableIP(ipNet *net.IPNet) string {
+	ip := make(net.IP, len(ipNet.IP))
+	copy(ip, ipNet.IP)
+	ip = ip.To4()
+	if ip == nil {
+		return ""
+	}
+	ip[len(ip)-1]++
+	return ip.String()
 }
 
 func (o *ScanOrchestrator) publishEvent(ctx context.Context, topic string, payload any) {
