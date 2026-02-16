@@ -318,6 +318,16 @@ definitions:
       category:
         example: production
         type: string
+      classification_confidence:
+        description: Classification metadata from the composite classifier.
+        example: 75
+        type: integer
+      classification_signals:
+        description: JSON-encoded signal breakdown
+        type: string
+      classification_source:
+        example: snmp_bridge_mib
+        type: string
       custom_fields:
         additionalProperties:
           type: string

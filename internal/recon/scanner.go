@@ -2,6 +2,7 @@ package recon
 
 import (
 	"context"
+	"encoding/json"
 	"net"
 	"strings"
 	"time"
@@ -471,11 +472,18 @@ func (o *ScanOrchestrator) classifyDevices(ctx context.Context, alive []HostResu
 
 		// Don't downgrade from a more specific manual or SNMP classification.
 		if device.DeviceType != models.DeviceTypeUnknown && device.DeviceType != result.DeviceType {
+			// Even if we don't change the type, update classification metadata
+			// if the new confidence is higher.
+			if result.Confidence > device.ClassificationConfidence {
+				signalsJSON, _ := json.Marshal(result.Signals)
+				_ = o.store.UpdateDeviceClassification(ctx, device.ID, device.DeviceType, result.Confidence, result.Source, string(signalsJSON))
+			}
 			continue
 		}
 
+		signalsJSON, _ := json.Marshal(result.Signals)
 		if device.DeviceType == models.DeviceTypeUnknown {
-			if updateErr := o.store.UpdateDeviceType(ctx, device.ID, result.DeviceType); updateErr != nil {
+			if updateErr := o.store.UpdateDeviceClassification(ctx, device.ID, result.DeviceType, result.Confidence, result.Source, string(signalsJSON)); updateErr != nil {
 				o.logger.Error("failed to update device type from classifier",
 					zap.String("device_id", device.ID),
 					zap.Error(updateErr))

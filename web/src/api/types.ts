@@ -98,6 +98,9 @@ export interface Device {
   category?: string
   primary_role?: string
   owner?: string
+  classification_confidence?: number
+  classification_source?: string
+  classification_signals?: string
 }
 
 /** Topology node (simplified device for graph display). */
