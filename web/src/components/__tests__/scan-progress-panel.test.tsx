@@ -30,6 +30,8 @@ describe('ScanProgressPanel', () => {
     subnetSize: 256,
     hostsAlive: 0,
     newDevices: [],
+    knownDeviceIps: new Set<string>(),
+    verifiedIps: new Set<string>(),
     startedAt: new Date(),
     ...overrides,
   })
