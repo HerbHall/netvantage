@@ -16,11 +16,16 @@ interface ArchOption {
   filename: string
 }
 
+interface ShellVariant {
+  shell: string
+  code: string
+}
+
 interface PlatformConfig {
   label: string
   icon: string
   architectures: ArchOption[]
-  installCommands: (filename: string) => string
+  installVariants: (filename: string) => ShellVariant[]
 }
 
 // ---------------------------------------------------------------------------
@@ -38,8 +43,12 @@ const PLATFORMS: Record<Platform, PlatformConfig> = {
       { label: 'x86_64 (amd64)', arch: 'amd64', filename: 'scout_linux_amd64' },
       { label: 'ARM64 (aarch64)', arch: 'arm64', filename: 'scout_linux_arm64' },
     ],
-    installCommands: (filename: string) =>
-      `curl -LO ${GITHUB_RELEASE_BASE}/${filename}\nchmod +x ${filename}\nsudo mv ${filename} /usr/local/bin/scout`,
+    installVariants: (filename: string) => [
+      {
+        shell: 'bash',
+        code: `curl -LO ${GITHUB_RELEASE_BASE}/${filename}\nchmod +x ${filename}\nsudo mv ${filename} /usr/local/bin/scout`,
+      },
+    ],
   },
   macos: {
     label: 'macOS',
@@ -48,8 +57,12 @@ const PLATFORMS: Record<Platform, PlatformConfig> = {
       { label: 'Apple Silicon (arm64)', arch: 'arm64', filename: 'scout_darwin_arm64' },
       { label: 'Intel (amd64)', arch: 'amd64', filename: 'scout_darwin_amd64' },
     ],
-    installCommands: (filename: string) =>
-      `curl -LO ${GITHUB_RELEASE_BASE}/${filename}\nchmod +x ${filename}\nmv ${filename} /usr/local/bin/scout`,
+    installVariants: (filename: string) => [
+      {
+        shell: 'bash',
+        code: `curl -LO ${GITHUB_RELEASE_BASE}/${filename}\nchmod +x ${filename}\nmv ${filename} /usr/local/bin/scout`,
+      },
+    ],
   },
   windows: {
     label: 'Windows',
@@ -57,8 +70,16 @@ const PLATFORMS: Record<Platform, PlatformConfig> = {
     architectures: [
       { label: 'x86_64 (amd64)', arch: 'amd64', filename: 'scout_windows_amd64.exe' },
     ],
-    installCommands: (filename: string) =>
-      `Invoke-WebRequest -Uri "${GITHUB_RELEASE_BASE}/${filename}" -OutFile scout.exe\nNew-Item -ItemType Directory -Force -Path "$env:ProgramFiles\\SubNetree" | Out-Null\nMove-Item scout.exe "$env:ProgramFiles\\SubNetree\\scout.exe"`,
+    installVariants: (filename: string) => [
+      {
+        shell: 'PowerShell',
+        code: `Invoke-WebRequest -Uri "${GITHUB_RELEASE_BASE}/${filename}" -OutFile scout.exe\nNew-Item -ItemType Directory -Force -Path "$env:ProgramFiles\\SubNetree" | Out-Null\nMove-Item scout.exe "$env:ProgramFiles\\SubNetree\\scout.exe"`,
+      },
+      {
+        shell: 'CMD',
+        code: `curl -LO ${GITHUB_RELEASE_BASE}/${filename}\nmkdir "%ProgramFiles%\\SubNetree" 2>nul\nmove /Y ${filename} "%ProgramFiles%\\SubNetree\\scout.exe"`,
+      },
+    ],
   },
 }
 
@@ -109,15 +130,20 @@ function CopyButton({ text }: { text: string }) {
 function CodeBlock({ code, language }: { code: string; language: string }) {
   return (
     <div className="relative group">
-      <div className="absolute right-2 top-2 opacity-0 group-hover:opacity-100 transition-opacity">
+      <div className="absolute right-2 top-2 flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
         <CopyButton text={code} />
       </div>
-      <pre className="rounded-md bg-black/40 border border-[var(--nv-border-subtle)] p-4 overflow-x-auto">
-        <code className="text-xs font-mono text-muted-foreground whitespace-pre">
-          <span className="sr-only">{language}</span>
-          {code}
-        </code>
-      </pre>
+      <div className="rounded-md bg-black/40 border border-[var(--nv-border-subtle)] overflow-hidden">
+        <div className="flex items-center gap-1.5 px-3 py-1 border-b border-[var(--nv-border-subtle)] bg-black/20">
+          <Terminal className="h-3 w-3 text-muted-foreground/60" />
+          <span className="text-[10px] font-mono text-muted-foreground/60 uppercase tracking-wider">{language}</span>
+        </div>
+        <pre className="p-4 overflow-x-auto">
+          <code className="text-xs font-mono text-muted-foreground whitespace-pre">
+            {code}
+          </code>
+        </pre>
+      </div>
     </div>
   )
 }
@@ -148,6 +174,37 @@ function PlatformTab({
   )
 }
 
+function ShellTabs({ variants }: { variants: ShellVariant[] }) {
+  const [activeShell, setActiveShell] = useState(0)
+
+  if (variants.length === 1) {
+    return <CodeBlock code={variants[0].code} language={variants[0].shell} />
+  }
+
+  return (
+    <div>
+      <div className="flex gap-1 mb-2">
+        {variants.map((v, i) => (
+          <button
+            key={v.shell}
+            type="button"
+            onClick={() => setActiveShell(i)}
+            className={cn(
+              'px-3 py-1 text-xs font-medium rounded-md transition-colors',
+              activeShell === i
+                ? 'bg-[var(--nv-sidebar-active-bg)] text-[var(--nv-sidebar-active)]'
+                : 'text-muted-foreground hover:bg-[var(--nv-bg-hover)] hover:text-foreground'
+            )}
+          >
+            {v.shell}
+          </button>
+        ))}
+      </div>
+      <CodeBlock code={variants[activeShell].code} language={variants[activeShell].shell} />
+    </div>
+  )
+}
+
 function ArchitectureSection({
   archOption,
   platformConfig,
@@ -155,7 +212,7 @@ function ArchitectureSection({
   archOption: ArchOption
   platformConfig: PlatformConfig
 }) {
-  const installCommands = platformConfig.installCommands(archOption.filename)
+  const variants = platformConfig.installVariants(archOption.filename)
   const downloadUrl = `${GITHUB_RELEASE_BASE}/${archOption.filename}`
 
   return (
@@ -175,10 +232,7 @@ function ArchitectureSection({
           Download
         </a>
       </div>
-      <CodeBlock
-        code={installCommands}
-        language={platformConfig.label === 'Windows' ? 'powershell' : 'bash'}
-      />
+      <ShellTabs variants={variants} />
     </div>
   )
 }
@@ -258,7 +312,7 @@ export function AgentSetupPage() {
                 Replace <code className="text-xs bg-black/30 rounded px-1 py-0.5">&lt;enrollment-token&gt;</code> with
                 the token from the Agents page.
               </p>
-              <CodeBlock code={enrollmentCommand} language="bash" />
+              <CodeBlock code={enrollmentCommand} language={activePlatform === 'windows' ? 'PowerShell / CMD' : 'bash'} />
               <p className="text-xs text-muted-foreground">
                 The agent will establish a secure mTLS connection to the server
                 on port 9090 and begin reporting system metrics.
@@ -280,13 +334,13 @@ export function AgentSetupPage() {
               <div>
                 <h4 className="text-sm font-medium">Verify Installation</h4>
                 <div className="mt-2">
-                  <CodeBlock code="scout --version" language="bash" />
+                  <CodeBlock code="scout --version" language={activePlatform === 'windows' ? 'PowerShell / CMD' : 'bash'} />
                 </div>
               </div>
               <div className="border-t border-[var(--nv-border-subtle)] pt-4">
                 <h4 className="text-sm font-medium">Check Agent Status</h4>
                 <div className="mt-2">
-                  <CodeBlock code="scout status" language="bash" />
+                  <CodeBlock code="scout status" language={activePlatform === 'windows' ? 'PowerShell / CMD' : 'bash'} />
                 </div>
               </div>
               <div className="border-t border-[var(--nv-border-subtle)] pt-4">
