@@ -469,6 +469,29 @@ definitions:
           type: string
         type: array
     type: object
+  github_com_HerbHall_subnetree_pkg_models.ScanMetrics:
+    properties:
+      created_at:
+        type: string
+      devices_created:
+        type: integer
+      devices_updated:
+        type: integer
+      duration_ms:
+        type: integer
+      enrich_phase_ms:
+        type: integer
+      hosts_alive:
+        type: integer
+      hosts_scanned:
+        type: integer
+      ping_phase_ms:
+        type: integer
+      post_process_ms:
+        type: integer
+      scan_id:
+        type: string
+    type: object
   github_com_HerbHall_subnetree_pkg_models.ScanResult:
     properties:
       devices:
@@ -1131,6 +1154,39 @@ definitions:
       object_id:
         type: string
       up_time_ms:
+        type: integer
+    type: object
+  internal_recon.ScanMetricsAggregate:
+    properties:
+      avg_devices_found:
+        type: number
+      avg_duration_ms:
+        type: number
+      avg_enrich_ms:
+        type: number
+      avg_hosts_alive:
+        type: number
+      avg_ping_phase_ms:
+        type: number
+      created_at:
+        type: string
+      failed_scans:
+        type: integer
+      id:
+        type: string
+      max_devices_found:
+        type: integer
+      min_devices_found:
+        type: integer
+      period:
+        type: string
+      period_end:
+        type: string
+      period_start:
+        type: string
+      scan_count:
+        type: integer
+      total_new_devices:
         type: integer
     type: object
   internal_recon.ScanRequest:
@@ -3258,6 +3314,69 @@ paths:
       security:
       - BearerAuth: []
       summary: Inventory summary
+      tags:
+      - recon
+  /recon/metrics/aggregates:
+    get:
+      description: Returns weekly or monthly aggregates of scan performance metrics.
+      parameters:
+      - default: weekly
+        description: Aggregation period (weekly or monthly)
+        in: query
+        name: period
+        type: string
+      - default: 52
+        description: Max results
+        in: query
+        name: limit
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/internal_recon.ScanMetricsAggregate'
+            type: array
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/github_com_HerbHall_subnetree_pkg_models.APIProblem'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/github_com_HerbHall_subnetree_pkg_models.APIProblem'
+      security:
+      - BearerAuth: []
+      summary: List scan metrics aggregates
+      tags:
+      - recon
+  /recon/metrics/raw:
+    get:
+      description: Returns recent individual scan performance metrics.
+      parameters:
+      - default: 30
+        description: Max results
+        in: query
+        name: limit
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/github_com_HerbHall_subnetree_pkg_models.ScanMetrics'
+            type: array
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/github_com_HerbHall_subnetree_pkg_models.APIProblem'
+      security:
+      - BearerAuth: []
+      summary: List raw scan metrics
       tags:
       - recon
   /recon/movements:
