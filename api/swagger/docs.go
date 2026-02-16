@@ -5481,6 +5481,9 @@ const docTemplate = `{
                 "device_id": {
                     "type": "string"
                 },
+                "device_name": {
+                    "type": "string"
+                },
                 "id": {
                     "type": "string"
                 },
@@ -5514,6 +5517,9 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "device_id": {
+                    "type": "string"
+                },
+                "device_name": {
                     "type": "string"
                 },
                 "enabled": {

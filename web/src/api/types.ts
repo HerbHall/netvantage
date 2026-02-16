@@ -358,6 +358,7 @@ export type CheckType = 'icmp' | 'tcp' | 'http'
 export interface Check {
   id: string
   device_id: string
+  device_name: string
   check_type: CheckType
   target: string
   interval_seconds: number
@@ -383,6 +384,7 @@ export interface Alert {
   id: string
   check_id: string
   device_id: string
+  device_name: string
   severity: string
   message: string
   triggered_at: string
