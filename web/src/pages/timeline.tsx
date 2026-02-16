@@ -387,7 +387,7 @@ export function TimelinePage() {
                   allowDecimals={false}
                   width={40}
                 />
-                <Tooltip content={<ChartTooltip />} />
+                <Tooltip content={(props: TooltipContentProps<number, string>) => <ChartTooltip {...props} />} />
                 {eventTypes.map((type) => {
                   const typeKey = type.replace(/\./g, '_')
                   const cfg = EVENT_TYPE_CONFIG[type]
