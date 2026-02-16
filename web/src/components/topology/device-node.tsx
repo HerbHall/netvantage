@@ -85,9 +85,9 @@ export const DeviceNode = memo(function DeviceNode({
           backgroundColor: 'var(--nv-bg-card)',
           border: `2px solid ${selected ? 'var(--nv-green-400)' : color}`,
           boxShadow: selected
-            ? '0 0 12px rgba(74, 222, 128, 0.3)'
+            ? 'var(--nv-topo-glow-selected)'
             : highlighted
-              ? '0 0 0 3px rgba(74, 222, 128, 0.5), 0 0 16px rgba(74, 222, 128, 0.2)'
+              ? 'var(--nv-topo-glow-highlight)'
               : undefined,
           opacity: dimmed ? 0.35 : 1,
           transition: 'opacity 0.2s, box-shadow 0.2s, border-color 0.2s',
