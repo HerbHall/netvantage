@@ -115,7 +115,7 @@ func (o *ScanOrchestrator) RunScan(ctx context.Context, scanID, subnet string) {
 
 	// Process each alive host as it arrives, streaming device events in
 	// real time rather than waiting for the full sweep to complete.
-	var alive []HostResult
+	alive := make([]HostResult, 0, subnetSize)
 	var onlineCount int
 	var totalCount int
 	for r := range results {
