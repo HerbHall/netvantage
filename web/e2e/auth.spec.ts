@@ -77,7 +77,7 @@ test.describe('Authentication', () => {
     await expect(page.getByText('Sign in to SubNetree')).toBeVisible({ timeout: 15_000 })
 
     await page.getByLabel('Username').fill(TEST_USER.username)
-    await page.getByLabel('Password').fill(TEST_USER.password)
+    await page.locator('#password').fill(TEST_USER.password)
     await page.getByRole('button', { name: 'Sign in' }).click()
 
     // Should redirect to dashboard after successful login
@@ -90,7 +90,7 @@ test.describe('Authentication', () => {
     await expect(page.getByText('Sign in to SubNetree')).toBeVisible({ timeout: 15_000 })
 
     await page.getByLabel('Username').fill(TEST_USER.username)
-    await page.getByLabel('Password').fill(TEST_USER.password)
+    await page.locator('#password').fill(TEST_USER.password)
     await page.getByRole('button', { name: 'Sign in' }).click()
 
     await expect(page).toHaveURL(/\/dashboard/, { timeout: 10_000 })

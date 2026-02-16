@@ -319,14 +319,19 @@ jobs:
       - name: Start server with seed data
         run: |
           NV_SEED_DATA=true ./subnetree &
-          for i in $(seq 1 30); do
+          SERVER_READY=false
+          for i in $(seq 1 60); do
             if curl -sf http://localhost:8080/healthz > /dev/null 2>&1; then
-              echo "Server ready"
+              echo "Server ready after ${i}s"
+              SERVER_READY=true
               break
             fi
-            echo "Waiting for server... ($i/30)"
-            sleep 2
+            sleep 1
           done
+          if [ "$SERVER_READY" != "true" ]; then
+            echo "::error::Server failed to start within 60 seconds"
+            exit 1
+          fi
 
       - name: Run E2E tests
         working-directory: web

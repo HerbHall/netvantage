@@ -39,7 +39,7 @@ async function globalSetup(config: FullConfig) {
       await page.waitForSelector('text=Sign in to SubNetree', { timeout: 15_000 })
 
       await page.getByLabel('Username').fill(TEST_USER.username)
-      await page.getByLabel('Password').fill(TEST_USER.password)
+      await page.locator('#password').fill(TEST_USER.password)
       await page.getByRole('button', { name: 'Sign in' }).click()
       await page.waitForURL(/\/dashboard/, { timeout: 10_000 })
     }

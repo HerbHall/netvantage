@@ -65,7 +65,7 @@ export async function login(page: Page): Promise<void> {
   await expect(page.getByText('Sign in to SubNetree')).toBeVisible({ timeout: 15_000 })
 
   await page.getByLabel('Username').fill(TEST_USER.username)
-  await page.getByLabel('Password').fill(TEST_USER.password)
+  await page.locator('#password').fill(TEST_USER.password)
   await page.getByRole('button', { name: 'Sign in' }).click()
 
   // Wait for successful redirect to dashboard
