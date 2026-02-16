@@ -12,6 +12,16 @@ const (
 	OIDSysLocation = "1.3.6.1.2.1.1.6.0"
 )
 
+// sysServices (1.3.6.1.2.1.1.7.0) - OSI layer bitmask.
+const OIDSysServices = "1.3.6.1.2.1.1.7.0"
+
+// BRIDGE-MIB (1.3.6.1.2.1.17) - Bridge/switch detection.
+const (
+	OIDBridgeBase     = "1.3.6.1.2.1.17.1.1.0" // dot1dBaseBridgeAddress
+	OIDBridgeNumPorts = "1.3.6.1.2.1.17.1.2.0" // dot1dBaseNumPorts
+	OIDBridgeType     = "1.3.6.1.2.1.17.1.3.0" // dot1dBaseType
+)
+
 // IF-MIB interface table (1.3.6.1.2.1.2.2.1).
 const (
 	OIDIfIndex       = "1.3.6.1.2.1.2.2.1.1"

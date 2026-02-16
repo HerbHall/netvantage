@@ -293,30 +293,324 @@ func TestFormatMAC(t *testing.T) {
 
 func TestInferDeviceType(t *testing.T) {
 	tests := []struct {
+		name string
+		info *SNMPSystemInfo
+		want models.DeviceType
+	}{
+		// Priority 1: BRIDGE-MIB detection.
+		{
+			name: "bridge_address_only_switch",
+			info: &SNMPSystemInfo{BridgeAddress: "00:1A:2B:3C:4D:5E"},
+			want: models.DeviceTypeSwitch,
+		},
+		{
+			name: "bridge_ports_gt1_switch",
+			info: &SNMPSystemInfo{BridgeNumPorts: 24},
+			want: models.DeviceTypeSwitch,
+		},
+		{
+			name: "bridge_with_layer3_router",
+			info: &SNMPSystemInfo{
+				BridgeAddress: "00:1A:2B:3C:4D:5E",
+				BridgeNumPorts: 48,
+				Services:       0x04, // Layer 3
+			},
+			want: models.DeviceTypeRouter, // L3 switch = router
+		},
+		{
+			name: "bridge_single_port_ignored",
+			info: &SNMPSystemInfo{BridgeNumPorts: 1},
+			want: models.DeviceTypeUnknown, // 1 port doesn't trigger bridge detection
+		},
+
+		// Priority 2: sysServices layer detection.
+		{
+			name: "services_layer3_only_router",
+			info: &SNMPSystemInfo{Services: 0x04},
+			want: models.DeviceTypeRouter,
+		},
+		{
+			name: "services_layer2_switch",
+			info: &SNMPSystemInfo{Services: 0x02},
+			want: models.DeviceTypeSwitch,
+		},
+		{
+			name: "services_layer2_and_layer3",
+			info: &SNMPSystemInfo{Services: 0x06}, // L2 + L3
+			want: models.DeviceTypeSwitch,          // L2 bit present => switch path
+		},
+		{
+			name: "services_other_layers_unknown",
+			info: &SNMPSystemInfo{Services: 0x40}, // Application layer only
+			want: models.DeviceTypeUnknown,
+		},
+
+		// Priority 3: sysObjectID (currently returns Unknown).
+		{
+			name: "object_id_only",
+			info: &SNMPSystemInfo{ObjectID: "1.3.6.1.4.1.9.1.1"},
+			want: models.DeviceTypeUnknown,
+		},
+
+		// Priority 4: sysDescr keyword matching.
+		{
+			name: "descr_router",
+			info: &SNMPSystemInfo{Description: "Cisco IOS Software, Router"},
+			want: models.DeviceTypeRouter,
+		},
+		{
+			name: "descr_routeros", //nolint:misspell // RouterOS is MikroTik's OS name
+			info: &SNMPSystemInfo{Description: "MikroTik RouterOS 7.x"},
+			want: models.DeviceTypeRouter,
+		},
+		{
+			name: "descr_mikrotik",
+			info: &SNMPSystemInfo{Description: "MikroTik hEX lite"},
+			want: models.DeviceTypeRouter,
+		},
+		{
+			name: "descr_switch",
+			info: &SNMPSystemInfo{Description: "HP ProCurve Switch"},
+			want: models.DeviceTypeSwitch,
+		},
+		{
+			name: "descr_catalyst",
+			info: &SNMPSystemInfo{Description: "Cisco Catalyst 2960"},
+			want: models.DeviceTypeSwitch,
+		},
+		{
+			name: "descr_procurve",
+			info: &SNMPSystemInfo{Description: "ProCurve J9019A"},
+			want: models.DeviceTypeSwitch,
+		},
+		{
+			name: "descr_edgeswitch",
+			info: &SNMPSystemInfo{Description: "Ubiquiti EdgeSwitch 24"},
+			want: models.DeviceTypeSwitch,
+		},
+		{
+			name: "descr_layer2",
+			info: &SNMPSystemInfo{Description: "Layer 2 managed switch"},
+			want: models.DeviceTypeSwitch,
+		},
+		{
+			name: "descr_bridge",
+			info: &SNMPSystemInfo{Description: "Linux bridge device"},
+			want: models.DeviceTypeSwitch,
+		},
+		{
+			name: "descr_access_point",
+			info: &SNMPSystemInfo{Description: "Ubiquiti Access Point"},
+			want: models.DeviceTypeAccessPoint,
+		},
+		{
+			name: "descr_wireless",
+			info: &SNMPSystemInfo{Description: "Wireless Controller"},
+			want: models.DeviceTypeAccessPoint,
+		},
+		{
+			name: "descr_unifi_ap",
+			info: &SNMPSystemInfo{Description: "UniFi AP AC Pro"},
+			want: models.DeviceTypeAccessPoint,
+		},
+		{
+			name: "descr_airmax",
+			info: &SNMPSystemInfo{Description: "Ubiquiti airMAX device"},
+			want: models.DeviceTypeAccessPoint,
+		},
+		{
+			name: "descr_airos",
+			info: &SNMPSystemInfo{Description: "AirOS v8.7.4"},
+			want: models.DeviceTypeAccessPoint,
+		},
+		{
+			name: "descr_firewall",
+			info: &SNMPSystemInfo{Description: "Juniper Firewall SRX"},
+			want: models.DeviceTypeFirewall,
+		},
+		{
+			name: "descr_pfsense",
+			info: &SNMPSystemInfo{Description: "pfSense 2.7.0"},
+			want: models.DeviceTypeFirewall,
+		},
+		{
+			name: "descr_opnsense",
+			info: &SNMPSystemInfo{Description: "OPNsense 24.1"},
+			want: models.DeviceTypeFirewall,
+		},
+		{
+			name: "descr_fortigate",
+			info: &SNMPSystemInfo{Description: "Fortinet FortiGate-60F"},
+			want: models.DeviceTypeFirewall,
+		},
+		{
+			name: "descr_sophos",
+			info: &SNMPSystemInfo{Description: "Sophos XG 125"},
+			want: models.DeviceTypeFirewall,
+		},
+		{
+			name: "descr_printer",
+			info: &SNMPSystemInfo{Description: "HP LaserJet Printer"},
+			want: models.DeviceTypePrinter,
+		},
+		{
+			name: "descr_laserjet",
+			info: &SNMPSystemInfo{Description: "LaserJet Pro M404"},
+			want: models.DeviceTypePrinter,
+		},
+		{
+			name: "descr_inkjet",
+			info: &SNMPSystemInfo{Description: "Epson Inkjet L3250"},
+			want: models.DeviceTypePrinter,
+		},
+		{
+			name: "descr_nas",
+			info: &SNMPSystemInfo{Description: "Synology NAS DS920+"},
+			want: models.DeviceTypeNAS,
+		},
+		{
+			name: "descr_synology",
+			info: &SNMPSystemInfo{Description: "Synology DiskStation"},
+			want: models.DeviceTypeNAS,
+		},
+		{
+			name: "descr_qnap",
+			info: &SNMPSystemInfo{Description: "QNAP TS-453D"},
+			want: models.DeviceTypeNAS,
+		},
+		{
+			name: "descr_storage",
+			info: &SNMPSystemInfo{Description: "NetApp Storage System"},
+			want: models.DeviceTypeNAS,
+		},
+		{
+			name: "descr_linux",
+			info: &SNMPSystemInfo{Description: "Linux 5.15.0-generic"},
+			want: models.DeviceTypeServer,
+		},
+		{
+			name: "descr_windows",
+			info: &SNMPSystemInfo{Description: "Microsoft Windows Server 2022"},
+			want: models.DeviceTypeServer,
+		},
+		{
+			name: "descr_freebsd",
+			info: &SNMPSystemInfo{Description: "FreeBSD 14.0-RELEASE"},
+			want: models.DeviceTypeServer,
+		},
+		{
+			name: "descr_esxi",
+			info: &SNMPSystemInfo{Description: "VMware ESXi 8.0.0"},
+			want: models.DeviceTypeServer,
+		},
+		{
+			name: "descr_proxmox",
+			info: &SNMPSystemInfo{Description: "Proxmox VE 8.1"},
+			want: models.DeviceTypeServer,
+		},
+		{
+			name: "descr_unknown",
+			info: &SNMPSystemInfo{Description: "Some Unknown Device"},
+			want: models.DeviceTypeUnknown,
+		},
+		{
+			name: "empty_info",
+			info: &SNMPSystemInfo{},
+			want: models.DeviceTypeUnknown,
+		},
+
+		// Priority ordering: higher priority signals override lower ones.
+		{
+			name: "bridge_overrides_descr_server",
+			info: &SNMPSystemInfo{
+				Description:    "Linux 5.15.0-generic",
+				BridgeNumPorts: 4,
+			},
+			want: models.DeviceTypeSwitch, // BRIDGE-MIB wins over sysDescr
+		},
+		{
+			name: "services_overrides_descr",
+			info: &SNMPSystemInfo{
+				Description: "Linux 5.15.0-generic",
+				Services:    0x04, // Layer 3
+			},
+			want: models.DeviceTypeRouter, // sysServices wins over sysDescr
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got := inferDeviceType(tt.info)
+			if got != tt.want {
+				t.Errorf("inferDeviceType() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
+
+func TestClassifyBySysDescr(t *testing.T) {
+	tests := []struct {
 		sysDescr string
 		want     models.DeviceType
 	}{
 		{"Cisco IOS Software, Router", models.DeviceTypeRouter},
 		{"ROUTER firmware v2.1", models.DeviceTypeRouter},
+		{"RouterOS 7.14", models.DeviceTypeRouter},
+		{"MikroTik hEX lite", models.DeviceTypeRouter},
 		{"HP ProCurve Switch", models.DeviceTypeSwitch},
+		{"Cisco Catalyst 2960", models.DeviceTypeSwitch},
+		{"Ubiquiti EdgeSwitch", models.DeviceTypeSwitch},
+		{"Layer 2 managed", models.DeviceTypeSwitch},
+		{"802.1D bridge", models.DeviceTypeSwitch},
 		{"Juniper Firewall SRX", models.DeviceTypeFirewall},
+		{"pfSense 2.7.0", models.DeviceTypeFirewall},
+		{"OPNsense 24.1", models.DeviceTypeFirewall},
+		{"FortiGate-60F", models.DeviceTypeFirewall},
+		{"Sophos XG Firewall", models.DeviceTypeFirewall},
 		{"HP LaserJet Printer", models.DeviceTypePrinter},
+		{"Brother Inkjet MFC", models.DeviceTypePrinter},
 		{"Ubiquiti Access Point", models.DeviceTypeAccessPoint},
 		{"Wireless Controller", models.DeviceTypeAccessPoint},
+		{"UniFi AP AC Pro", models.DeviceTypeAccessPoint},
+		{"airMAX NanoStation", models.DeviceTypeAccessPoint},
+		{"airOS v8.7.4", models.DeviceTypeAccessPoint},
 		{"Synology NAS DS920+", models.DeviceTypeNAS},
+		{"QNAP TS-453D", models.DeviceTypeNAS},
 		{"NetApp Storage System", models.DeviceTypeNAS},
 		{"Linux 5.15.0-generic", models.DeviceTypeServer},
 		{"Microsoft Windows Server 2022", models.DeviceTypeServer},
 		{"FreeBSD 14.0-RELEASE", models.DeviceTypeServer},
+		{"VMware ESXi 8.0", models.DeviceTypeServer},
+		{"Proxmox VE 8.1", models.DeviceTypeServer},
 		{"Some Unknown Device", models.DeviceTypeUnknown},
 		{"", models.DeviceTypeUnknown},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.sysDescr, func(t *testing.T) {
-			got := inferDeviceType(tt.sysDescr)
+			got := classifyBySysDescr(tt.sysDescr)
 			if got != tt.want {
-				t.Errorf("inferDeviceType(%q) = %v, want %v", tt.sysDescr, got, tt.want)
+				t.Errorf("classifyBySysDescr(%q) = %v, want %v", tt.sysDescr, got, tt.want)
+			}
+		})
+	}
+}
+
+func TestClassifyBySysObjectID(t *testing.T) {
+	tests := []struct {
+		objectID string
+		want     models.DeviceType
+	}{
+		{"", models.DeviceTypeUnknown},
+		{"1.3.6.1.4.1.9.1.1", models.DeviceTypeUnknown},       // Cisco
+		{"1.3.6.1.4.1.2636.1.1.1.2", models.DeviceTypeUnknown}, // Juniper
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.objectID, func(t *testing.T) {
+			got := classifyBySysObjectID(tt.objectID)
+			if got != tt.want {
+				t.Errorf("classifyBySysObjectID(%q) = %v, want %v", tt.objectID, got, tt.want)
 			}
 		})
 	}

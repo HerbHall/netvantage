@@ -45,12 +45,16 @@ type SNMPCredential struct {
 
 // SNMPSystemInfo holds basic system information retrieved via SNMP.
 type SNMPSystemInfo struct {
-	Description string        // sysDescr (1.3.6.1.2.1.1.1.0)
-	ObjectID    string        // sysObjectID (1.3.6.1.2.1.1.2.0)
-	UpTime      time.Duration // sysUpTime (1.3.6.1.2.1.1.3.0)
-	Contact     string        // sysContact (1.3.6.1.2.1.1.4.0)
-	Name        string        // sysName (1.3.6.1.2.1.1.5.0)
-	Location    string        // sysLocation (1.3.6.1.2.1.1.6.0)
+	Description    string        // sysDescr (1.3.6.1.2.1.1.1.0)
+	ObjectID       string        // sysObjectID (1.3.6.1.2.1.1.2.0)
+	UpTime         time.Duration // sysUpTime (1.3.6.1.2.1.1.3.0)
+	Contact        string        // sysContact (1.3.6.1.2.1.1.4.0)
+	Name           string        // sysName (1.3.6.1.2.1.1.5.0)
+	Location       string        // sysLocation (1.3.6.1.2.1.1.6.0)
+	Services       int           // sysServices (1.3.6.1.2.1.1.7.0) - OSI layer bitmask
+	BridgeAddress  string        // dot1dBaseBridgeAddress (BRIDGE-MIB)
+	BridgeNumPorts int           // dot1dBaseNumPorts (BRIDGE-MIB)
+	BridgeType     int           // dot1dBaseType (BRIDGE-MIB)
 }
 
 // SNMPInterface represents a network interface discovered via SNMP IF-MIB.
@@ -203,6 +207,7 @@ func (c *SNMPCollector) GetSystemInfo(ctx context.Context, target string, cred C
 		OIDSysContact,
 		OIDSysName,
 		OIDSysLocation,
+		OIDSysServices,
 	}
 
 	result, err := g.Get(oids)
@@ -225,16 +230,51 @@ func (c *SNMPCollector) GetSystemInfo(ctx context.Context, target string, cred C
 			info.Name = parsePDUString(pdu)
 		case "." + OIDSysLocation:
 			info.Location = parsePDUString(pdu)
+		case "." + OIDSysServices:
+			info.Services = parsePDUInt(pdu)
 		}
 	}
+
+	// Query BRIDGE-MIB separately (not all devices support it).
+	c.queryBridgeInfo(g, info)
 
 	c.logger.Debug("SNMP system info retrieved",
 		zap.String("target", target),
 		zap.String("name", info.Name),
 		zap.String("descr", info.Description),
+		zap.Int("services", info.Services),
+		zap.String("bridgeAddr", info.BridgeAddress),
+		zap.Int("bridgePorts", info.BridgeNumPorts),
 	)
 
 	return info, nil
+}
+
+// queryBridgeInfo attempts to retrieve BRIDGE-MIB data from the device.
+// Many devices don't support BRIDGE-MIB, so errors are silently ignored.
+func (c *SNMPCollector) queryBridgeInfo(g *gosnmp.GoSNMP, info *SNMPSystemInfo) {
+	oids := []string{OIDBridgeBase, OIDBridgeNumPorts, OIDBridgeType}
+
+	result, err := g.Get(oids)
+	if err != nil {
+		return
+	}
+
+	for _, pdu := range result.Variables {
+		if pdu.Type == gosnmp.NoSuchObject || pdu.Type == gosnmp.NoSuchInstance {
+			continue
+		}
+		switch pdu.Name {
+		case "." + OIDBridgeBase:
+			if b, ok := pdu.Value.([]byte); ok && len(b) > 0 {
+				info.BridgeAddress = formatMAC(b)
+			}
+		case "." + OIDBridgeNumPorts:
+			info.BridgeNumPorts = parsePDUInt(pdu)
+		case "." + OIDBridgeType:
+			info.BridgeType = parsePDUInt(pdu)
+		}
+	}
 }
 
 // GetInterfaces retrieves the interface table from an SNMP-enabled device.
@@ -370,7 +410,7 @@ func (c *SNMPCollector) Discover(ctx context.Context, target string, cred Creden
 	device := models.Device{
 		ID:              uuid.New().String(),
 		Hostname:        hostname,
-		DeviceType:      inferDeviceType(sysInfo.Description),
+		DeviceType:      inferDeviceType(sysInfo),
 		DiscoveryMethod: models.DiscoverySNMP,
 		IPAddresses:     []string{ip},
 		MACAddress:      macAddr,
@@ -389,25 +429,104 @@ func (c *SNMPCollector) Discover(ctx context.Context, target string, cred Creden
 	return []models.Device{device}, nil
 }
 
-// inferDeviceType attempts to determine the device type from the sysDescr string.
-func inferDeviceType(sysDescr string) models.DeviceType {
+// inferDeviceType determines device type from all available SNMP data.
+// Priority: BRIDGE-MIB > sysServices > sysObjectID > sysDescr keywords.
+func inferDeviceType(info *SNMPSystemInfo) models.DeviceType {
+	// Priority 1: BRIDGE-MIB detection (definitive for switches).
+	if info.BridgeAddress != "" || info.BridgeNumPorts > 1 {
+		// Device is a bridge/switch. Check if it also routes (L3 switch).
+		if info.Services&0x04 != 0 {
+			return models.DeviceTypeRouter
+		}
+		return models.DeviceTypeSwitch
+	}
+
+	// Priority 2: sysServices layer detection.
+	if info.Services != 0 {
+		if info.Services&0x04 != 0 && info.Services&0x02 == 0 {
+			return models.DeviceTypeRouter // Layer 3 only
+		}
+		if info.Services&0x02 != 0 {
+			return models.DeviceTypeSwitch // Layer 2
+		}
+	}
+
+	// Priority 3: sysObjectID vendor prefix.
+	if dt := classifyBySysObjectID(info.ObjectID); dt != models.DeviceTypeUnknown {
+		return dt
+	}
+
+	// Priority 4: sysDescr keyword matching (expanded).
+	return classifyBySysDescr(info.Description)
+}
+
+// classifyBySysObjectID uses the enterprise OID prefix for vendor identification.
+// sysObjectID identifies the vendor/product but not reliably the device type
+// (e.g. Cisco makes routers AND switches), so this returns Unknown for most cases.
+func classifyBySysObjectID(objectID string) models.DeviceType {
+	if objectID == "" {
+		return models.DeviceTypeUnknown
+	}
+	return models.DeviceTypeUnknown
+}
+
+// classifyBySysDescr uses keyword matching on the sysDescr string.
+func classifyBySysDescr(sysDescr string) models.DeviceType {
 	lower := strings.ToLower(sysDescr)
 
 	switch {
-	case strings.Contains(lower, "router"):
+	// Routers.
+	case strings.Contains(lower, "router"),
+		strings.Contains(lower, "routeros"), //nolint:misspell // RouterOS is MikroTik's OS name
+		strings.Contains(lower, "mikrotik"):
 		return models.DeviceTypeRouter
-	case strings.Contains(lower, "switch"):
+
+	// Switches.
+	case strings.Contains(lower, "switch"),
+		strings.Contains(lower, "catalyst"),
+		strings.Contains(lower, "procurve"),
+		strings.Contains(lower, "edgeswitch"),
+		strings.Contains(lower, "layer 2"),
+		strings.Contains(lower, "bridge"):
 		return models.DeviceTypeSwitch
-	case strings.Contains(lower, "firewall"):
-		return models.DeviceTypeFirewall
-	case strings.Contains(lower, "printer"):
-		return models.DeviceTypePrinter
-	case strings.Contains(lower, "access point") || strings.Contains(lower, "wireless"):
+
+	// Access points.
+	case strings.Contains(lower, "access point"),
+		strings.Contains(lower, "wireless"),
+		strings.Contains(lower, "unifi ap"),
+		strings.Contains(lower, "airmax"),
+		strings.Contains(lower, "airos"):
 		return models.DeviceTypeAccessPoint
-	case strings.Contains(lower, "nas") || strings.Contains(lower, "storage"):
+
+	// Firewalls.
+	case strings.Contains(lower, "firewall"),
+		strings.Contains(lower, "pfsense"),
+		strings.Contains(lower, "opnsense"),
+		strings.Contains(lower, "fortigate"),
+		strings.Contains(lower, "sophos"):
+		return models.DeviceTypeFirewall
+
+	// Printers.
+	case strings.Contains(lower, "printer"),
+		strings.Contains(lower, "laserjet"),
+		strings.Contains(lower, "inkjet"):
+		return models.DeviceTypePrinter
+
+	// NAS.
+	case strings.Contains(lower, "nas"),
+		strings.Contains(lower, "synology"),
+		strings.Contains(lower, "qnap"),
+		strings.Contains(lower, "storage"):
 		return models.DeviceTypeNAS
-	case strings.Contains(lower, "linux") || strings.Contains(lower, "windows") || strings.Contains(lower, "freebsd"):
+
+	// Servers.
+	case strings.Contains(lower, "linux"),
+		strings.Contains(lower, "windows"),
+		strings.Contains(lower, "freebsd"),
+		strings.Contains(lower, "esxi"),
+		strings.Contains(lower, "proxmox"):
 		return models.DeviceTypeServer
+
 	default:
 		return models.DeviceTypeUnknown
 	}
