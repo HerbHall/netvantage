@@ -45,7 +45,7 @@ type TracerouteRequest struct {
 var tracerouteRunning atomic.Bool
 
 // RunTraceroute performs an ICMP traceroute to the target IP.
-func RunTraceroute(ctx context.Context, target string, maxHops int, hopTimeoutMs int, logger *zap.Logger) (*TracerouteResult, error) {
+func RunTraceroute(ctx context.Context, target string, maxHops, hopTimeoutMs int, logger *zap.Logger) (*TracerouteResult, error) {
 	// Resolve the target to an IP address.
 	targetIP := net.ParseIP(target)
 	if targetIP == nil {
@@ -140,7 +140,7 @@ func openICMPConn() (*icmp.PacketConn, string, error) {
 }
 
 // probeHop sends a single ICMP Echo Request with the given TTL and waits for a response.
-func probeHop(ctx context.Context, conn *icmp.PacketConn, network string, target net.IP, ttl int, id int, seq int, timeout time.Duration, logger *zap.Logger) (hop TracerouteHop, reached bool) {
+func probeHop(ctx context.Context, conn *icmp.PacketConn, network string, target net.IP, ttl, id, seq int, timeout time.Duration, logger *zap.Logger) (hop TracerouteHop, reached bool) {
 	hop.Hop = ttl
 
 	// Set TTL on the connection.
@@ -218,12 +218,7 @@ func probeHop(ctx context.Context, conn *icmp.PacketConn, network string, target
 		}
 
 		// Parse the ICMP message.
-		var proto int
-		if network == "udp4" {
-			proto = 1 // ICMPv4 protocol number for parsing
-		} else {
-			proto = 1
-		}
+		proto := 1 // ICMPv4 protocol number for parsing
 		reply, err := icmp.ParseMessage(proto, buf[:n])
 		if err != nil {
 			continue
@@ -270,7 +265,7 @@ func probeHop(ctx context.Context, conn *icmp.PacketConn, network string, target
 // Destination Unreachable) contains our original Echo Request in the payload.
 // ICMP error messages include the IP header + first 8 bytes of the original
 // packet that triggered the error.
-func matchesProbe(reply *icmp.Message, expectedID int, expectedSeq int) bool {
+func matchesProbe(reply *icmp.Message, expectedID, expectedSeq int) bool {
 	body, ok := reply.Body.(*icmp.TimeExceeded)
 	if !ok {
 		// Try DstUnreach.
@@ -286,7 +281,7 @@ func matchesProbe(reply *icmp.Message, expectedID int, expectedSeq int) bool {
 // matchesPayload extracts the ICMP Echo ID and Seq from the raw payload
 // of an ICMP error message. The payload contains the original IP header
 // (typically 20 bytes) followed by at least 8 bytes of the ICMP Echo Request.
-func matchesPayload(data []byte, expectedID int, expectedSeq int) bool {
+func matchesPayload(data []byte, expectedID, expectedSeq int) bool {
 	if len(data) < 28 {
 		// Need at least 20 (IP header) + 8 (ICMP header with ID + Seq)
 		return false
@@ -325,7 +320,7 @@ func resolveHostnames(hops []TracerouteHop, logger *zap.Logger) {
 		}
 		// Remove trailing dot from FQDN.
 		hostname := names[0]
-		if len(hostname) > 0 && hostname[len(hostname)-1] == '.' {
+		if hostname != "" && hostname[len(hostname)-1] == '.' {
 			hostname = hostname[:len(hostname)-1]
 		}
 		hops[i].Hostname = hostname
