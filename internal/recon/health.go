@@ -63,17 +63,14 @@ func computeHealthScore(metrics []models.ScanMetrics, scans []models.ScanResult)
 		Detail: deviceDetail,
 	})
 
-	// Factor 4: Average ping RTT proxy (15%)
+	// Factor 4: Average ping RTT proxy (15%) + Factor 5: DNS lookup success (10%)
 	rttScore, rttDetail := computeAvgRTTProxy(metrics)
 	factors = append(factors, HealthScoreFactor{
 		Name:   "avg_ping_rtt",
 		Score:  rttScore,
 		Weight: 0.15,
 		Detail: rttDetail,
-	})
-
-	// Factor 5: DNS lookup success (10%) - default 95%
-	factors = append(factors, HealthScoreFactor{
+	}, HealthScoreFactor{
 		Name:   "dns_lookup_success",
 		Score:  95.0,
 		Weight: 0.10,
@@ -118,7 +115,7 @@ func computeHealthScore(metrics []models.ScanMetrics, scans []models.ScanResult)
 }
 
 // computeSuccessRate returns a 0-100 score for scan success rate.
-func computeSuccessRate(scans []models.ScanResult) (float64, string) {
+func computeSuccessRate(scans []models.ScanResult) (score float64, detail string) {
 	if len(scans) == 0 {
 		return 100.0, "no scans to evaluate"
 	}
@@ -131,13 +128,13 @@ func computeSuccessRate(scans []models.ScanResult) (float64, string) {
 	}
 
 	rate := float64(completed) / float64(len(scans)) * 100.0
-	detail := strconv.Itoa(completed) + "/" + strconv.Itoa(len(scans)) + " scans completed"
+	detail = strconv.Itoa(completed) + "/" + strconv.Itoa(len(scans)) + " scans completed"
 	return rate, detail
 }
 
 // computeDurationStability returns a 0-100 score based on scan duration consistency.
 // Lower coefficient of variation = higher score.
-func computeDurationStability(metrics []models.ScanMetrics) (float64, string) {
+func computeDurationStability(metrics []models.ScanMetrics) (score float64, detail string) {
 	if len(metrics) < 2 {
 		return 100.0, "insufficient data for stability analysis"
 	}
@@ -155,13 +152,13 @@ func computeDurationStability(metrics []models.ScanMetrics) (float64, string) {
 
 	cv := coefficientOfVariation(durations)
 	// CV < 0.1 = perfect (100), CV > 1.0 = poor (0), linear between.
-	score := 100.0 * (1.0 - clamp(cv/1.0, 0, 1))
-	detail := fmt.Sprintf("%.1f%% coefficient of variation", cv*100)
+	score = 100.0 * (1.0 - clamp(cv/1.0, 0, 1))
+	detail = fmt.Sprintf("%.1f%% coefficient of variation", cv*100)
 	return score, detail
 }
 
 // computeDeviceCountStability returns a 0-100 score based on device count consistency.
-func computeDeviceCountStability(metrics []models.ScanMetrics) (float64, string) {
+func computeDeviceCountStability(metrics []models.ScanMetrics) (score float64, detail string) {
 	if len(metrics) < 2 {
 		return 100.0, "insufficient data for stability analysis"
 	}
@@ -172,8 +169,8 @@ func computeDeviceCountStability(metrics []models.ScanMetrics) (float64, string)
 	}
 
 	cv := coefficientOfVariation(counts)
-	score := 100.0 * (1.0 - clamp(cv/1.0, 0, 1))
-	detail := fmt.Sprintf("%.1f%% coefficient of variation", cv*100)
+	score = 100.0 * (1.0 - clamp(cv/1.0, 0, 1))
+	detail = fmt.Sprintf("%.1f%% coefficient of variation", cv*100)
 	return score, detail
 }
 
