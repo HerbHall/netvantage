@@ -275,16 +275,13 @@ func extractLLDPOIDBase(oid, indexKey string) string {
 	if !strings.HasPrefix(oid, ".") {
 		oid = "." + oid
 	}
-	// OID = "." + baseOID + "." + indexKey
 	suffix := "." + indexKey
 	if !strings.HasSuffix(oid, suffix) {
 		return ""
 	}
 	base := oid[:len(oid)-len(suffix)]
 	// Remove leading dot to match our constants.
-	if strings.HasPrefix(base, ".") {
-		base = base[1:]
-	}
+	base = strings.TrimPrefix(base, ".")
 	return base
 }
 
