@@ -14,24 +14,6 @@ import (
 // dnsTimeout is the maximum time to wait for a reverse DNS lookup.
 const dnsTimeout = 500 * time.Millisecond
 
-// scanStage represents a named post-scan processing stage.
-type scanStage struct {
-	name string
-	run  func(ctx context.Context)
-}
-
-// runStages executes stages sequentially, checking for cancellation between each.
-func (o *ScanOrchestrator) runStages(ctx context.Context, stages []scanStage) {
-	for _, stage := range stages {
-		if ctx.Err() != nil {
-			o.logger.Warn("scan cancelled, skipping remaining stages",
-				zap.String("skipped", stage.name))
-			return
-		}
-		stage.run(ctx)
-	}
-}
-
 // PingScanner probes hosts via ICMP and sends results to a channel.
 type PingScanner interface {
 	Scan(ctx context.Context, subnet *net.IPNet, results chan<- HostResult) error
@@ -74,6 +56,24 @@ func NewScanOrchestrator(
 		pinger: pinger,
 		arp:    arp,
 		logger: logger,
+	}
+}
+
+// scanStage represents a named post-scan processing stage.
+type scanStage struct {
+	name string
+	run  func(ctx context.Context)
+}
+
+// runStages executes stages sequentially, checking for cancellation between each.
+func (o *ScanOrchestrator) runStages(ctx context.Context, stages []scanStage) {
+	for _, stage := range stages {
+		if ctx.Err() != nil {
+			o.logger.Warn("scan cancelled, skipping remaining stages",
+				zap.String("skipped", stage.name))
+			return
+		}
+		stage.run(ctx)
 	}
 }
 
