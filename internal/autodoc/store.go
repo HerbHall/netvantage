@@ -228,9 +228,9 @@ func (s *Store) ListEntriesBetween(ctx context.Context, since, until time.Time) 
 }
 
 // buildWhere constructs a WHERE clause from the filter.
-func (s *Store) buildWhere(filter ListFilter) (string, []any) {
+func (s *Store) buildWhere(filter ListFilter) (where string, args []any) {
 	clauses := []string{"1=1"}
-	args := []any{}
+	args = []any{}
 
 	if filter.EventType != "" {
 		clauses = append(clauses, "event_type = ?")
