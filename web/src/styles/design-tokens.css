@@ -146,6 +146,10 @@
   --nv-shadow-lg:  0 10px 25px rgba(0, 0, 0, 0.3);
   --nv-shadow-glow: 0 0 20px rgba(74, 222, 128, 0.15);
 
+  /* Topology node glow (selection / highlight) */
+  --nv-topo-glow-selected:    0 0 12px rgba(74, 222, 128, 0.3);
+  --nv-topo-glow-highlight:   0 0 0 3px rgba(74, 222, 128, 0.5), 0 0 16px rgba(74, 222, 128, 0.2);
+
   /* ------------------------------------------------------------------ */
   /* Typography                                                         */
   /* ------------------------------------------------------------------ */
@@ -219,4 +223,25 @@
   --nv-shadow-md:  0 4px 6px rgba(0, 0, 0, 0.07);
   --nv-shadow-lg:  0 10px 25px rgba(0, 0, 0, 0.1);
   --nv-shadow-glow: 0 0 20px rgba(22, 101, 52, 0.1);
+
+  /* Topology map -- darker for light backgrounds */
+  --nv-topo-node-online:    var(--nv-green-600);
+  --nv-topo-node-degraded:  var(--nv-earth-600);
+  --nv-topo-node-offline:   #dc2626;
+  --nv-topo-node-unknown:   var(--nv-sage-600);
+  --nv-topo-link-default:   rgba(22, 101, 52, 0.25);
+  --nv-topo-link-active:    rgba(22, 101, 52, 0.50);
+  --nv-topo-link-saturated: rgba(120, 85, 40, 0.45);
+
+  /* Charts -- increase contrast */
+  --nv-chart-green:  var(--nv-green-600);
+  --nv-chart-amber:  var(--nv-earth-600);
+  --nv-chart-sage:   var(--nv-sage-600);
+  --nv-chart-red:    #dc2626;
+  --nv-chart-blue:   #3b82f6;
+  --nv-chart-grid:   rgba(22, 101, 52, 0.08);
+
+  /* Topology node glow -- darker green for light backgrounds */
+  --nv-topo-glow-selected:    0 0 12px rgba(22, 101, 52, 0.35);
+  --nv-topo-glow-highlight:   0 0 0 3px rgba(22, 101, 52, 0.4), 0 0 16px rgba(22, 101, 52, 0.15);
 }
