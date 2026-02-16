@@ -18,7 +18,7 @@ test.describe('Authentication', () => {
 
   test('login page shows the SubNetree logo', async ({ page }) => {
     await page.goto('/login')
-    await expect(page.getByAlt('SubNetree')).toBeVisible()
+    await expect(page.getByAltText('SubNetree')).toBeVisible()
   })
 
   test('login page shows description text', async ({ page }) => {
