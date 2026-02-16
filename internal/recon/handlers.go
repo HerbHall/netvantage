@@ -1336,3 +1336,69 @@ func (m *Module) findSNMPCredential(ctx context.Context, deviceID string) (strin
 func (m *Module) SetCredentialProvider(cp roles.CredentialProvider) {
 	m.credProvider = cp
 }
+
+// handleTraceroute runs an ICMP traceroute to a target IP.
+//
+//	@Summary		Run traceroute
+//	@Description	Performs an ICMP traceroute to the specified target IP address
+//	@Tags			recon
+//	@Accept			json
+//	@Produce		json
+//	@Security		BearerAuth
+//	@Param			request	body		TracerouteRequest	true	"Traceroute parameters"
+//	@Success		200		{object}	TracerouteResult
+//	@Failure		400		{object}	models.APIProblem
+//	@Failure		429		{object}	models.APIProblem
+//	@Failure		500		{object}	models.APIProblem
+//	@Router			/recon/traceroute [post]
+func (m *Module) handleTraceroute(w http.ResponseWriter, r *http.Request) {
+	var req TracerouteRequest
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		writeError(w, http.StatusBadRequest, "invalid JSON body")
+		return
+	}
+	if req.Target == "" {
+		writeError(w, http.StatusBadRequest, "target is required")
+		return
+	}
+
+	// Validate the target looks like an IP address.
+	if ip := net.ParseIP(req.Target); ip == nil {
+		writeError(w, http.StatusBadRequest, "target must be a valid IP address")
+		return
+	}
+
+	// Rate limit: only one concurrent traceroute at a time.
+	if !tracerouteRunning.CompareAndSwap(false, true) {
+		writeError(w, http.StatusTooManyRequests, "a traceroute is already in progress, please wait")
+		return
+	}
+	defer tracerouteRunning.Store(false)
+
+	// Apply defaults.
+	maxHops := req.MaxHops
+	if maxHops <= 0 || maxHops > 64 {
+		maxHops = 30
+	}
+	timeoutMs := req.TimeoutMs
+	if timeoutMs <= 0 || timeoutMs > 10000 {
+		timeoutMs = 1000
+	}
+
+	// Run with a context timeout for the entire traceroute.
+	totalTimeout := time.Duration(maxHops) * time.Duration(timeoutMs) * time.Millisecond
+	ctx, cancel := context.WithTimeout(r.Context(), totalTimeout+5*time.Second)
+	defer cancel()
+
+	result, err := RunTraceroute(ctx, req.Target, maxHops, timeoutMs, m.logger.Named("traceroute"))
+	if err != nil {
+		m.logger.Error("traceroute failed",
+			zap.String("target", req.Target),
+			zap.Error(err),
+		)
+		writeError(w, http.StatusInternalServerError, "traceroute failed: "+err.Error())
+		return
+	}
+
+	writeJSON(w, http.StatusOK, result)
+}

@@ -44,6 +44,8 @@ import {
   TrendingUp,
   Key,
   Fingerprint,
+  Route,
+  Loader2,
   type LucideIcon,
 } from 'lucide-react'
 import { toast } from 'sonner'
@@ -60,9 +62,9 @@ import {
 } from '@/api/devices'
 import { getDeviceServices, getDeviceUtilization, updateDesiredState } from '@/api/services'
 import { getDeviceMetrics } from '@/api/pulse'
-import { getSNMPSystemInfo, getSNMPInterfaces } from '@/api/recon'
+import { getSNMPSystemInfo, getSNMPInterfaces, runTraceroute } from '@/api/recon'
 import { listDeviceCredentials } from '@/api/vault'
-import type { DeviceType, DeviceStatus, Scan, Service, ServiceType, DesiredState, MetricName, MetricRange } from '@/api/types'
+import type { DeviceType, DeviceStatus, Scan, Service, ServiceType, DesiredState, MetricName, MetricRange, TracerouteResult } from '@/api/types'
 import { TimeSeriesChart } from '@/components/time-series-chart'
 import { AnomalyIndicators } from '@/components/insight/anomaly-indicators'
 import { ForecastWarning } from '@/components/insight/forecast-warning'
@@ -711,6 +713,9 @@ export function DeviceDetailPage() {
           <SNMPInterfacesSection deviceId={id} />
         </>
       )}
+
+      {/* Traceroute (available for any device with an IP) */}
+      {primaryIp && <TracerouteSection targetIp={primaryIp} />}
 
       {/* Inventory Details */}
       <Card>
@@ -1904,6 +1909,143 @@ function MetricsSection({
           range={selectedRange}
           loading={metricsLoading}
         />
+      </CardContent>
+    </Card>
+  )
+}
+
+// ============================================================================
+// Traceroute Section
+// ============================================================================
+
+function TracerouteSection({ targetIp }: { targetIp: string }) {
+  const [result, setResult] = useState<TracerouteResult | null>(null)
+
+  const traceMutation = useMutation({
+    mutationFn: () => runTraceroute({ target: targetIp, max_hops: 30, timeout_ms: 1000 }),
+    onSuccess: (data) => {
+      setResult(data)
+    },
+    onError: (err) => {
+      toast.error(err instanceof Error ? err.message : 'Traceroute failed')
+    },
+  })
+
+  return (
+    <Card>
+      <CardHeader className="pb-3">
+        <div className="flex items-center justify-between">
+          <CardTitle className="text-sm font-medium flex items-center gap-2">
+            <Route className="h-4 w-4 text-muted-foreground" />
+            Traceroute
+          </CardTitle>
+          <Button
+            variant="outline"
+            size="sm"
+            className="gap-2"
+            onClick={() => traceMutation.mutate()}
+            disabled={traceMutation.isPending}
+          >
+            {traceMutation.isPending ? (
+              <>
+                <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                Running...
+              </>
+            ) : (
+              <>
+                <Route className="h-3.5 w-3.5" />
+                Run Traceroute
+              </>
+            )}
+          </Button>
+        </div>
+      </CardHeader>
+      <CardContent>
+        {!result && !traceMutation.isPending && (
+          <div className="text-center py-6">
+            <Route className="h-8 w-8 mx-auto text-muted-foreground mb-2" />
+            <p className="text-sm text-muted-foreground">
+              Click &quot;Run Traceroute&quot; to trace the network path to {targetIp}
+            </p>
+            <p className="text-xs text-muted-foreground mt-1">
+              Shows each hop between this server and the target device.
+            </p>
+          </div>
+        )}
+
+        {traceMutation.isPending && (
+          <div className="text-center py-6">
+            <Loader2 className="h-8 w-8 mx-auto text-muted-foreground mb-2 animate-spin" />
+            <p className="text-sm text-muted-foreground">
+              Tracing route to {targetIp}...
+            </p>
+            <p className="text-xs text-muted-foreground mt-1">
+              This may take up to 30 seconds depending on hop count.
+            </p>
+          </div>
+        )}
+
+        {result != null && !traceMutation.isPending && (
+          <div className="space-y-3">
+            {/* Summary */}
+            <div className="flex items-center gap-4 flex-wrap text-sm">
+              <span className={cn(
+                'inline-flex items-center px-2.5 py-1 rounded-md text-xs font-medium',
+                result.reached
+                  ? 'bg-green-500/10 text-green-600 dark:text-green-400'
+                  : 'bg-amber-500/10 text-amber-600 dark:text-amber-400',
+              )}>
+                {result.reached ? 'Target Reached' : 'Target Not Reached'}
+              </span>
+              <span className="text-muted-foreground">
+                {result.total_hops} hop{result.total_hops !== 1 ? 's' : ''}
+              </span>
+              <span className="text-muted-foreground">
+                {result.duration_ms.toFixed(1)} ms total
+              </span>
+            </div>
+
+            {/* Hop Table */}
+            <div className="rounded-lg border overflow-hidden">
+              <table className="w-full text-sm">
+                <thead className="bg-muted/50">
+                  <tr>
+                    <th className="px-4 py-2 text-left font-medium w-12">Hop</th>
+                    <th className="px-4 py-2 text-left font-medium">IP Address</th>
+                    <th className="px-4 py-2 text-left font-medium">Hostname</th>
+                    <th className="px-4 py-2 text-right font-medium">RTT</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y">
+                  {result.hops.map((hop) => (
+                    <tr key={hop.hop} className="hover:bg-muted/30 transition-colors">
+                      <td className="px-4 py-2 text-muted-foreground">{hop.hop}</td>
+                      <td className="px-4 py-2">
+                        {hop.timeout ? (
+                          <span className="text-muted-foreground">*</span>
+                        ) : (
+                          <code className="text-xs font-mono bg-muted px-1.5 py-0.5 rounded">
+                            {hop.ip}
+                          </code>
+                        )}
+                      </td>
+                      <td className="px-4 py-2 text-muted-foreground">
+                        {hop.timeout ? '-' : (hop.hostname || '-')}
+                      </td>
+                      <td className="px-4 py-2 text-right">
+                        {hop.timeout ? (
+                          <span className="text-muted-foreground">*</span>
+                        ) : (
+                          <span className="text-xs">{hop.rtt_ms.toFixed(2)} ms</span>
+                        )}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        )}
       </CardContent>
     </Card>
   )
