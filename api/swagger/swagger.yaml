@@ -836,6 +836,8 @@ definitions:
         type: integer
       device_id:
         type: string
+      device_name:
+        type: string
       id:
         type: string
       message:
@@ -858,6 +860,8 @@ definitions:
       created_at:
         type: string
       device_id:
+        type: string
+      device_name:
         type: string
       enabled:
         type: boolean
