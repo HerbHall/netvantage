@@ -4874,6 +4874,19 @@ const docTemplate = `{
                     "type": "string",
                     "example": "production"
                 },
+                "classification_confidence": {
+                    "description": "Classification metadata from the composite classifier.",
+                    "type": "integer",
+                    "example": 75
+                },
+                "classification_signals": {
+                    "description": "JSON-encoded signal breakdown",
+                    "type": "string"
+                },
+                "classification_source": {
+                    "type": "string",
+                    "example": "snmp_bridge_mib"
+                },
                 "custom_fields": {
                     "type": "object",
                     "additionalProperties": {

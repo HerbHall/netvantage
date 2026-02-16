@@ -68,4 +68,9 @@ type Device struct {
 	Category        string            `json:"category,omitempty" example:"production"`
 	PrimaryRole     string            `json:"primary_role,omitempty" example:"web-server"`
 	Owner           string            `json:"owner,omitempty" example:"platform-team"`
+
+	// Classification metadata from the composite classifier.
+	ClassificationConfidence int    `json:"classification_confidence,omitempty" example:"75"`
+	ClassificationSource     string `json:"classification_source,omitempty" example:"snmp_bridge_mib"`
+	ClassificationSignals    string `json:"classification_signals,omitempty"` // JSON-encoded signal breakdown
 }

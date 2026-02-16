@@ -163,13 +163,25 @@ func (s *ReconStore) UpsertDevice(ctx context.Context, device *models.Device) (c
 
 		newStatus := string(models.DeviceStatusOnline)
 
+		// Merge classification metadata: keep higher confidence.
+		classConfidence := device.ClassificationConfidence
+		classSource := device.ClassificationSource
+		classSignals := device.ClassificationSignals
+		if existing.ClassificationConfidence > classConfidence {
+			classConfidence = existing.ClassificationConfidence
+			classSource = existing.ClassificationSource
+			classSignals = existing.ClassificationSignals
+		}
+
 		_, err = s.db.ExecContext(ctx, `
 			UPDATE recon_devices SET
 				ip_addresses = ?, mac_address = ?, manufacturer = ?,
-				status = ?, discovery_method = ?, device_type = ?, last_seen = ?
+				status = ?, discovery_method = ?, device_type = ?, last_seen = ?,
+				classification_confidence = ?, classification_source = ?, classification_signals = ?
 			WHERE id = ?`,
 			string(ipsJSON), mac, manufacturer,
 			newStatus, string(method), deviceType, now,
+			classConfidence, classSource, classSignals,
 			existing.ID,
 		)
 		if err != nil {
@@ -205,12 +217,14 @@ func (s *ReconStore) UpsertDevice(ctx context.Context, device *models.Device) (c
 			id, hostname, ip_addresses, mac_address, manufacturer,
 			device_type, os, status, discovery_method, agent_id,
 			first_seen, last_seen, notes, tags, custom_fields,
-			location, category, primary_role, owner
-		) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+			location, category, primary_role, owner,
+			classification_confidence, classification_source, classification_signals
+		) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
 		device.ID, device.Hostname, string(ipsJSON), device.MACAddress, device.Manufacturer,
 		string(device.DeviceType), device.OS, string(device.Status), string(device.DiscoveryMethod), device.AgentID,
 		now, now, device.Notes, string(tagsJSON), string(cfJSON),
 		device.Location, device.Category, device.PrimaryRole, device.Owner,
+		device.ClassificationConfidence, device.ClassificationSource, device.ClassificationSignals,
 	)
 	if err != nil {
 		return false, fmt.Errorf("insert device: %w", err)
@@ -226,7 +240,8 @@ func (s *ReconStore) GetDevice(ctx context.Context, id string) (*models.Device, 
 		id, hostname, ip_addresses, mac_address, manufacturer,
 		device_type, os, status, discovery_method, agent_id,
 		first_seen, last_seen, notes, tags, custom_fields,
-		location, category, primary_role, owner
+		location, category, primary_role, owner,
+		classification_confidence, classification_source, classification_signals
 		FROM recon_devices WHERE id = ?`, id))
 }
 
@@ -236,7 +251,8 @@ func (s *ReconStore) GetDeviceByMAC(ctx context.Context, mac string) (*models.De
 		id, hostname, ip_addresses, mac_address, manufacturer,
 		device_type, os, status, discovery_method, agent_id,
 		first_seen, last_seen, notes, tags, custom_fields,
-		location, category, primary_role, owner
+		location, category, primary_role, owner,
+		classification_confidence, classification_source, classification_signals
 		FROM recon_devices WHERE mac_address = ?`, mac))
 }
 
@@ -247,7 +263,8 @@ func (s *ReconStore) GetDeviceByIP(ctx context.Context, ip string) (*models.Devi
 		id, hostname, ip_addresses, mac_address, manufacturer,
 		device_type, os, status, discovery_method, agent_id,
 		first_seen, last_seen, notes, tags, custom_fields,
-		location, category, primary_role, owner
+		location, category, primary_role, owner,
+		classification_confidence, classification_source, classification_signals
 		FROM recon_devices WHERE ip_addresses LIKE ?`, "%\""+ip+"\"%"))
 }
 
@@ -257,7 +274,8 @@ func (s *ReconStore) GetDeviceByHostname(ctx context.Context, hostname string) (
 		id, hostname, ip_addresses, mac_address, manufacturer,
 		device_type, os, status, discovery_method, agent_id,
 		first_seen, last_seen, notes, tags, custom_fields,
-		location, category, primary_role, owner
+		location, category, primary_role, owner,
+		classification_confidence, classification_source, classification_signals
 		FROM recon_devices WHERE hostname = ?`, hostname))
 }
 
@@ -310,7 +328,8 @@ func (s *ReconStore) ListDevices(ctx context.Context, opts ListDevicesOptions) (
 		"id, hostname, ip_addresses, mac_address, manufacturer, "+
 		"device_type, os, status, discovery_method, agent_id, "+
 		"first_seen, last_seen, notes, tags, custom_fields, "+
-		"location, category, primary_role, owner "+
+		"location, category, primary_role, owner, "+
+		"classification_confidence, classification_source, classification_signals "+
 		"FROM recon_devices WHERE "+where+" ORDER BY last_seen DESC LIMIT ? OFFSET ?",
 		queryArgs...)
 	if err != nil {
@@ -486,7 +505,8 @@ func (s *ReconStore) FindStaleDevices(ctx context.Context, threshold time.Time) 
 		id, hostname, ip_addresses, mac_address, manufacturer,
 		device_type, os, status, discovery_method, agent_id,
 		first_seen, last_seen, notes, tags, custom_fields,
-		location, category, primary_role, owner
+		location, category, primary_role, owner,
+		classification_confidence, classification_source, classification_signals
 		FROM recon_devices WHERE status = ? AND last_seen < ?`,
 		string(models.DeviceStatusOnline), threshold,
 	)
@@ -542,6 +562,7 @@ func (s *ReconStore) scanDevice(row *sql.Row) (*models.Device, error) {
 		&dt, &d.OS, &status, &method, &d.AgentID,
 		&d.FirstSeen, &d.LastSeen, &d.Notes, &tagsJSON, &cfJSON,
 		&d.Location, &d.Category, &d.PrimaryRole, &d.Owner,
+		&d.ClassificationConfidence, &d.ClassificationSource, &d.ClassificationSignals,
 	)
 	if err != nil {
 		return nil, err
@@ -565,6 +586,7 @@ func (s *ReconStore) scanDeviceRow(rows *sql.Rows) (*models.Device, error) {
 		&dt, &d.OS, &status, &method, &d.AgentID,
 		&d.FirstSeen, &d.LastSeen, &d.Notes, &tagsJSON, &cfJSON,
 		&d.Location, &d.Category, &d.PrimaryRole, &d.Owner,
+		&d.ClassificationConfidence, &d.ClassificationSource, &d.ClassificationSignals,
 	)
 	if err != nil {
 		return nil, err
@@ -619,7 +641,9 @@ func (s *ReconStore) UpdateDevice(ctx context.Context, id string, params UpdateD
 	if params.DeviceType != nil {
 		oldType := string(existing.DeviceType)
 		if *params.DeviceType != oldType {
-			_, err = s.db.ExecContext(ctx, `UPDATE recon_devices SET device_type = ? WHERE id = ?`, *params.DeviceType, id)
+			_, err = s.db.ExecContext(ctx, `UPDATE recon_devices SET device_type = ?,
+				classification_confidence = 100, classification_source = 'manual', classification_signals = '[]'
+				WHERE id = ?`, *params.DeviceType, id)
 			if err != nil {
 				return fmt.Errorf("update device_type: %w", err)
 			}
@@ -659,6 +683,17 @@ func (s *ReconStore) UpdateDeviceType(ctx context.Context, deviceID string, devi
 		string(deviceType), deviceID)
 	if err != nil {
 		return fmt.Errorf("update device type: %w", err)
+	}
+	return nil
+}
+
+// UpdateDeviceClassification updates the device type along with classification metadata.
+func (s *ReconStore) UpdateDeviceClassification(ctx context.Context, deviceID string, deviceType models.DeviceType, confidence int, source, signalsJSON string) error {
+	_, err := s.db.ExecContext(ctx,
+		`UPDATE recon_devices SET device_type = ?, classification_confidence = ?, classification_source = ?, classification_signals = ? WHERE id = ?`,
+		string(deviceType), confidence, source, signalsJSON, deviceID)
+	if err != nil {
+		return fmt.Errorf("update device classification: %w", err)
 	}
 	return nil
 }
@@ -707,12 +742,14 @@ func (s *ReconStore) InsertManualDevice(ctx context.Context, device *models.Devi
 			id, hostname, ip_addresses, mac_address, manufacturer,
 			device_type, os, status, discovery_method, agent_id,
 			first_seen, last_seen, notes, tags, custom_fields,
-			location, category, primary_role, owner
-		) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+			location, category, primary_role, owner,
+			classification_confidence, classification_source, classification_signals
+		) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
 		device.ID, device.Hostname, string(ipsJSON), device.MACAddress, device.Manufacturer,
 		string(device.DeviceType), device.OS, string(device.Status), string(device.DiscoveryMethod), device.AgentID,
 		now, now, device.Notes, string(tagsJSON), string(cfJSON),
 		device.Location, device.Category, device.PrimaryRole, device.Owner,
+		device.ClassificationConfidence, device.ClassificationSource, device.ClassificationSignals,
 	)
 	if err != nil {
 		return fmt.Errorf("insert manual device: %w", err)

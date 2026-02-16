@@ -203,5 +203,22 @@ func migrations() []plugin.Migration {
 				return nil
 			},
 		},
+		{
+			Version:     8,
+			Description: "add classification confidence columns to recon_devices",
+			Up: func(tx *sql.Tx) error {
+				stmts := []string{
+					`ALTER TABLE recon_devices ADD COLUMN classification_confidence INTEGER NOT NULL DEFAULT 0`,
+					`ALTER TABLE recon_devices ADD COLUMN classification_source TEXT NOT NULL DEFAULT ''`,
+					`ALTER TABLE recon_devices ADD COLUMN classification_signals TEXT NOT NULL DEFAULT ''`,
+				}
+				for _, stmt := range stmts {
+					if _, err := tx.Exec(stmt); err != nil {
+						return err
+					}
+				}
+				return nil
+			},
+		},
 	}
 }

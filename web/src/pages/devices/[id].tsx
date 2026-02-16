@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useMemo } from 'react'
 import { useParams, Link, useNavigate } from 'react-router-dom'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import {
@@ -43,6 +43,7 @@ import {
   Layers,
   TrendingUp,
   Key,
+  Fingerprint,
   type LucideIcon,
 } from 'lucide-react'
 import { toast } from 'sonner'
@@ -643,6 +644,15 @@ export function DeviceDetailPage() {
           </CardContent>
         </Card>
       </div>
+
+      {/* Classification Confidence */}
+      {device.classification_confidence != null && device.classification_confidence > 0 && (
+        <ClassificationSection
+          confidence={device.classification_confidence}
+          source={device.classification_source || ''}
+          signalsJSON={device.classification_signals || ''}
+        />
+      )}
 
       {/* Metrics */}
       <MetricsSection
@@ -1701,6 +1711,118 @@ function SNMPInterfacesSection({ deviceId }: { deviceId: string }) {
             </tbody>
           </table>
         </div>
+      </CardContent>
+    </Card>
+  )
+}
+
+// ============================================================================
+// Classification Section
+// ============================================================================
+
+interface ClassificationSignal {
+  source: string
+  device_type: string
+  weight: number
+  detail: string
+}
+
+function confidenceBadge(confidence: number): { bg: string; text: string; label: string } {
+  if (confidence >= 50) return { bg: 'bg-green-500/10', text: 'text-green-600 dark:text-green-400', label: 'Identified' }
+  if (confidence >= 25) return { bg: 'bg-amber-500/10', text: 'text-amber-600 dark:text-amber-400', label: 'Probable' }
+  return { bg: 'bg-gray-500/10', text: 'text-gray-600 dark:text-gray-400', label: 'Unknown' }
+}
+
+const sourceLabels: Record<string, string> = {
+  snmp_bridge_mib: 'SNMP BRIDGE-MIB',
+  snmp_sys_services: 'SNMP sysServices',
+  snmp_sys_descr: 'SNMP sysDescr',
+  lldp_caps: 'LLDP Capabilities',
+  port_fingerprint: 'Port Fingerprint',
+  oui_vendor: 'OUI Vendor',
+  ttl_hint: 'TTL Hint',
+  manual: 'Manual Override',
+  none: 'None',
+}
+
+function ClassificationSection({
+  confidence,
+  source,
+  signalsJSON,
+}: {
+  confidence: number
+  source: string
+  signalsJSON: string
+}) {
+  const signals = useMemo<ClassificationSignal[]>(() => {
+    if (!signalsJSON) return []
+    try {
+      return JSON.parse(signalsJSON) as ClassificationSignal[]
+    } catch {
+      return []
+    }
+  }, [signalsJSON])
+
+  const badge = confidenceBadge(confidence)
+
+  return (
+    <Card>
+      <CardHeader className="pb-3">
+        <CardTitle className="text-sm font-medium flex items-center gap-2">
+          <Fingerprint className="h-4 w-4 text-muted-foreground" />
+          Classification
+        </CardTitle>
+      </CardHeader>
+      <CardContent className="space-y-4">
+        <div className="flex items-center gap-4 flex-wrap">
+          <div>
+            <p className="text-xs text-muted-foreground mb-1">Confidence</p>
+            <div className="flex items-center gap-2">
+              <span className={cn('inline-flex items-center px-2.5 py-1 rounded-md text-sm font-bold', badge.bg, badge.text)}>
+                {confidence}%
+              </span>
+              <span className={cn('text-sm', badge.text)}>{badge.label}</span>
+            </div>
+          </div>
+          <div>
+            <p className="text-xs text-muted-foreground mb-1">Primary Source</p>
+            <p className="text-sm font-medium">{sourceLabels[source] || source || 'Unknown'}</p>
+          </div>
+        </div>
+
+        {signals.length > 0 && (
+          <div>
+            <p className="text-xs text-muted-foreground mb-2">Signal Breakdown</p>
+            <div className="rounded-lg border overflow-hidden">
+              <table className="w-full text-sm">
+                <thead className="bg-muted/50">
+                  <tr>
+                    <th className="px-4 py-2 text-left font-medium">Source</th>
+                    <th className="px-4 py-2 text-left font-medium">Suggested Type</th>
+                    <th className="px-4 py-2 text-right font-medium">Weight</th>
+                    <th className="px-4 py-2 text-left font-medium">Detail</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y">
+                  {signals.map((signal, idx) => (
+                    <tr key={idx} className="hover:bg-muted/30 transition-colors">
+                      <td className="px-4 py-2 font-medium">
+                        {sourceLabels[signal.source] || signal.source}
+                      </td>
+                      <td className="px-4 py-2 capitalize">{signal.device_type}</td>
+                      <td className="px-4 py-2 text-right">
+                        <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-primary/10 text-primary">
+                          {signal.weight}
+                        </span>
+                      </td>
+                      <td className="px-4 py-2 text-muted-foreground">{signal.detail}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        )}
       </CardContent>
     </Card>
   )
