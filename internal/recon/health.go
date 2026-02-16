@@ -176,7 +176,7 @@ func computeDeviceCountStability(metrics []models.ScanMetrics) (score float64, d
 
 // computeAvgRTTProxy returns a 0-100 score approximating network latency.
 // Uses ping_phase_ms / hosts_scanned as a proxy for average per-host time.
-func computeAvgRTTProxy(metrics []models.ScanMetrics) (float64, string) {
+func computeAvgRTTProxy(metrics []models.ScanMetrics) (score float64, detail string) {
 	if len(metrics) == 0 {
 		return 100.0, "no metrics available"
 	}
@@ -197,7 +197,6 @@ func computeAvgRTTProxy(metrics []models.ScanMetrics) (float64, string) {
 
 	avgRTT := totalRTT / float64(count)
 	// < 5ms = perfect (100), > 200ms = poor (0), logarithmic scale.
-	var score float64
 	switch {
 	case avgRTT <= 5:
 		score = 100.0
@@ -208,13 +207,13 @@ func computeAvgRTTProxy(metrics []models.ScanMetrics) (float64, string) {
 		score = 100.0 * (1.0 - math.Log(avgRTT/5.0)/math.Log(200.0/5.0))
 	}
 
-	detail := fmt.Sprintf("%.1f ms avg per-host ping time", avgRTT)
+	detail = fmt.Sprintf("%.1f ms avg per-host ping time", avgRTT)
 	return clamp(score, 0, 100), detail
 }
 
 // computeNewDeviceRate returns a 0-100 score for the rate of new device discovery.
 // A moderate new-device rate indicates healthy network monitoring.
-func computeNewDeviceRate(metrics []models.ScanMetrics) (float64, string) {
+func computeNewDeviceRate(metrics []models.ScanMetrics) (score float64, detail string) {
 	if len(metrics) == 0 {
 		return 80.0, "no metrics available"
 	}
@@ -242,7 +241,6 @@ func computeNewDeviceRate(metrics []models.ScanMetrics) (float64, string) {
 	weeklyRate := float64(totalNewDevices) / spanDays * 7.0
 
 	// 0-2 new devices/week = great (100), 3-10 = good (80-90), >10 = concerning (60-80)
-	var score float64
 	switch {
 	case weeklyRate <= 2:
 		score = 100.0
@@ -252,7 +250,7 @@ func computeNewDeviceRate(metrics []models.ScanMetrics) (float64, string) {
 		score = 80.0 - clamp((weeklyRate-10.0)*2.0, 0, 40)
 	}
 
-	detail := fmt.Sprintf("%.1f new devices/week", weeklyRate)
+	detail = fmt.Sprintf("%.1f new devices/week", weeklyRate)
 	return clamp(score, 0, 100), detail
 }
 
