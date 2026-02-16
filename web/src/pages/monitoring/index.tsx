@@ -246,8 +246,8 @@ function ChecksTab() {
               <tbody className="divide-y">
                 {checks.map((check) => (
                   <tr key={check.id} className="hover:bg-muted/30 transition-colors">
-                    <td className="px-4 py-3 font-mono text-xs">
-                      {check.device_id.slice(0, 8)}...
+                    <td className="px-4 py-3 text-sm" title={check.device_id}>
+                      {check.device_name || check.device_id.slice(0, 8) + '...'}
                     </td>
                     <td className="px-4 py-3">
                       <CheckTypeBadge type={check.check_type} />
@@ -528,8 +528,8 @@ function AlertsTab() {
                     )}
                     title={alert.suppressed ? `Suppressed: upstream device ${alert.suppressed_by ?? ''} is down` : undefined}
                   >
-                    <td className="px-4 py-3 font-mono text-xs">
-                      {alert.device_id.slice(0, 8)}...
+                    <td className="px-4 py-3 text-sm" title={alert.device_id}>
+                      {alert.device_name || alert.device_id.slice(0, 8) + '...'}
                     </td>
                     <td className="px-4 py-3">
                       <SeverityBadge severity={alert.severity} />

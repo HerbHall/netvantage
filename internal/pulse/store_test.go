@@ -20,6 +20,29 @@ func testStore(t *testing.T) *PulseStore {
 	if err := db.Migrate(ctx, "pulse", migrations()); err != nil {
 		t.Fatalf("migrate: %v", err)
 	}
+
+	// Create recon_devices table for LEFT JOIN queries that resolve device names.
+	_, err = db.DB().ExecContext(ctx, `CREATE TABLE IF NOT EXISTS recon_devices (
+		id               TEXT PRIMARY KEY,
+		hostname         TEXT NOT NULL DEFAULT '',
+		ip_addresses     TEXT NOT NULL DEFAULT '[]',
+		mac_address      TEXT NOT NULL DEFAULT '',
+		manufacturer     TEXT NOT NULL DEFAULT '',
+		device_type      TEXT NOT NULL DEFAULT 'unknown',
+		os               TEXT NOT NULL DEFAULT '',
+		status           TEXT NOT NULL DEFAULT 'unknown',
+		discovery_method TEXT NOT NULL DEFAULT 'icmp',
+		agent_id         TEXT NOT NULL DEFAULT '',
+		first_seen       DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+		last_seen        DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+		notes            TEXT NOT NULL DEFAULT '',
+		tags             TEXT NOT NULL DEFAULT '[]',
+		custom_fields    TEXT NOT NULL DEFAULT '{}'
+	)`)
+	if err != nil {
+		t.Fatalf("create recon_devices table: %v", err)
+	}
+
 	return NewPulseStore(db.DB())
 }
 
@@ -894,6 +917,73 @@ func TestListAllChecks(t *testing.T) {
 	}
 }
 
+// -- ListAllChecks with DeviceName resolution --
+
+func TestListAllChecks_DeviceName(t *testing.T) {
+	s := testStore(t)
+	ctx := context.Background()
+
+	now := time.Now().Truncate(time.Second)
+
+	// Insert a recon device with hostname.
+	_, err := s.db.ExecContext(ctx, `INSERT INTO recon_devices (id, hostname, ip_addresses) VALUES (?, ?, ?)`,
+		"dev-with-hostname", "my-router", `["192.168.1.1"]`)
+	if err != nil {
+		t.Fatalf("insert recon device: %v", err)
+	}
+
+	// Insert a recon device without hostname but with IPs.
+	_, err = s.db.ExecContext(ctx, `INSERT INTO recon_devices (id, hostname, ip_addresses) VALUES (?, ?, ?)`,
+		"dev-with-ip", "", `["10.0.0.5"]`)
+	if err != nil {
+		t.Fatalf("insert recon device: %v", err)
+	}
+
+	// Check linked to device with hostname.
+	insertTestCheck(t, s, &Check{
+		ID: "chk-hostname", DeviceID: "dev-with-hostname", CheckType: "icmp",
+		Target: "192.168.1.1", IntervalSeconds: 30, Enabled: true,
+		CreatedAt: now, UpdatedAt: now,
+	})
+
+	// Check linked to device with IP only (no hostname).
+	insertTestCheck(t, s, &Check{
+		ID: "chk-ip", DeviceID: "dev-with-ip", CheckType: "icmp",
+		Target: "10.0.0.5", IntervalSeconds: 30, Enabled: true,
+		CreatedAt: now.Add(time.Second), UpdatedAt: now.Add(time.Second),
+	})
+
+	// Check linked to a device that does not exist in recon_devices.
+	insertTestCheck(t, s, &Check{
+		ID: "chk-orphan", DeviceID: "dev-unknown", CheckType: "icmp",
+		Target: "172.16.0.1", IntervalSeconds: 60, Enabled: true,
+		CreatedAt: now.Add(2 * time.Second), UpdatedAt: now.Add(2 * time.Second),
+	})
+
+	checks, err := s.ListAllChecks(ctx)
+	if err != nil {
+		t.Fatalf("ListAllChecks: %v", err)
+	}
+	if len(checks) != 3 {
+		t.Fatalf("expected 3 checks, got %d", len(checks))
+	}
+
+	// Device with hostname resolves to hostname.
+	if checks[0].DeviceName != "my-router" {
+		t.Errorf("checks[0].DeviceName = %q, want %q", checks[0].DeviceName, "my-router")
+	}
+
+	// Device without hostname resolves to first IP.
+	if checks[1].DeviceName != "10.0.0.5" {
+		t.Errorf("checks[1].DeviceName = %q, want %q", checks[1].DeviceName, "10.0.0.5")
+	}
+
+	// Orphan device falls back to device_id.
+	if checks[2].DeviceName != "dev-unknown" {
+		t.Errorf("checks[2].DeviceName = %q, want %q", checks[2].DeviceName, "dev-unknown")
+	}
+}
+
 // -- UpdateCheck --
 
 func TestUpdateCheck(t *testing.T) {
@@ -1582,5 +1672,76 @@ func TestListAlerts_SuppressedFilter(t *testing.T) {
 	}
 	if len(alerts) != 2 {
 		t.Fatalf("expected 2 alerts total, got %d", len(alerts))
+	}
+}
+
+// -- Alert DeviceName resolution --
+
+func TestListAlerts_DeviceName(t *testing.T) {
+	s := testStore(t)
+	ctx := context.Background()
+
+	now := time.Now().Truncate(time.Second)
+
+	// Insert a recon device with hostname.
+	_, err := s.db.ExecContext(ctx, `INSERT INTO recon_devices (id, hostname, ip_addresses) VALUES (?, ?, ?)`,
+		"dev-named", "web-server", `["10.0.0.10"]`)
+	if err != nil {
+		t.Fatalf("insert recon device: %v", err)
+	}
+
+	insertTestCheck(t, s, &Check{
+		ID: "chk-named", DeviceID: "dev-named", CheckType: "icmp",
+		Target: "10.0.0.10", IntervalSeconds: 30, Enabled: true,
+		CreatedAt: now, UpdatedAt: now,
+	})
+	insertTestCheck(t, s, &Check{
+		ID: "chk-orphan", DeviceID: "dev-orphan", CheckType: "icmp",
+		Target: "172.16.0.1", IntervalSeconds: 30, Enabled: true,
+		CreatedAt: now, UpdatedAt: now,
+	})
+
+	if err := s.InsertAlert(ctx, &Alert{
+		ID: "alert-named", CheckID: "chk-named", DeviceID: "dev-named",
+		Severity: "critical", Message: "Host down",
+		TriggeredAt: now, ConsecutiveFailures: 5,
+	}); err != nil {
+		t.Fatalf("InsertAlert: %v", err)
+	}
+	if err := s.InsertAlert(ctx, &Alert{
+		ID: "alert-orphan", CheckID: "chk-orphan", DeviceID: "dev-orphan",
+		Severity: "warning", Message: "Host unreachable",
+		TriggeredAt: now.Add(time.Second), ConsecutiveFailures: 3,
+	}); err != nil {
+		t.Fatalf("InsertAlert: %v", err)
+	}
+
+	// ListAlerts should resolve device names.
+	alerts, err := s.ListAlerts(ctx, AlertFilters{})
+	if err != nil {
+		t.Fatalf("ListAlerts: %v", err)
+	}
+	if len(alerts) != 2 {
+		t.Fatalf("expected 2 alerts, got %d", len(alerts))
+	}
+
+	// Most recent first (alert-orphan has later triggered_at).
+	if alerts[0].DeviceName != "dev-orphan" {
+		t.Errorf("alerts[0].DeviceName = %q, want %q", alerts[0].DeviceName, "dev-orphan")
+	}
+	if alerts[1].DeviceName != "web-server" {
+		t.Errorf("alerts[1].DeviceName = %q, want %q", alerts[1].DeviceName, "web-server")
+	}
+
+	// ListActiveAlerts should also resolve device names.
+	active, err := s.ListActiveAlerts(ctx, "")
+	if err != nil {
+		t.Fatalf("ListActiveAlerts: %v", err)
+	}
+	if len(active) != 2 {
+		t.Fatalf("expected 2 active alerts, got %d", len(active))
+	}
+	if active[1].DeviceName != "web-server" {
+		t.Errorf("active[1].DeviceName = %q, want %q", active[1].DeviceName, "web-server")
 	}
 }

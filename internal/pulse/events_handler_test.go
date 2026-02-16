@@ -24,6 +24,28 @@ func newTestModule(t *testing.T) (*Module, *PulseStore) {
 		t.Fatalf("migrate: %v", err)
 	}
 
+	// Create recon_devices table for LEFT JOIN queries that resolve device names.
+	_, err = db.DB().ExecContext(ctx, `CREATE TABLE IF NOT EXISTS recon_devices (
+		id               TEXT PRIMARY KEY,
+		hostname         TEXT NOT NULL DEFAULT '',
+		ip_addresses     TEXT NOT NULL DEFAULT '[]',
+		mac_address      TEXT NOT NULL DEFAULT '',
+		manufacturer     TEXT NOT NULL DEFAULT '',
+		device_type      TEXT NOT NULL DEFAULT 'unknown',
+		os               TEXT NOT NULL DEFAULT '',
+		status           TEXT NOT NULL DEFAULT 'unknown',
+		discovery_method TEXT NOT NULL DEFAULT 'icmp',
+		agent_id         TEXT NOT NULL DEFAULT '',
+		first_seen       DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+		last_seen        DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+		notes            TEXT NOT NULL DEFAULT '',
+		tags             TEXT NOT NULL DEFAULT '[]',
+		custom_fields    TEXT NOT NULL DEFAULT '{}'
+	)`)
+	if err != nil {
+		t.Fatalf("create recon_devices table: %v", err)
+	}
+
 	ps := NewPulseStore(db.DB())
 	m := &Module{
 		logger: zap.NewNop(),

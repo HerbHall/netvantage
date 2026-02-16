@@ -25,6 +25,7 @@ type MetricSeries struct {
 type Check struct {
 	ID              string    `json:"id"`
 	DeviceID        string    `json:"device_id"`
+	DeviceName      string    `json:"device_name"`
 	CheckType       string    `json:"check_type"`
 	Target          string    `json:"target"`
 	IntervalSeconds int       `json:"interval_seconds"`
@@ -50,6 +51,7 @@ type Alert struct {
 	ID                  string     `json:"id"`
 	CheckID             string     `json:"check_id"`
 	DeviceID            string     `json:"device_id"`
+	DeviceName          string     `json:"device_name"`
 	Severity            string     `json:"severity"`
 	Message             string     `json:"message"`
 	TriggeredAt         time.Time  `json:"triggered_at"`
@@ -196,10 +198,16 @@ func (s *PulseStore) UpdateCheckEnabled(ctx context.Context, id string, enabled 
 }
 
 // ListAllChecks returns all monitoring checks (enabled and disabled).
+// Device names are resolved via LEFT JOIN with recon_devices, falling back to
+// the first IP address or the raw device_id when hostname is empty.
 func (s *PulseStore) ListAllChecks(ctx context.Context) ([]Check, error) {
 	rows, err := s.db.QueryContext(ctx, `
-		SELECT id, device_id, check_type, target, interval_seconds, enabled, created_at, updated_at
-		FROM pulse_checks ORDER BY created_at`,
+		SELECT c.id, c.device_id, c.check_type, c.target, c.interval_seconds,
+			c.enabled, c.created_at, c.updated_at,
+			COALESCE(NULLIF(d.hostname, ''), json_extract(d.ip_addresses, '$[0]'), c.device_id) AS device_name
+		FROM pulse_checks c
+		LEFT JOIN recon_devices d ON d.id = c.device_id
+		ORDER BY c.created_at`,
 	)
 	if err != nil {
 		return nil, fmt.Errorf("list all checks: %w", err)
@@ -212,7 +220,7 @@ func (s *PulseStore) ListAllChecks(ctx context.Context) ([]Check, error) {
 		var enabledInt int
 		if err := rows.Scan(
 			&c.ID, &c.DeviceID, &c.CheckType, &c.Target, &c.IntervalSeconds,
-			&enabledInt, &c.CreatedAt, &c.UpdatedAt,
+			&enabledInt, &c.CreatedAt, &c.UpdatedAt, &c.DeviceName,
 		); err != nil {
 			return nil, fmt.Errorf("scan check row: %w", err)
 		}
@@ -520,20 +528,27 @@ func (s *PulseStore) GetActiveAlert(ctx context.Context, checkID string) (*Alert
 
 // ListActiveAlerts returns active (unresolved) alerts. If deviceID is empty, returns all
 // active alerts. If deviceID is provided, returns only active alerts for that device.
+// Device names are resolved via LEFT JOIN with recon_devices.
 func (s *PulseStore) ListActiveAlerts(ctx context.Context, deviceID string) ([]Alert, error) {
 	var rows *sql.Rows
 	var err error
 	if deviceID == "" {
 		rows, err = s.db.QueryContext(ctx, `
-			SELECT id, check_id, device_id, severity, message, triggered_at, resolved_at,
-				acknowledged_at, consecutive_failures, suppressed, suppressed_by
-			FROM pulse_alerts WHERE resolved_at IS NULL ORDER BY triggered_at DESC`,
+			SELECT a.id, a.check_id, a.device_id, a.severity, a.message, a.triggered_at, a.resolved_at,
+				a.acknowledged_at, a.consecutive_failures, a.suppressed, a.suppressed_by,
+				COALESCE(NULLIF(d.hostname, ''), json_extract(d.ip_addresses, '$[0]'), a.device_id) AS device_name
+			FROM pulse_alerts a
+			LEFT JOIN recon_devices d ON d.id = a.device_id
+			WHERE a.resolved_at IS NULL ORDER BY a.triggered_at DESC`,
 		)
 	} else {
 		rows, err = s.db.QueryContext(ctx, `
-			SELECT id, check_id, device_id, severity, message, triggered_at, resolved_at,
-				acknowledged_at, consecutive_failures, suppressed, suppressed_by
-			FROM pulse_alerts WHERE device_id = ? AND resolved_at IS NULL ORDER BY triggered_at DESC`,
+			SELECT a.id, a.check_id, a.device_id, a.severity, a.message, a.triggered_at, a.resolved_at,
+				a.acknowledged_at, a.consecutive_failures, a.suppressed, a.suppressed_by,
+				COALESCE(NULLIF(d.hostname, ''), json_extract(d.ip_addresses, '$[0]'), a.device_id) AS device_name
+			FROM pulse_alerts a
+			LEFT JOIN recon_devices d ON d.id = a.device_id
+			WHERE a.device_id = ? AND a.resolved_at IS NULL ORDER BY a.triggered_at DESC`,
 			deviceID,
 		)
 	}
@@ -577,28 +592,32 @@ func (s *PulseStore) GetAlert(ctx context.Context, id string) (*Alert, error) {
 }
 
 // ListAlerts returns alerts matching the given filters.
+// Device names are resolved via LEFT JOIN with recon_devices.
 func (s *PulseStore) ListAlerts(ctx context.Context, filters AlertFilters) ([]Alert, error) {
-	query := `SELECT id, check_id, device_id, severity, message, triggered_at, resolved_at,
-		acknowledged_at, consecutive_failures, suppressed, suppressed_by FROM pulse_alerts`
+	query := `SELECT a.id, a.check_id, a.device_id, a.severity, a.message, a.triggered_at, a.resolved_at,
+		a.acknowledged_at, a.consecutive_failures, a.suppressed, a.suppressed_by,
+		COALESCE(NULLIF(d.hostname, ''), json_extract(d.ip_addresses, '$[0]'), a.device_id) AS device_name
+		FROM pulse_alerts a
+		LEFT JOIN recon_devices d ON d.id = a.device_id`
 	var conditions []string
 	var args []any
 
 	if filters.DeviceID != "" {
-		conditions = append(conditions, "device_id = ?")
+		conditions = append(conditions, "a.device_id = ?")
 		args = append(args, filters.DeviceID)
 	}
 	if filters.Severity != "" {
-		conditions = append(conditions, "severity = ?")
+		conditions = append(conditions, "a.severity = ?")
 		args = append(args, filters.Severity)
 	}
 	if filters.ActiveOnly {
-		conditions = append(conditions, "resolved_at IS NULL")
+		conditions = append(conditions, "a.resolved_at IS NULL")
 	}
 	if filters.Suppressed != nil {
 		if *filters.Suppressed {
-			conditions = append(conditions, "suppressed = 1")
+			conditions = append(conditions, "a.suppressed = 1")
 		} else {
-			conditions = append(conditions, "suppressed = 0")
+			conditions = append(conditions, "a.suppressed = 0")
 		}
 	}
 
@@ -609,7 +628,7 @@ func (s *PulseStore) ListAlerts(ctx context.Context, filters AlertFilters) ([]Al
 		}
 	}
 
-	query += " ORDER BY triggered_at DESC"
+	query += " ORDER BY a.triggered_at DESC"
 
 	limit := filters.Limit
 	if limit <= 0 {
@@ -652,6 +671,7 @@ func (s *PulseStore) DeleteOldAlerts(ctx context.Context, before time.Time) (int
 }
 
 // scanAlertRows scans alert rows into a slice, handling nullable columns.
+// Expects 12 columns: the standard 11 alert columns plus device_name.
 func scanAlertRows(rows *sql.Rows) ([]Alert, error) {
 	var alerts []Alert
 	for rows.Next() {
@@ -661,7 +681,7 @@ func scanAlertRows(rows *sql.Rows) ([]Alert, error) {
 		if err := rows.Scan(
 			&a.ID, &a.CheckID, &a.DeviceID, &a.Severity, &a.Message,
 			&a.TriggeredAt, &resolvedAt, &acknowledgedAt, &a.ConsecutiveFailures,
-			&suppressedInt, &a.SuppressedBy,
+			&suppressedInt, &a.SuppressedBy, &a.DeviceName,
 		); err != nil {
 			return nil, fmt.Errorf("scan alert row: %w", err)
 		}
