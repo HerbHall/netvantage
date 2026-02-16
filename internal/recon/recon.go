@@ -263,6 +263,7 @@ func (m *Module) Routes() []plugin.Route {
 		{Method: "POST", Path: "/snmp/discover", Handler: m.handleSNMPDiscover},
 		{Method: "GET", Path: "/snmp/system/{device_id}", Handler: m.handleSNMPSystemInfo},
 		{Method: "GET", Path: "/snmp/interfaces/{device_id}", Handler: m.handleSNMPInterfaces},
+		{Method: "POST", Path: "/traceroute", Handler: m.handleTraceroute},
 	}
 }
 

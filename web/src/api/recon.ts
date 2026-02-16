@@ -1,5 +1,5 @@
 import { api } from './client'
-import type { Device, SNMPSystemInfo, SNMPInterface, SNMPDiscoverRequest } from './types'
+import type { Device, SNMPSystemInfo, SNMPInterface, SNMPDiscoverRequest, TracerouteRequest, TracerouteResult } from './types'
 
 /** Discover a device via SNMP. */
 export async function discoverSNMP(req: SNMPDiscoverRequest): Promise<Device[]> {
@@ -14,4 +14,9 @@ export async function getSNMPSystemInfo(deviceId: string): Promise<SNMPSystemInf
 /** Get SNMP interface table for a device. */
 export async function getSNMPInterfaces(deviceId: string): Promise<SNMPInterface[]> {
   return api.get<SNMPInterface[]>(`/recon/snmp/interfaces/${deviceId}`)
+}
+
+/** Run an ICMP traceroute to a target IP. */
+export async function runTraceroute(req: TracerouteRequest): Promise<TracerouteResult> {
+  return api.post<TracerouteResult>('/recon/traceroute', req)
 }

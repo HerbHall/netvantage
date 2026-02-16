@@ -487,6 +487,35 @@ export interface SNMPDiscoverRequest {
 }
 
 // ============================================================================
+// Traceroute Types
+// ============================================================================
+
+/** A single hop in a traceroute result. */
+export interface TracerouteHop {
+  hop: number
+  ip?: string
+  hostname?: string
+  rtt_ms: number
+  timeout: boolean
+}
+
+/** Complete traceroute result. */
+export interface TracerouteResult {
+  target: string
+  hops: TracerouteHop[]
+  reached: boolean
+  total_hops: number
+  duration_ms: number
+}
+
+/** Request body for the traceroute endpoint. */
+export interface TracerouteRequest {
+  target: string
+  max_hops?: number
+  timeout_ms?: number
+}
+
+// ============================================================================
 // Metrics History Types
 // ============================================================================
 

@@ -3571,6 +3571,63 @@
                 }
             }
         },
+        "/recon/traceroute": {
+            "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Performs an ICMP traceroute to the specified target IP address",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "recon"
+                ],
+                "summary": "Run traceroute",
+                "parameters": [
+                    {
+                        "description": "Traceroute parameters",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/internal_recon.TracerouteRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/internal_recon.TracerouteResult"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_HerbHall_subnetree_pkg_models.APIProblem"
+                        }
+                    },
+                    "429": {
+                        "description": "Too Many Requests",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_HerbHall_subnetree_pkg_models.APIProblem"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_HerbHall_subnetree_pkg_models.APIProblem"
+                        }
+                    }
+                }
+            }
+        },
         "/settings/interfaces": {
             "get": {
                 "description": "Get a list of all network interfaces available on the server.",
@@ -6329,6 +6386,72 @@
                         }
                     ],
                     "example": "online"
+                }
+            }
+        },
+        "internal_recon.TracerouteHop": {
+            "type": "object",
+            "properties": {
+                "hop": {
+                    "type": "integer"
+                },
+                "hostname": {
+                    "type": "string",
+                    "example": "router.local"
+                },
+                "ip": {
+                    "type": "string",
+                    "example": "192.168.1.1"
+                },
+                "rtt_ms": {
+                    "type": "number",
+                    "example": 1.23
+                },
+                "timeout": {
+                    "type": "boolean"
+                }
+            }
+        },
+        "internal_recon.TracerouteRequest": {
+            "type": "object",
+            "properties": {
+                "max_hops": {
+                    "type": "integer",
+                    "example": 30
+                },
+                "target": {
+                    "type": "string",
+                    "example": "192.168.1.1"
+                },
+                "timeout_ms": {
+                    "type": "integer",
+                    "example": 1000
+                }
+            }
+        },
+        "internal_recon.TracerouteResult": {
+            "type": "object",
+            "properties": {
+                "duration_ms": {
+                    "type": "number",
+                    "example": 42.5
+                },
+                "hops": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/internal_recon.TracerouteHop"
+                    }
+                },
+                "reached": {
+                    "type": "boolean"
+                },
+                "target": {
+                    "type": "string",
+                    "example": "192.168.1.1"
+                },
+                "total_hops": {
+                    "type": "integer",
+                    "example": 5
                 }
             }
         },

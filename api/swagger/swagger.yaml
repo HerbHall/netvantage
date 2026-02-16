@@ -1314,6 +1314,52 @@ definitions:
         - $ref: '#/definitions/github_com_HerbHall_subnetree_pkg_models.DeviceStatus'
         example: online
     type: object
+  internal_recon.TracerouteHop:
+    properties:
+      hop:
+        type: integer
+      hostname:
+        example: router.local
+        type: string
+      ip:
+        example: 192.168.1.1
+        type: string
+      rtt_ms:
+        example: 1.23
+        type: number
+      timeout:
+        type: boolean
+    type: object
+  internal_recon.TracerouteRequest:
+    properties:
+      max_hops:
+        example: 30
+        type: integer
+      target:
+        example: 192.168.1.1
+        type: string
+      timeout_ms:
+        example: 1000
+        type: integer
+    type: object
+  internal_recon.TracerouteResult:
+    properties:
+      duration_ms:
+        example: 42.5
+        type: number
+      hops:
+        items:
+          $ref: '#/definitions/internal_recon.TracerouteHop'
+        type: array
+      reached:
+        type: boolean
+      target:
+        example: 192.168.1.1
+        type: string
+      total_hops:
+        example: 5
+        type: integer
+    type: object
   internal_recon.UpdateDeviceParams:
     properties:
       category:
@@ -3795,6 +3841,42 @@ paths:
       security:
       - BearerAuth: []
       summary: Update topology layout
+      tags:
+      - recon
+  /recon/traceroute:
+    post:
+      consumes:
+      - application/json
+      description: Performs an ICMP traceroute to the specified target IP address
+      parameters:
+      - description: Traceroute parameters
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/internal_recon.TracerouteRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/internal_recon.TracerouteResult'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/github_com_HerbHall_subnetree_pkg_models.APIProblem'
+        "429":
+          description: Too Many Requests
+          schema:
+            $ref: '#/definitions/github_com_HerbHall_subnetree_pkg_models.APIProblem'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/github_com_HerbHall_subnetree_pkg_models.APIProblem'
+      security:
+      - BearerAuth: []
+      summary: Run traceroute
       tags:
       - recon
   /settings/interfaces:
