@@ -2872,6 +2872,105 @@ const docTemplate = `{
                 }
             }
         },
+        "/recon/metrics/aggregates": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Returns weekly or monthly aggregates of scan performance metrics.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "recon"
+                ],
+                "summary": "List scan metrics aggregates",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "default": "weekly",
+                        "description": "Aggregation period (weekly or monthly)",
+                        "name": "period",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "default": 52,
+                        "description": "Max results",
+                        "name": "limit",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/internal_recon.ScanMetricsAggregate"
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_HerbHall_subnetree_pkg_models.APIProblem"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_HerbHall_subnetree_pkg_models.APIProblem"
+                        }
+                    }
+                }
+            }
+        },
+        "/recon/metrics/raw": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Returns recent individual scan performance metrics.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "recon"
+                ],
+                "summary": "List raw scan metrics",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "default": 30,
+                        "description": "Max results",
+                        "name": "limit",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/github_com_HerbHall_subnetree_pkg_models.ScanMetrics"
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_HerbHall_subnetree_pkg_models.APIProblem"
+                        }
+                    }
+                }
+            }
+        },
         "/recon/movements": {
             "get": {
                 "security": [
@@ -4946,6 +5045,41 @@ const docTemplate = `{
                 }
             }
         },
+        "github_com_HerbHall_subnetree_pkg_models.ScanMetrics": {
+            "type": "object",
+            "properties": {
+                "created_at": {
+                    "type": "string"
+                },
+                "devices_created": {
+                    "type": "integer"
+                },
+                "devices_updated": {
+                    "type": "integer"
+                },
+                "duration_ms": {
+                    "type": "integer"
+                },
+                "enrich_phase_ms": {
+                    "type": "integer"
+                },
+                "hosts_alive": {
+                    "type": "integer"
+                },
+                "hosts_scanned": {
+                    "type": "integer"
+                },
+                "ping_phase_ms": {
+                    "type": "integer"
+                },
+                "post_process_ms": {
+                    "type": "integer"
+                },
+                "scan_id": {
+                    "type": "string"
+                }
+            }
+        },
         "github_com_HerbHall_subnetree_pkg_models.ScanResult": {
             "type": "object",
             "properties": {
@@ -5932,6 +6066,56 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "up_time_ms": {
+                    "type": "integer"
+                }
+            }
+        },
+        "internal_recon.ScanMetricsAggregate": {
+            "type": "object",
+            "properties": {
+                "avg_devices_found": {
+                    "type": "number"
+                },
+                "avg_duration_ms": {
+                    "type": "number"
+                },
+                "avg_enrich_ms": {
+                    "type": "number"
+                },
+                "avg_hosts_alive": {
+                    "type": "number"
+                },
+                "avg_ping_phase_ms": {
+                    "type": "number"
+                },
+                "created_at": {
+                    "type": "string"
+                },
+                "failed_scans": {
+                    "type": "integer"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "max_devices_found": {
+                    "type": "integer"
+                },
+                "min_devices_found": {
+                    "type": "integer"
+                },
+                "period": {
+                    "type": "string"
+                },
+                "period_end": {
+                    "type": "string"
+                },
+                "period_start": {
+                    "type": "string"
+                },
+                "scan_count": {
+                    "type": "integer"
+                },
+                "total_new_devices": {
                     "type": "integer"
                 }
             }
