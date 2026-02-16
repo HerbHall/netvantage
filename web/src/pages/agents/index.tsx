@@ -187,8 +187,9 @@ export function AgentsPage() {
             <>
               <h3 className="text-lg font-medium">No agents enrolled</h3>
               <p className="text-sm text-muted-foreground mt-1 max-w-md mx-auto">
-                Install the Scout agent on devices you want to monitor. Create an enrollment
-                token and use it to register agents with the server.
+                Install the Scout agent on devices you want to monitor.
+                See <Link to="/agent-setup" className="text-primary hover:underline">Agent Setup</Link> for
+                download and installation instructions.
               </p>
             </>
           ) : (
