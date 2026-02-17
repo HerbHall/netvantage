@@ -1,7 +1,7 @@
 import { useState, useCallback, useMemo, useRef } from 'react'
 import { Link } from 'react-router-dom'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { RefreshCw, AlertCircle, Bot, Trash2, Search } from 'lucide-react'
+import { RefreshCw, AlertCircle, Bot, Trash2, Search, Download } from 'lucide-react'
 import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -114,6 +114,12 @@ export function AgentsPage() {
         </div>
 
         <div className="flex items-center gap-2">
+          <Button variant="outline" size="sm" asChild>
+            <Link to="/agent-setup" className="gap-2">
+              <Download className="h-4 w-4" />
+              Deploy Agent
+            </Link>
+          </Button>
           <Button variant="outline" size="icon" onClick={() => refetch()} disabled={isLoading}>
             <RefreshCw className={cn('h-4 w-4', isLoading && 'animate-spin')} />
           </Button>
@@ -188,9 +194,13 @@ export function AgentsPage() {
               <h3 className="text-lg font-medium">No agents enrolled</h3>
               <p className="text-sm text-muted-foreground mt-1 max-w-md mx-auto">
                 Install the Scout agent on devices you want to monitor.
-                See <Link to="/agent-setup" className="text-primary hover:underline">Agent Setup</Link> for
-                download and installation instructions.
               </p>
+              <Button asChild className="mt-4 gap-2">
+                <Link to="/agent-setup">
+                  <Download className="h-4 w-4" />
+                  Deploy Your First Agent
+                </Link>
+              </Button>
             </>
           ) : (
             <>

@@ -691,6 +691,47 @@ const docTemplate = `{
                 }
             }
         },
+        "/dispatch/download/{platform}/{arch}": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Redirects to the GitHub release download URL for the Scout binary.",
+                "tags": [
+                    "dispatch"
+                ],
+                "summary": "Download Scout binary",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Target OS (linux, darwin, windows)",
+                        "name": "platform",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Target architecture (amd64, arm64)",
+                        "name": "arch",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "302": {
+                        "description": "Found"
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_HerbHall_subnetree_pkg_models.APIProblem"
+                        }
+                    }
+                }
+            }
+        },
         "/dispatch/enroll": {
             "post": {
                 "security": [
@@ -726,6 +767,57 @@ const docTemplate = `{
                         "schema": {
                             "$ref": "#/definitions/internal_dispatch.enrollTokenResponse"
                         }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_HerbHall_subnetree_pkg_models.APIProblem"
+                        }
+                    }
+                }
+            }
+        },
+        "/dispatch/install/{platform}/{arch}": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Returns a platform-specific install script (bash or PowerShell) for one-click Scout agent deployment.",
+                "produces": [
+                    "application/octet-stream"
+                ],
+                "tags": [
+                    "dispatch"
+                ],
+                "summary": "Generate install script",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Target OS (linux, darwin, windows)",
+                        "name": "platform",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Target architecture (amd64, arm64)",
+                        "name": "arch",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Enrollment token",
+                        "name": "token",
+                        "in": "query",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK"
                     },
                     "400": {
                         "description": "Bad Request",

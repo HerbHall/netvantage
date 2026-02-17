@@ -67,6 +67,12 @@ archives:
         formats:
           - zip
 
+  - id: scout-binary
+    ids:
+      - scout
+    name_template: "scout_{{ .Os }}_{{ .Arch }}"
+    format: binary
+
 checksum:
   name_template: 'checksums.txt'
 

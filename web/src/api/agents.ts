@@ -59,3 +59,13 @@ export async function getAgentSoftware(id: string): Promise<SoftwareInventory> {
 export async function getAgentServices(id: string): Promise<ServiceInfo[]> {
   return api.get<ServiceInfo[]>(`/dispatch/agents/${id}/services`)
 }
+
+/** Build the URL for downloading the platform-specific install script. */
+export function getInstallScriptUrl(platform: string, arch: string, token: string): string {
+  return `/api/v1/dispatch/install/${platform}/${arch}?token=${encodeURIComponent(token)}`
+}
+
+/** Build the URL for downloading the Scout binary directly. */
+export function getDownloadUrl(platform: string, arch: string): string {
+  return `/api/v1/dispatch/download/${platform}/${arch}`
+}

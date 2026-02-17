@@ -2106,6 +2106,32 @@ paths:
       summary: Get agent software inventory
       tags:
       - dispatch
+  /dispatch/download/{platform}/{arch}:
+    get:
+      description: Redirects to the GitHub release download URL for the Scout binary.
+      parameters:
+      - description: Target OS (linux, darwin, windows)
+        in: path
+        name: platform
+        required: true
+        type: string
+      - description: Target architecture (amd64, arm64)
+        in: path
+        name: arch
+        required: true
+        type: string
+      responses:
+        "302":
+          description: Found
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/github_com_HerbHall_subnetree_pkg_models.APIProblem'
+      security:
+      - BearerAuth: []
+      summary: Download Scout binary
+      tags:
+      - dispatch
   /dispatch/enroll:
     post:
       consumes:
@@ -2132,6 +2158,40 @@ paths:
       security:
       - BearerAuth: []
       summary: Create enrollment token
+      tags:
+      - dispatch
+  /dispatch/install/{platform}/{arch}:
+    get:
+      description: Returns a platform-specific install script (bash or PowerShell)
+        for one-click Scout agent deployment.
+      parameters:
+      - description: Target OS (linux, darwin, windows)
+        in: path
+        name: platform
+        required: true
+        type: string
+      - description: Target architecture (amd64, arm64)
+        in: path
+        name: arch
+        required: true
+        type: string
+      - description: Enrollment token
+        in: query
+        name: token
+        required: true
+        type: string
+      produces:
+      - application/octet-stream
+      responses:
+        "200":
+          description: OK
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/github_com_HerbHall_subnetree_pkg_models.APIProblem'
+      security:
+      - BearerAuth: []
+      summary: Generate install script
       tags:
       - dispatch
   /health:
