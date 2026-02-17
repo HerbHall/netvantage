@@ -18,11 +18,11 @@
     ],
     "UserPromptSubmit": [
       {
-        "matcher": "^(?!/).{5,}",
+        "matcher": "^(?!/).{15,}",
         "hooks": [
           {
-            "type": "prompt",
-            "prompt": "Coordination files at .coordination/. If work reveals a research question, suggest: 'Consider /dashboard option 10 to file a research request.' If there are unprocessed RF-NNN findings in research-findings.md, mention briefly."
+            "type": "command",
+            "command": "echo 'Reminder: Coordination files at .coordination/. Use /dashboard option 10 for research requests.'"
           }
         ]
       }
