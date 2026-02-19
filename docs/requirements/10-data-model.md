@@ -45,7 +45,7 @@
 | FirstSeen | timestamp | |
 | LastSeen | timestamp | |
 
-### Hardware Profile (Phase 1b, #164)
+### Hardware Profile (Phase 2, #437)
 
 | Field | Type | Description |
 |-------|------|-------------|
