@@ -45,9 +45,10 @@ func runMCPStdio() {
 	registerStdioTools(server, adapter)
 
 	ctx, cancel := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
-	defer cancel()
 
-	if err := server.Run(ctx, &sdkmcp.StdioTransport{}); err != nil {
+	err = server.Run(ctx, &sdkmcp.StdioTransport{})
+	cancel()
+	if err != nil {
 		fmt.Fprintf(os.Stderr, "mcp server error: %v\n", err)
 		os.Exit(1)
 	}

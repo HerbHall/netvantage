@@ -117,9 +117,9 @@ func (q *mockQuerier) QueryDevicesByHardware(_ context.Context, query models.Har
 		return nil, 0, q.queryDevicesErr
 	}
 	// Simple filter: return all devices that pass basic checks.
-	var result []models.Device
-	for _, d := range q.allDevices {
-		result = append(result, d)
+	result := make([]models.Device, 0, len(q.allDevices))
+	for i := range q.allDevices {
+		result = append(result, q.allDevices[i])
 	}
 	return result, len(result), nil
 }
@@ -421,7 +421,7 @@ func TestAPIKeyMiddleware(t *testing.T) {
 			}
 			m.apiKey = tc.apiKey
 
-			req := httptest.NewRequest(http.MethodPost, "/api/v1/mcp/", nil)
+			req := httptest.NewRequest(http.MethodPost, "/api/v1/mcp/", http.NoBody)
 			if tc.authHeader != "" {
 				req.Header.Set("Authorization", tc.authHeader)
 			}
