@@ -315,3 +315,58 @@ func (m *Module) handleQueryDevicesByHardware(w http.ResponseWriter, r *http.Req
 		Offset:  q.Offset,
 	})
 }
+
+// RefreshHardwareResponse is the response for POST /devices/{id}/hardware/refresh.
+type RefreshHardwareResponse struct {
+	Status   string `json:"status" example:"refresh_requested"`
+	DeviceID string `json:"device_id" example:"abc-123"`
+}
+
+// handleRefreshDeviceHardware triggers a hardware profile re-collection for a device.
+//
+//	@Summary		Refresh device hardware profile
+//	@Description	Triggers a hardware profile re-collection for a device. For agent-managed devices, publishes a refresh event to the dispatch system.
+//	@Tags			recon
+//	@Produce		json
+//	@Security		BearerAuth
+//	@Param			id	path		string	true	"Device ID"
+//	@Success		200	{object}	RefreshHardwareResponse
+//	@Failure		400	{object}	models.APIProblem
+//	@Failure		404	{object}	models.APIProblem
+//	@Failure		500	{object}	models.APIProblem
+//	@Router			/recon/devices/{id}/hardware/refresh [post]
+func (m *Module) handleRefreshDeviceHardware(w http.ResponseWriter, r *http.Request) {
+	id := r.PathValue("id")
+	if id == "" {
+		writeError(w, http.StatusBadRequest, "device ID is required")
+		return
+	}
+
+	device, err := m.store.GetDevice(r.Context(), id)
+	if err != nil {
+		writeError(w, http.StatusNotFound, "device not found")
+		return
+	}
+
+	// For agent-managed devices, publish a refresh event so dispatch can
+	// request the agent to re-collect hardware profiles.
+	if device.AgentID != "" {
+		m.publishEvent(r.Context(), "dispatch.device.refresh_hardware", map[string]string{
+			"device_id": device.ID,
+			"agent_id":  device.AgentID,
+		})
+		m.logger.Info("hardware refresh requested for agent-managed device",
+			zap.String("device_id", id),
+			zap.String("agent_id", device.AgentID),
+		)
+	} else {
+		m.logger.Info("hardware refresh requested for agentless device",
+			zap.String("device_id", id),
+		)
+	}
+
+	writeJSON(w, http.StatusOK, RefreshHardwareResponse{
+		Status:   "refresh_requested",
+		DeviceID: id,
+	})
+}

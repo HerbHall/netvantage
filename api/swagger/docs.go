@@ -3052,6 +3052,58 @@ const docTemplate = `{
                 }
             }
         },
+        "/recon/devices/{id}/hardware/refresh": {
+            "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Triggers a hardware profile re-collection for a device. For agent-managed devices, publishes a refresh event to the dispatch system.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "recon"
+                ],
+                "summary": "Refresh device hardware profile",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Device ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/internal_recon.RefreshHardwareResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_HerbHall_subnetree_pkg_models.APIProblem"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_HerbHall_subnetree_pkg_models.APIProblem"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_HerbHall_subnetree_pkg_models.APIProblem"
+                        }
+                    }
+                }
+            }
+        },
         "/recon/devices/{id}/history": {
             "get": {
                 "security": [
@@ -7284,6 +7336,19 @@ const docTemplate = `{
                 },
                 "total_devices": {
                     "type": "integer"
+                }
+            }
+        },
+        "internal_recon.RefreshHardwareResponse": {
+            "type": "object",
+            "properties": {
+                "device_id": {
+                    "type": "string",
+                    "example": "abc-123"
+                },
+                "status": {
+                    "type": "string",
+                    "example": "refresh_requested"
                 }
             }
         },
