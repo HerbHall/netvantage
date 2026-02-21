@@ -331,6 +331,7 @@ func (m *Module) Routes() []plugin.Route {
 		{Method: "POST", Path: "/diag/port-check", Handler: m.handleDiagPortCheck},
 		{Method: "GET", Path: "/devices/{id}/hardware", Handler: m.handleGetDeviceHardware},
 		{Method: "PUT", Path: "/devices/{id}/hardware", Handler: m.handleUpdateDeviceHardware},
+		{Method: "POST", Path: "/devices/{id}/hardware/refresh", Handler: m.handleRefreshDeviceHardware},
 		{Method: "GET", Path: "/devices/{id}/storage", Handler: m.handleGetDeviceStorage},
 		{Method: "GET", Path: "/devices/{id}/gpu", Handler: m.handleGetDeviceGPU},
 		{Method: "GET", Path: "/devices/{id}/services", Handler: m.handleGetDeviceServices},

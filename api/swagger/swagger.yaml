@@ -1478,6 +1478,15 @@ definitions:
       total_devices:
         type: integer
     type: object
+  internal_recon.RefreshHardwareResponse:
+    properties:
+      device_id:
+        example: abc-123
+        type: string
+      status:
+        example: refresh_requested
+        type: string
+    type: object
   internal_recon.SNMPDiscoverRequest:
     properties:
       credential_id:
@@ -3706,6 +3715,40 @@ paths:
       security:
       - BearerAuth: []
       summary: Update device hardware profile
+      tags:
+      - recon
+  /recon/devices/{id}/hardware/refresh:
+    post:
+      description: Triggers a hardware profile re-collection for a device. For agent-managed
+        devices, publishes a refresh event to the dispatch system.
+      parameters:
+      - description: Device ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/internal_recon.RefreshHardwareResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/github_com_HerbHall_subnetree_pkg_models.APIProblem'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/github_com_HerbHall_subnetree_pkg_models.APIProblem'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/github_com_HerbHall_subnetree_pkg_models.APIProblem'
+      security:
+      - BearerAuth: []
+      summary: Refresh device hardware profile
       tags:
       - recon
   /recon/devices/{id}/history:

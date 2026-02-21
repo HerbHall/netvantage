@@ -4,12 +4,15 @@ package profiler
 
 import (
 	"bufio"
+	"bytes"
 	"context"
 	"os"
+	"os/exec"
 	"path/filepath"
 	"runtime"
 	"strconv"
 	"strings"
+	"time"
 
 	scoutpb "github.com/HerbHall/subnetree/api/proto/v1"
 	"go.uber.org/zap"
@@ -35,6 +38,9 @@ func collectHardware(_ context.Context, logger *zap.Logger) (*scoutpb.HardwarePr
 
 	// System info from DMI (may not exist in containers/VMs).
 	readDMIInfo(logger, hw)
+
+	// GPU info from /sys/class/drm/ or lspci fallback.
+	hw.Gpus = collectGPUs(logger)
 
 	return hw, nil
 }
@@ -287,6 +293,252 @@ func classifyLinuxNICType(name, kernelType string) string {
 	default:
 		return "ethernet"
 	}
+}
+
+// GPU vendor IDs used for identification from sysfs.
+var gpuVendorNames = map[string]string{
+	"0x10de": "NVIDIA",
+	"0x1002": "AMD",
+	"0x8086": "Intel",
+}
+
+// collectGPUs detects GPUs using /sys/class/drm/ with lspci as fallback.
+func collectGPUs(logger *zap.Logger) []*scoutpb.GPUInfo {
+	gpus := collectGPUsFromSysfs(logger)
+	if len(gpus) > 0 {
+		return gpus
+	}
+
+	// Fallback: parse lspci output.
+	gpus = collectGPUsFromLspci(logger)
+	return gpus
+}
+
+// collectGPUsFromSysfs reads GPU info from /sys/class/drm/card*/device/.
+func collectGPUsFromSysfs(logger *zap.Logger) []*scoutpb.GPUInfo {
+	entries, err := os.ReadDir("/sys/class/drm")
+	if err != nil {
+		logger.Debug("failed to read /sys/class/drm", zap.Error(err))
+		return nil
+	}
+
+	// Track seen PCI device paths to avoid duplicates (card0 and card0-DP-1 share same device).
+	seen := make(map[string]bool)
+	var gpus []*scoutpb.GPUInfo
+
+	for _, entry := range entries {
+		name := entry.Name()
+		// Only process cardN entries (not renderD* or card0-DP-1 etc).
+		if !strings.HasPrefix(name, "card") || strings.Contains(name, "-") {
+			continue
+		}
+
+		devicePath := "/sys/class/drm/" + name + "/device"
+		if _, err := os.Stat(devicePath); err != nil {
+			continue
+		}
+
+		// Resolve real device path to deduplicate.
+		realPath, err := filepath.EvalSymlinks(devicePath)
+		if err != nil {
+			realPath = devicePath
+		}
+		if seen[realPath] {
+			continue
+		}
+		seen[realPath] = true
+
+		gpu := &scoutpb.GPUInfo{}
+
+		// Read vendor ID.
+		vendorID := readSysfsField(devicePath + "/vendor")
+		vendorName := gpuVendorNames[vendorID]
+
+		// Read device label if available (some drivers provide it).
+		label := readSysfsField(devicePath + "/label")
+		if label != "" {
+			gpu.Model = label
+		} else {
+			// Construct a model string from vendor + device ID.
+			deviceID := readSysfsField(devicePath + "/device")
+			switch {
+			case vendorName != "" && deviceID != "":
+				gpu.Model = vendorName + " GPU [" + deviceID + "]"
+			case vendorName != "":
+				gpu.Model = vendorName + " GPU"
+			case vendorID != "":
+				gpu.Model = "GPU [" + vendorID + ":" + deviceID + "]"
+			}
+		}
+
+		// Read VRAM for AMD GPUs (mem_info_vram_total is AMD-specific).
+		vramData := readSysfsField(devicePath + "/mem_info_vram_total")
+		if vramData != "" {
+			if v, e := strconv.ParseInt(vramData, 10, 64); e == nil {
+				gpu.VramBytes = v
+			}
+		}
+
+		// For NVIDIA: check /proc/driver/nvidia/gpus/*/information.
+		if vendorID == "0x10de" {
+			nvidiaGPUFromProc(logger, gpu)
+		}
+
+		// Read driver version from the driver module link name.
+		driverLink := devicePath + "/driver"
+		if target, err := os.Readlink(driverLink); err == nil {
+			gpu.DriverVersion = filepath.Base(target)
+		}
+
+		if gpu.Model != "" {
+			gpus = append(gpus, gpu)
+		}
+	}
+
+	return gpus
+}
+
+// nvidiaGPUFromProc attempts to read NVIDIA GPU model and VRAM from
+// /proc/driver/nvidia/gpus/*/information.
+func nvidiaGPUFromProc(logger *zap.Logger, gpu *scoutpb.GPUInfo) {
+	entries, err := os.ReadDir("/proc/driver/nvidia/gpus")
+	if err != nil {
+		logger.Debug("nvidia proc driver not available", zap.Error(err))
+		return
+	}
+
+	for _, entry := range entries {
+		infoPath := "/proc/driver/nvidia/gpus/" + entry.Name() + "/information"
+		data, err := os.ReadFile(infoPath)
+		if err != nil {
+			continue
+		}
+
+		scanner := bufio.NewScanner(bytes.NewReader(data))
+		for scanner.Scan() {
+			line := scanner.Text()
+			parts := strings.SplitN(line, ":", 2)
+			if len(parts) != 2 {
+				continue
+			}
+			key := strings.TrimSpace(parts[0])
+			val := strings.TrimSpace(parts[1])
+
+			switch key {
+			case "Model":
+				gpu.Model = val
+			case "Device Minor":
+				// Skip, not needed.
+			}
+		}
+
+		// Only use first GPU entry for this card.
+		return
+	}
+}
+
+// readSysfsField reads a single sysfs file and returns the trimmed content.
+func readSysfsField(path string) string {
+	data, err := os.ReadFile(path)
+	if err != nil {
+		return ""
+	}
+	return strings.TrimSpace(string(data))
+}
+
+// collectGPUsFromLspci parses lspci -mm output as a fallback GPU detection method.
+func collectGPUsFromLspci(logger *zap.Logger) []*scoutpb.GPUInfo {
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+
+	cmd := exec.CommandContext(ctx, "lspci", "-mm")
+	var stdout bytes.Buffer
+	cmd.Stdout = &stdout
+
+	if err := cmd.Run(); err != nil {
+		logger.Debug("lspci not available for GPU detection", zap.Error(err))
+		return nil
+	}
+
+	return parseLspciOutput(stdout.String())
+}
+
+// parseLspciOutput parses lspci -mm output and extracts VGA/3D controller entries.
+// Each line has quoted fields: Slot "Class" "Vendor" "Device" "SVendor" "SDevice"
+func parseLspciOutput(output string) []*scoutpb.GPUInfo {
+	var gpus []*scoutpb.GPUInfo
+
+	scanner := bufio.NewScanner(strings.NewReader(output))
+	for scanner.Scan() {
+		line := scanner.Text()
+
+		// Filter to VGA compatible controllers and 3D controllers.
+		if !strings.Contains(line, "VGA compatible controller") &&
+			!strings.Contains(line, "3D controller") {
+			continue
+		}
+
+		fields := parseQuotedFields(line)
+		if len(fields) < 4 {
+			continue
+		}
+
+		// fields[0] = Slot (unquoted), fields[1] = Class, fields[2] = Vendor, fields[3] = Device.
+		vendor := fields[2]
+		device := fields[3]
+
+		gpu := &scoutpb.GPUInfo{
+			Model: strings.TrimSpace(vendor + " " + device),
+		}
+		gpus = append(gpus, gpu)
+	}
+
+	return gpus
+}
+
+// parseQuotedFields extracts quoted and unquoted fields from a lspci -mm line.
+// Format: SLOT "Class" "Vendor" "Device" "SVendor" "SDevice"
+func parseQuotedFields(line string) []string {
+	var fields []string
+	remaining := line
+
+	// First field (slot) is unquoted, separated by space.
+	idx := strings.IndexByte(remaining, ' ')
+	if idx < 0 {
+		return []string{remaining}
+	}
+	fields = append(fields, remaining[:idx])
+	remaining = strings.TrimSpace(remaining[idx+1:])
+
+	// Remaining fields are quoted.
+	for remaining != "" {
+		remaining = strings.TrimSpace(remaining)
+		if remaining == "" {
+			break
+		}
+		if remaining[0] != '"' {
+			// Unexpected format, take everything up to next space.
+			idx = strings.IndexByte(remaining, ' ')
+			if idx < 0 {
+				fields = append(fields, remaining)
+				break
+			}
+			fields = append(fields, remaining[:idx])
+			remaining = remaining[idx+1:]
+			continue
+		}
+
+		// Find closing quote.
+		endIdx := strings.IndexByte(remaining[1:], '"')
+		if endIdx < 0 {
+			fields = append(fields, remaining[1:])
+			break
+		}
+		fields = append(fields, remaining[1:endIdx+1])
+		remaining = remaining[endIdx+2:]
+	}
+
+	return fields
 }
 
 // readDMIInfo reads system manufacturer, model, serial, and BIOS version from
