@@ -361,11 +361,12 @@ func collectGPUsFromSysfs(logger *zap.Logger) []*scoutpb.GPUInfo {
 		} else {
 			// Construct a model string from vendor + device ID.
 			deviceID := readSysfsField(devicePath + "/device")
-			if vendorName != "" && deviceID != "" {
+			switch {
+			case vendorName != "" && deviceID != "":
 				gpu.Model = vendorName + " GPU [" + deviceID + "]"
-			} else if vendorName != "" {
+			case vendorName != "":
 				gpu.Model = vendorName + " GPU"
-			} else if vendorID != "" {
+			case vendorID != "":
 				gpu.Model = "GPU [" + vendorID + ":" + deviceID + "]"
 			}
 		}
