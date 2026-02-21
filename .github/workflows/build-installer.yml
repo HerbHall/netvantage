@@ -1,0 +1,81 @@
+name: Build Windows Installer
+
+on:
+  release:
+    types: [published]
+
+permissions:
+  contents: write
+
+jobs:
+  build-installer:
+    name: Build Scout Installer
+    runs-on: windows-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Get release version
+        id: tag
+        shell: bash
+        run: echo "version=${GITHUB_REF_NAME#v}" >> "$GITHUB_OUTPUT"
+
+      - name: Download Scout Windows binary from release
+        shell: bash
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          mkdir -p installer/inno/bin
+
+          # GoReleaser produces a bare binary named scout_windows_amd64.exe
+          # via the scout-binary archive config
+          gh release download "$GITHUB_REF_NAME" \
+            --pattern 'scout_windows_amd64.exe' \
+            --dir installer/inno/bin/ || true
+
+          # If bare binary wasn't found, try downloading the zip archive
+          # and extracting scout.exe from it
+          if [ ! -f installer/inno/bin/scout_windows_amd64.exe ]; then
+            echo "Bare binary not found, trying zip archive..."
+            gh release download "$GITHUB_REF_NAME" \
+              --pattern "scout_${{ steps.tag.outputs.version }}_windows_amd64.zip" \
+              --dir /tmp/
+            unzip -o "/tmp/scout_${{ steps.tag.outputs.version }}_windows_amd64.zip" \
+              -d installer/inno/bin/
+          fi
+
+          # Normalize to scout.exe (the name the .iss script expects)
+          if [ -f installer/inno/bin/scout_windows_amd64.exe ]; then
+            mv installer/inno/bin/scout_windows_amd64.exe installer/inno/bin/scout.exe
+          fi
+
+          # Verify the binary exists
+          if [ ! -f installer/inno/bin/scout.exe ]; then
+            echo "ERROR: scout.exe not found after download"
+            ls -la installer/inno/bin/
+            exit 1
+          fi
+
+          echo "Scout binary ready:"
+          ls -la installer/inno/bin/scout.exe
+
+      - name: Install Inno Setup
+        shell: powershell
+        run: |
+          choco install innosetup -y --no-progress
+          echo "C:\Program Files (x86)\Inno Setup 6" | Out-File -Append -FilePath $env:GITHUB_PATH -Encoding utf8
+
+      - name: Build installer
+        shell: cmd
+        env:
+          SCOUT_VERSION: ${{ steps.tag.outputs.version }}
+        run: iscc installer\inno\subnetree-scout.iss
+
+      - name: Upload installer to release
+        shell: bash
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh release upload "$GITHUB_REF_NAME" \
+            installer/inno/output/SubNetreeScout-*.exe \
+            --clobber
