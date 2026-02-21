@@ -29,8 +29,6 @@ func runMCPStdio() {
 		fmt.Fprintf(os.Stderr, "failed to open database: %v\n", err)
 		os.Exit(1)
 	}
-	defer db.Close()
-
 	reconStore := recon.NewReconStore(db.DB())
 	adapter := &mcpStdioAdapter{store: reconStore}
 
@@ -48,6 +46,7 @@ func runMCPStdio() {
 
 	err = server.Run(ctx, &sdkmcp.StdioTransport{})
 	cancel()
+	db.Close()
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "mcp server error: %v\n", err)
 		os.Exit(1)

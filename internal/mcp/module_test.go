@@ -116,11 +116,7 @@ func (q *mockQuerier) QueryDevicesByHardware(_ context.Context, query models.Har
 	if q.queryDevicesErr != nil {
 		return nil, 0, q.queryDevicesErr
 	}
-	// Simple filter: return all devices that pass basic checks.
-	result := make([]models.Device, 0, len(q.allDevices))
-	for i := range q.allDevices {
-		result = append(result, q.allDevices[i])
-	}
+	result := append([]models.Device{}, q.allDevices...)
 	return result, len(result), nil
 }
 
