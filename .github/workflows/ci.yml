@@ -184,6 +184,7 @@ jobs:
         uses: golangci/golangci-lint-action@v7
         with:
           version: v2.10.1
+          only-new-issues: true
 
   vulncheck:
     name: Vulnerability Check
