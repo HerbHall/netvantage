@@ -1,0 +1,170 @@
+name: Release Gate
+
+# Evaluates release-please PRs and auto-merges when criteria are met.
+#
+# Release tiers:
+#   Immediate  - Critical/security fix → auto-merge now
+#   Threshold  - Minor bump (features) OR 5+ patch fixes → auto-merge
+#   Batched    - Below threshold → stays open for manual merge
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened, labeled]
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  evaluate:
+    name: Evaluate Release
+    if: >-
+      github.event.pull_request.user.login == 'github-actions[bot]' &&
+      contains(github.event.pull_request.labels.*.name, 'autorelease: pending')
+    runs-on: ubuntu-latest
+    outputs:
+      decision: ${{ steps.gate.outputs.decision }}
+      reason: ${{ steps.gate.outputs.reason }}
+      version_from: ${{ steps.gate.outputs.version_from }}
+      version_to: ${{ steps.gate.outputs.version_to }}
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+
+      - name: Evaluate release criteria
+        id: gate
+        run: |
+          set -euo pipefail
+
+          # Get version info
+          CURRENT=$(git show origin/main:.release-please-manifest.json | jq -r '."."')
+          NEW=$(jq -r '."."' .release-please-manifest.json)
+          echo "version_from=$CURRENT" >> "$GITHUB_OUTPUT"
+          echo "version_to=$NEW" >> "$GITHUB_OUTPUT"
+
+          CUR_MAJOR=$(echo "$CURRENT" | cut -d. -f1)
+          CUR_MINOR=$(echo "$CURRENT" | cut -d. -f2)
+          NEW_MAJOR=$(echo "$NEW" | cut -d. -f1)
+          NEW_MINOR=$(echo "$NEW" | cut -d. -f2)
+
+          # Get commits since last release tag
+          LAST_TAG=$(git describe --tags --abbrev=0 origin/main 2>/dev/null || echo "")
+          if [ -n "$LAST_TAG" ]; then
+            COMMIT_LOG=$(git log "${LAST_TAG}..origin/main" --format="%s" 2>/dev/null || echo "")
+          else
+            COMMIT_LOG=$(git log origin/main --format="%s" 2>/dev/null || echo "")
+          fi
+
+          # Count changelog entries by type
+          FEAT_COUNT=$(echo "$COMMIT_LOG" | grep -c "^feat" || true)
+          FIX_COUNT=$(echo "$COMMIT_LOG" | grep -c "^fix" || true)
+          TOTAL=$((FEAT_COUNT + FIX_COUNT))
+
+          echo "Commits since $LAST_TAG: feat=$FEAT_COUNT fix=$FIX_COUNT total=$TOTAL"
+          echo "Version: $CURRENT -> $NEW"
+
+          # Tier 1: Immediate - critical/security fix
+          HAS_CRITICAL=false
+          if echo "$COMMIT_LOG" | grep -qiE '^fix!:|BREAKING CHANGE'; then
+            HAS_CRITICAL=true
+          fi
+          if echo "$COMMIT_LOG" | grep -qiE 'CVE-|security|vulnerability|critical'; then
+            HAS_CRITICAL=true
+          fi
+
+          if [ "$HAS_CRITICAL" = "true" ]; then
+            echo "decision=immediate" >> "$GITHUB_OUTPUT"
+            echo "reason=Critical or security fix detected" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          # Tier 2: Threshold - minor/major bump OR 5+ accumulated fixes
+          if [ "$NEW_MAJOR" -gt "$CUR_MAJOR" ]; then
+            echo "decision=threshold" >> "$GITHUB_OUTPUT"
+            echo "reason=Major version bump ($CURRENT -> $NEW)" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          if [ "$NEW_MINOR" -gt "$CUR_MINOR" ]; then
+            echo "decision=threshold" >> "$GITHUB_OUTPUT"
+            echo "reason=Minor version bump with $FEAT_COUNT feature(s) ($CURRENT -> $NEW)" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          if [ "$FIX_COUNT" -ge 5 ]; then
+            echo "decision=threshold" >> "$GITHUB_OUTPUT"
+            echo "reason=$FIX_COUNT bug fixes accumulated ($CURRENT -> $NEW)" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          # Below threshold - stay batched
+          echo "decision=batched" >> "$GITHUB_OUTPUT"
+          echo "reason=Patch only with $TOTAL change(s), below threshold ($CURRENT -> $NEW)" >> "$GITHUB_OUTPUT"
+
+      - name: Label PR with decision
+        run: |
+          DECISION="${{ steps.gate.outputs.decision }}"
+          PR_NUMBER="${{ github.event.pull_request.number }}"
+
+          # Remove old release labels
+          gh pr edit "$PR_NUMBER" --remove-label "release:auto" 2>/dev/null || true
+          gh pr edit "$PR_NUMBER" --remove-label "release:batched" 2>/dev/null || true
+
+          if [ "$DECISION" = "immediate" ] || [ "$DECISION" = "threshold" ]; then
+            gh label create "release:auto" --color "0E8A16" --description "Auto-release approved" --force 2>/dev/null || true
+            gh pr edit "$PR_NUMBER" --add-label "release:auto"
+          else
+            gh label create "release:batched" --color "FBCA04" --description "Batched, waiting for threshold" --force 2>/dev/null || true
+            gh pr edit "$PR_NUMBER" --add-label "release:batched"
+          fi
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Post decision comment
+        run: |
+          DECISION="${{ steps.gate.outputs.decision }}"
+          REASON="${{ steps.gate.outputs.reason }}"
+          FROM="${{ steps.gate.outputs.version_from }}"
+          TO="${{ steps.gate.outputs.version_to }}"
+          PR_NUMBER="${{ github.event.pull_request.number }}"
+
+          if [ "$DECISION" = "immediate" ] || [ "$DECISION" = "threshold" ]; then
+            ICON="🟢"
+            ACTION="Auto-merge enabled."
+          else
+            ICON="🟡"
+            ACTION="Waiting for more changes or manual merge."
+          fi
+
+          BODY=$(cat <<EOF
+          ### $ICON Release Gate: \`$DECISION\`
+
+          **Version**: $FROM → $TO
+          **Reason**: $REASON
+          **Action**: $ACTION
+          EOF
+          )
+
+          # Delete previous bot gate comments to avoid spam
+          gh api "repos/${{ github.repository }}/issues/$PR_NUMBER/comments" \
+            --jq '.[] | select(.user.login == "github-actions[bot]" and (.body | contains("Release Gate"))) | .id' \
+            | xargs -I{} gh api -X DELETE "repos/${{ github.repository }}/issues/comments/{}" 2>/dev/null || true
+
+          gh pr comment "$PR_NUMBER" --body "$BODY"
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  auto-merge:
+    name: Auto-merge Release
+    needs: evaluate
+    if: needs.evaluate.outputs.decision == 'immediate' || needs.evaluate.outputs.decision == 'threshold'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Enable auto-merge
+        run: |
+          gh pr merge "${{ github.event.pull_request.number }}" \
+            --repo "${{ github.repository }}" \
+            --squash --auto
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}

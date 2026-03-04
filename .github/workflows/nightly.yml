@@ -1,0 +1,187 @@
+name: Nightly Build
+
+# Builds and pushes a nightly Docker image from main.
+# Does NOT create a GitHub Release or git tag.
+# Useful for testing latest main without waiting for a formal release.
+
+on:
+  schedule:
+    - cron: '0 2 * * *' # Every day at 2 AM UTC
+  workflow_dispatch: # Manual trigger
+
+permissions:
+  contents: read
+  packages: write
+
+jobs:
+  check-changes:
+    name: Check for Changes
+    runs-on: ubuntu-latest
+    outputs:
+      has_changes: ${{ steps.check.outputs.has_changes }}
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+
+      - name: Check for commits since last nightly
+        id: check
+        run: |
+          # Skip build if no commits in the last 24 hours
+          RECENT=$(git log --since="24 hours ago" --oneline origin/main | head -1)
+          if [ -n "$RECENT" ]; then
+            echo "has_changes=true" >> "$GITHUB_OUTPUT"
+            echo "Changes found since last nightly"
+          else
+            echo "has_changes=false" >> "$GITHUB_OUTPUT"
+            echo "No changes in last 24 hours, skipping build"
+          fi
+
+  build:
+    name: Nightly Docker Image
+    needs: check-changes
+    if: needs.check-changes.outputs.has_changes == 'true' || github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Set up Go
+        uses: actions/setup-go@v6
+        with:
+          go-version-file: go.mod
+          cache: true
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version: 22
+
+      - name: Install pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 10
+
+      - name: Build frontend
+        working-directory: web
+        run: |
+          pnpm install --frozen-lockfile
+          pnpm run build
+
+      - name: Embed frontend in Go binary
+        run: |
+          rm -rf internal/dashboard/dist
+          cp -r web/dist internal/dashboard/dist
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Log in to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Generate build metadata
+        id: meta
+        run: |
+          DATE=$(date -u +%Y%m%d)
+          SHORT_SHA=$(git rev-parse --short HEAD)
+          echo "date=$DATE" >> "$GITHUB_OUTPUT"
+          echo "short_sha=$SHORT_SHA" >> "$GITHUB_OUTPUT"
+
+      - name: Build and push Docker image
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          push: true
+          platforms: linux/amd64,linux/arm64
+          tags: |
+            ghcr.io/herbhall/subnetree:nightly
+            ghcr.io/herbhall/subnetree:nightly-${{ steps.meta.outputs.date }}
+          build-args: |
+            VERSION=nightly-${{ steps.meta.outputs.date }}-${{ steps.meta.outputs.short_sha }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+  binaries:
+    name: Nightly Binaries
+    needs: check-changes
+    if: needs.check-changes.outputs.has_changes == 'true' || github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        include:
+          - goos: linux
+            goarch: amd64
+          - goos: linux
+            goarch: arm64
+          - goos: darwin
+            goarch: amd64
+          - goos: darwin
+            goarch: arm64
+          - goos: windows
+            goarch: amd64
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Set up Go
+        uses: actions/setup-go@v6
+        with:
+          go-version-file: go.mod
+          cache: true
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version: 22
+
+      - name: Install pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 10
+
+      - name: Build frontend
+        working-directory: web
+        run: |
+          pnpm install --frozen-lockfile
+          pnpm run build
+
+      - name: Embed frontend in Go binary
+        run: |
+          rm -rf internal/dashboard/dist
+          cp -r web/dist internal/dashboard/dist
+
+      - name: Build binary
+        env:
+          GOOS: ${{ matrix.goos }}
+          GOARCH: ${{ matrix.goarch }}
+          CGO_ENABLED: '0'
+        run: |
+          DATE=$(date -u +%Y%m%d)
+          SHORT_SHA=$(git rev-parse --short HEAD)
+          EXT=""
+          if [ "$GOOS" = "windows" ]; then EXT=".exe"; fi
+
+          go build -ldflags "\
+            -s -w \
+            -X github.com/HerbHall/subnetree/internal/version.Version=nightly-${DATE}-${SHORT_SHA} \
+            -X github.com/HerbHall/subnetree/internal/version.GitCommit=${SHORT_SHA} \
+            -X github.com/HerbHall/subnetree/internal/version.BuildDate=$(date -u +%Y-%m-%dT%H:%M:%SZ)" \
+            -o "subnetree-${GOOS}-${GOARCH}${EXT}" ./cmd/subnetree/
+
+          go build -ldflags "\
+            -s -w \
+            -X github.com/HerbHall/subnetree/internal/version.Version=nightly-${DATE}-${SHORT_SHA} \
+            -X github.com/HerbHall/subnetree/internal/version.GitCommit=${SHORT_SHA} \
+            -X github.com/HerbHall/subnetree/internal/version.BuildDate=$(date -u +%Y-%m-%dT%H:%M:%SZ)" \
+            -o "scout-${GOOS}-${GOARCH}${EXT}" ./cmd/scout/
+
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v7
+        with:
+          name: nightly-${{ matrix.goos }}-${{ matrix.goarch }}
+          path: |
+            subnetree-*
+            scout-*
+          retention-days: 7
