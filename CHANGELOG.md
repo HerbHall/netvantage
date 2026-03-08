@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.6.3](https://github.com/HerbHall/subnetree/compare/v0.6.2...v0.6.3) (2026-03-08)
+
+
+### Bug Fixes
+
+* align status.md phase with Samverk lifecycle naming ([e28988f](https://github.com/HerbHall/subnetree/commit/e28988f6e2d23a9f49fe0a3f913e059e07f309a6))
+
 ## [0.6.2](https://github.com/HerbHall/subnetree/compare/v0.6.1...v0.6.2) (2026-03-07)
 
 
