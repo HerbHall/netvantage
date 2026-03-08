@@ -52,6 +52,18 @@ Requirements are split into `docs/requirements/` with per-section files. Read ON
 5. **Use the /create-plan skill for multi-step implementations.** It handles context handoffs between phases.
 6. **When modifying requirements**, edit the specific section file directly. Don't read the full index.
 
+## Session Start (Required)
+
+Before any work in a new session:
+
+1. Read `.samverk/status.md` -- current phase, in-flight issues, last session summary
+2. Samverk MCP not yet configured for this project -- skip step 2
+3. Check open issues if the task involves issue triage or project direction
+4. Proceed without asking the user to explain project state -- the repo has it
+
+**Rule**: Never ask the user "what's the current state?" or "where did we leave off?"
+Read the repo first. Ask only if something is genuinely ambiguous after reading.
+
 ## Guiding Principles
 
 These principles govern every development decision. When in doubt, refer here:
