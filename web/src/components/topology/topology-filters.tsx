@@ -107,7 +107,7 @@ export const TopologyFilters = memo(function TopologyFilters({
 
   return (
     <div
-      className="flex flex-col gap-2 rounded-lg px-3 py-2 shadow-md"
+      className="flex flex-col gap-2 rounded-lg px-3 py-2 shadow-md max-w-[calc(100vw-420px)]"
       style={{
         backgroundColor: 'var(--nv-bg-card)',
         border: '1px solid var(--nv-border-default)',
