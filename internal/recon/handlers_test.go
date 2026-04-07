@@ -281,6 +281,101 @@ func TestHandleTopology_WithData(t *testing.T) {
 	}
 }
 
+func TestInferGatewayEdges(t *testing.T) {
+	devices := []models.Device{
+		{ID: "gw", IPAddresses: []string{"192.168.1.1"}, DeviceType: models.DeviceTypeRouter},
+		{ID: "srv", IPAddresses: []string{"192.168.1.10"}, DeviceType: models.DeviceTypeServer},
+		{ID: "desk", IPAddresses: []string{"192.168.1.20"}, DeviceType: models.DeviceTypeDesktop},
+		{ID: "noip", DeviceType: models.DeviceTypeServer}, // no IP, should be skipped
+	}
+	existing := map[string]bool{}
+
+	edges := inferGatewayEdges(devices, existing)
+	if len(edges) != 2 {
+		t.Fatalf("edges = %d, want 2", len(edges))
+	}
+	for _, e := range edges {
+		if e.Source != "gw" {
+			t.Errorf("edge source = %q, want %q (parent->child direction)", e.Source, "gw")
+		}
+		if e.LinkType != "inferred" {
+			t.Errorf("link_type = %q, want %q", e.LinkType, "inferred")
+		}
+	}
+}
+
+func TestInferGatewayEdges_SwitchHierarchy(t *testing.T) {
+	devices := []models.Device{
+		{ID: "gw", IPAddresses: []string{"192.168.1.1"}, DeviceType: models.DeviceTypeRouter},
+		{ID: "sw", IPAddresses: []string{"192.168.1.2"}, DeviceType: models.DeviceTypeSwitch},
+		{ID: "srv", IPAddresses: []string{"192.168.1.10"}, DeviceType: models.DeviceTypeServer},
+	}
+	existing := map[string]bool{}
+
+	edges := inferGatewayEdges(devices, existing)
+	if len(edges) != 2 {
+		t.Fatalf("edges = %d, want 2", len(edges))
+	}
+	// gw -> sw, sw -> srv
+	edgeMap := map[string]string{}
+	for _, e := range edges {
+		edgeMap[e.Source] = e.Target
+	}
+	if edgeMap["gw"] != "sw" {
+		t.Errorf("gateway should connect to switch, got target %q", edgeMap["gw"])
+	}
+	if edgeMap["sw"] != "srv" {
+		t.Errorf("switch should connect to server, got target %q", edgeMap["sw"])
+	}
+}
+
+func TestInferGatewayEdges_SkipsExisting(t *testing.T) {
+	devices := []models.Device{
+		{ID: "gw", IPAddresses: []string{"192.168.1.1"}, DeviceType: models.DeviceTypeRouter},
+		{ID: "srv", IPAddresses: []string{"192.168.1.10"}, DeviceType: models.DeviceTypeServer},
+	}
+	existing := map[string]bool{
+		"gw|srv": true,
+	}
+
+	edges := inferGatewayEdges(devices, existing)
+	if len(edges) != 0 {
+		t.Errorf("edges = %d, want 0 (should skip existing)", len(edges))
+	}
+}
+
+func TestHandleTopology_InfersGatewayEdges(t *testing.T) {
+	m := newTestModule(t)
+	ctx := context.Background()
+
+	// Two devices on same subnet, no stored links.
+	d1 := &models.Device{
+		IPAddresses: []string{"10.0.0.1"}, MACAddress: "BB:00:00:00:00:01",
+		Hostname: "gw", DeviceType: models.DeviceTypeRouter,
+		Status: models.DeviceStatusOnline, DiscoveryMethod: models.DiscoveryARP,
+	}
+	d2 := &models.Device{
+		IPAddresses: []string{"10.0.0.50"}, MACAddress: "BB:00:00:00:00:02",
+		Hostname: "server", DeviceType: models.DeviceTypeServer,
+		Status: models.DeviceStatusOnline, DiscoveryMethod: models.DiscoveryARP,
+	}
+	_, _ = m.store.UpsertDevice(ctx, d1)
+	_, _ = m.store.UpsertDevice(ctx, d2)
+
+	req := httptest.NewRequest("GET", "/topology", http.NoBody)
+	w := httptest.NewRecorder()
+	m.handleTopology(w, req)
+
+	var graph TopologyGraph
+	_ = json.NewDecoder(w.Body).Decode(&graph)
+	if len(graph.Edges) != 1 {
+		t.Fatalf("edges = %d, want 1 (inferred gateway link)", len(graph.Edges))
+	}
+	if graph.Edges[0].LinkType != "inferred" {
+		t.Errorf("link_type = %q, want %q", graph.Edges[0].LinkType, "inferred")
+	}
+}
+
 func TestWriteError_Format(t *testing.T) {
 	w := httptest.NewRecorder()
 	writeError(w, http.StatusBadRequest, "test error")

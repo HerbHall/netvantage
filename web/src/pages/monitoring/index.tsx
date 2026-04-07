@@ -232,33 +232,33 @@ function ChecksTab() {
       ) : (
         <div className="rounded-lg border overflow-hidden">
           <div className="overflow-x-auto">
-            <table className="w-full text-sm">
+            <table className="w-full text-sm table-fixed">
               <thead className="bg-muted/50">
                 <tr>
-                  <th className="px-4 py-3 text-left font-medium">Device</th>
-                  <th className="px-4 py-3 text-left font-medium">Type</th>
-                  <th className="px-4 py-3 text-left font-medium">Target</th>
-                  <th className="px-4 py-3 text-left font-medium hidden md:table-cell">Trend</th>
-                  <th className="px-4 py-3 text-left font-medium">Interval</th>
-                  <th className="px-4 py-3 text-left font-medium">Enabled</th>
-                  <th className="px-4 py-3 text-left font-medium w-24">Actions</th>
+                  <th className="w-36 px-3 py-3 text-left font-medium">Device</th>
+                  <th className="w-16 px-2 py-3 text-left font-medium">Type</th>
+                  <th className="w-32 px-2 py-3 text-left font-medium">Target</th>
+                  <th className="px-2 py-3 text-left font-medium hidden md:table-cell">Trend</th>
+                  <th className="w-16 px-2 py-3 text-left font-medium">Interval</th>
+                  <th className="w-16 px-2 py-3 text-left font-medium">Enabled</th>
+                  <th className="w-20 px-2 py-3 text-left font-medium">Actions</th>
                 </tr>
               </thead>
               <tbody className="divide-y">
                 {checks.map((check) => (
                   <tr key={check.id} className="hover:bg-muted/30 transition-colors">
-                    <td className="px-4 py-3 text-sm" title={check.device_id}>
+                    <td className="px-3 py-3 text-sm truncate" title={check.device_name || check.device_id}>
                       {check.device_name || check.device_id.slice(0, 8) + '...'}
                     </td>
-                    <td className="px-4 py-3">
+                    <td className="px-2 py-3">
                       <CheckTypeBadge type={check.check_type} />
                     </td>
-                    <td className="px-4 py-3 text-muted-foreground">{check.target}</td>
-                    <td className="px-4 py-3 hidden md:table-cell">
+                    <td className="px-2 py-3 text-muted-foreground truncate">{check.target}</td>
+                    <td className="px-2 py-3 hidden md:table-cell">
                       <SparklineChart data={sparklineData.get(check.device_id) ?? []} />
                     </td>
-                    <td className="px-4 py-3 text-muted-foreground">{check.interval_seconds}s</td>
-                    <td className="px-4 py-3">
+                    <td className="px-2 py-3 text-muted-foreground">{check.interval_seconds}s</td>
+                    <td className="px-2 py-3">
                       <button
                         onClick={() => toggleMutation.mutate(check.id)}
                         disabled={toggleMutation.isPending}
@@ -273,7 +273,7 @@ function ChecksTab() {
                         {check.enabled ? 'On' : 'Off'}
                       </button>
                     </td>
-                    <td className="px-4 py-3">
+                    <td className="px-2 py-3">
                       <div className="flex items-center gap-1">
                         <Button
                           variant="ghost"

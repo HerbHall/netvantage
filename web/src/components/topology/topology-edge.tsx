@@ -40,6 +40,7 @@ export const TopologyEdge = memo(function TopologyEdge(
     targetPosition,
   })
 
+  const isInferred = data?.linkType === 'inferred'
   const strokeColor =
     selected || hovered
       ? 'var(--nv-topo-link-active)'
@@ -62,7 +63,9 @@ export const TopologyEdge = memo(function TopologyEdge(
         style={{
           stroke: strokeColor,
           strokeWidth: selected || hovered ? 2.5 : 1.5,
-          transition: 'stroke 0.2s, stroke-width 0.2s',
+          strokeDasharray: isInferred ? '6 3' : undefined,
+          opacity: isInferred && !selected && !hovered ? 0.5 : undefined,
+          transition: 'stroke 0.2s, stroke-width 0.2s, opacity 0.2s',
         }}
       />
       {/* Animated dot for online/active edges */}
