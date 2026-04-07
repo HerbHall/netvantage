@@ -1,5 +1,22 @@
 # Changelog
 
+## [0.6.3](https://github.com/HerbHall/subnetree/compare/v0.6.2...v0.6.3) (2026-04-07)
+
+
+### Features
+
+* allow renaming device hostname from detail page ([#555](https://github.com/HerbHall/subnetree/issues/555)) ([32e1a39](https://github.com/HerbHall/subnetree/commit/32e1a396ba08f0e45aaeda633c773bb3979f6a40))
+* collapse unclassified devices in topology view ([#563](https://github.com/HerbHall/subnetree/issues/563)) ([e24db1a](https://github.com/HerbHall/subnetree/commit/e24db1a5e8c066a42d751d3a6c0806b269b32cac))
+* infer gateway topology links + unified toolbar + UI improvements ([#562](https://github.com/HerbHall/subnetree/issues/562)) ([16494c5](https://github.com/HerbHall/subnetree/commit/16494c56ab08dcdcc7a5d61f06c831e4f3735d99))
+
+
+### Bug Fixes
+
+* align status.md phase with Samverk lifecycle naming ([e28988f](https://github.com/HerbHall/subnetree/commit/e28988f6e2d23a9f49fe0a3f913e059e07f309a6))
+* pin Dockerfile Go image to 1.25.8 to match go.mod ([#557](https://github.com/HerbHall/subnetree/issues/557)) ([8c0657b](https://github.com/HerbHall/subnetree/commit/8c0657ba416f3f4f45280c6957e69b261065b570))
+* repair corrupted CODEOWNERS and verify Copilot auto-review setup ([#556](https://github.com/HerbHall/subnetree/issues/556)) ([c121ee2](https://github.com/HerbHall/subnetree/commit/c121ee23ebd0a649d4d13832d0251b0fa2e2c574))
+* resolve govulncheck CI failures blocking all PRs ([#552](https://github.com/HerbHall/subnetree/issues/552)) ([bf4a965](https://github.com/HerbHall/subnetree/commit/bf4a96565d626237e2e9b11272f2359638ba9bea))
+
 ## [0.6.2](https://github.com/HerbHall/subnetree/compare/v0.6.1...v0.6.2) (2026-03-07)
 
 
