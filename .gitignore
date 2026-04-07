@@ -25,7 +25,8 @@ coverage.html
 *.swo
 *~
 
-# Claude Code local settings (user-specific, modified every session)
+# Claude Code local files (skills are machine-specific, settings.local is user-specific)
+.claude/skills/
 .claude/settings.local.json
 
 # OS
