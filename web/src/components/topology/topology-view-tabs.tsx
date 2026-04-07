@@ -23,14 +23,7 @@ export const TopologyViewTabs = memo(function TopologyViewTabs({
   onViewModeChange,
 }: TopologyViewTabsProps) {
   return (
-    <div
-      className="flex items-center gap-1 rounded-lg px-2 py-1.5 shadow-md"
-      style={{
-        backgroundColor: 'var(--nv-bg-card)',
-        border: '1px solid var(--nv-border-default)',
-        backdropFilter: 'blur(8px)',
-      }}
-    >
+    <div className="flex items-center gap-1">
       {viewOptions.map(({ value, label, Icon }) => (
         <button
           key={value}

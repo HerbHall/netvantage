@@ -157,12 +157,7 @@ export const TopologyToolbar = memo(function TopologyToolbar({
 
   return (
     <div
-      className="flex items-center gap-1 rounded-lg px-2 py-1.5 shadow-md"
-      style={{
-        backgroundColor: 'var(--nv-bg-card)',
-        border: '1px solid var(--nv-border-default)',
-        backdropFilter: 'blur(8px)',
-      }}
+      className="flex items-center gap-1"
     >
       {/* Layout selector */}
       {layoutOptions.map(({ value, label, Icon }) => (

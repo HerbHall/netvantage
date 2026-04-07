@@ -106,105 +106,96 @@ export const TopologyFilters = memo(function TopologyFilters({
     statusFilter.size < 4 || typeFilter.size < presentTypes.length || searchQuery.length > 0
 
   return (
-    <div
-      className="flex flex-col gap-2 rounded-lg px-3 py-2 shadow-md"
-      style={{
-        backgroundColor: 'var(--nv-bg-card)',
-        border: '1px solid var(--nv-border-default)',
-        backdropFilter: 'blur(8px)',
-      }}
-    >
-      {/* Search bar */}
-      <div className="flex items-center gap-2">
-        <div
-          className="flex items-center gap-2 flex-1 rounded-md px-2 py-1.5"
+    <>
+      {/* Search */}
+      <div
+        className="flex items-center gap-1.5 rounded-md px-2 py-1 w-40"
+        style={{
+          backgroundColor: 'var(--nv-input-bg)',
+          border: '1px solid var(--nv-input-border)',
+        }}
+      >
+        <Search
+          className="h-3 w-3 flex-shrink-0"
+          style={{ color: 'var(--nv-text-secondary)' }}
+        />
+        <input
+          type="text"
+          value={searchQuery}
+          onChange={(e) => onSearchChange(e.target.value)}
+          placeholder="Search..."
+          className="bg-transparent text-[11px] outline-none flex-1 min-w-0"
+          style={{ color: 'var(--nv-input-text)' }}
+        />
+      </div>
+
+      {/* Status pills */}
+      {statusOptions.map(({ value, label, color }) => (
+        <button
+          key={value}
+          onClick={() => onStatusFilterChange(value)}
+          title={label}
+          className="flex items-center gap-1 rounded-md px-1.5 py-1 text-[10px] font-medium transition-colors"
           style={{
-            backgroundColor: 'var(--nv-input-bg)',
-            border: '1px solid var(--nv-input-border)',
+            backgroundColor: statusFilter.has(value) ? 'var(--nv-bg-active)' : 'transparent',
+            color: statusFilter.has(value) ? color : 'var(--nv-text-muted)',
+            opacity: statusFilter.has(value) ? 1 : 0.6,
           }}
         >
-          <Search
-            className="h-3.5 w-3.5 flex-shrink-0"
-            style={{ color: 'var(--nv-text-secondary)' }}
+          <span
+            className="h-1.5 w-1.5 rounded-full flex-shrink-0"
+            style={{ backgroundColor: color }}
           />
-          <input
-            type="text"
-            value={searchQuery}
-            onChange={(e) => onSearchChange(e.target.value)}
-            placeholder="Search devices..."
-            className="bg-transparent text-xs outline-none flex-1 min-w-0"
-            style={{
-              color: 'var(--nv-input-text)',
-            }}
-          />
-        </div>
-        {hasActiveFilters && (
-          <button
-            onClick={onReset}
-            title="Reset filters"
-            className="rounded-md p-1.5 transition-colors hover:bg-[var(--nv-bg-hover)]"
-            style={{ color: 'var(--nv-text-secondary)' }}
-          >
-            <RotateCcw className="h-3.5 w-3.5" />
-          </button>
-        )}
-      </div>
+          {label}
+        </button>
+      ))}
 
-      {/* Status filter */}
-      <div className="flex items-center gap-1">
-        {statusOptions.map(({ value, label, color }) => (
-          <button
-            key={value}
-            onClick={() => onStatusFilterChange(value)}
-            title={label}
-            className="flex items-center gap-1 rounded-md px-2 py-1 text-[10px] font-medium transition-colors"
-            style={{
-              backgroundColor: statusFilter.has(value) ? 'var(--nv-bg-active)' : 'transparent',
-              color: statusFilter.has(value) ? color : 'var(--nv-text-muted)',
-              opacity: statusFilter.has(value) ? 1 : 0.6,
-            }}
-          >
-            <span
-              className="h-1.5 w-1.5 rounded-full flex-shrink-0"
-              style={{ backgroundColor: color }}
-            />
-            {label}
-          </button>
-        ))}
-      </div>
-
-      {/* Device type filter */}
-      <div className="flex flex-wrap items-center gap-1">
-        {presentTypes.map((type) => {
-          const Icon = deviceTypeIcons[type] || CircleHelp
-          const label = deviceTypeLabels[type] || type
-          const active = typeFilter.has(type)
-          return (
-            <button
-              key={type}
-              onClick={() => onTypeFilterChange(type)}
-              title={label}
-              className="flex items-center gap-1 rounded-md px-1.5 py-1 text-[10px] font-medium transition-colors"
-              style={{
-                backgroundColor: active ? 'var(--nv-bg-active)' : 'transparent',
-                color: active ? 'var(--nv-text-primary)' : 'var(--nv-text-muted)',
-                opacity: active ? 1 : 0.6,
-              }}
-            >
-              <Icon className="h-3 w-3" />
-              {label}
-            </button>
-          )
-        })}
-      </div>
-
-      {/* Count display */}
+      {/* Divider */}
       <div
-        className="text-[10px] font-medium text-center"
+        className="w-px h-5 flex-shrink-0"
+        style={{ backgroundColor: 'var(--nv-border-default)' }}
+      />
+
+      {/* Type filter icons */}
+      {presentTypes.map((type) => {
+        const Icon = deviceTypeIcons[type] || CircleHelp
+        const label = deviceTypeLabels[type] || type
+        const active = typeFilter.has(type)
+        return (
+          <button
+            key={type}
+            onClick={() => onTypeFilterChange(type)}
+            title={label}
+            className="rounded-md p-1 transition-colors"
+            style={{
+              backgroundColor: active ? 'var(--nv-bg-active)' : 'transparent',
+              color: active ? 'var(--nv-text-primary)' : 'var(--nv-text-muted)',
+              opacity: active ? 1 : 0.4,
+            }}
+          >
+            <Icon className="h-3.5 w-3.5" />
+          </button>
+        )
+      })}
+
+      {/* Count */}
+      <span
+        className="text-[10px] font-medium flex-shrink-0"
         style={{ color: 'var(--nv-text-secondary)' }}
       >
-        Showing {visibleCount} of {totalCount} devices
-      </div>
-    </div>
+        {visibleCount}/{totalCount}
+      </span>
+
+      {hasActiveFilters && (
+        <button
+          onClick={onReset}
+          title="Reset filters"
+          className="rounded-md p-1 transition-colors hover:bg-[var(--nv-bg-hover)]"
+          style={{ color: 'var(--nv-text-secondary)' }}
+        >
+          <RotateCcw className="h-3 w-3" />
+        </button>
+      )}
+    </>
   )
 })

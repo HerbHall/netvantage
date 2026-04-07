@@ -566,8 +566,8 @@ export function TopologyPage() {
         onNodesChange={onNodesChange} onEdgesChange={onEdgesChange}
         onNodeClick={handleNodeClick} onEdgeClick={handleEdgeClick} onPaneClick={handlePaneClick}
         nodeTypes={nodeTypes} edgeTypes={edgeTypes}
-        minZoom={0.1} maxZoom={4} fitView
-        fitViewOptions={{ padding: 0.2, maxZoom: 1.5 }}
+        minZoom={0.05} maxZoom={4} fitView
+        fitViewOptions={{ padding: 0.2, minZoom: 0.15, maxZoom: 1.5 }}
         proOptions={{ hideAttribution: true }}
         className="rounded-lg" style={{ backgroundColor: 'var(--nv-bg-surface)' }}
       >
@@ -576,30 +576,44 @@ export function TopologyPage() {
         {showMinimap && (
           <MiniMap nodeStrokeWidth={3} style={{ backgroundColor: 'var(--nv-bg-card)', border: '1px solid var(--nv-border-default)' }} maskColor="rgba(0, 0, 0, 0.3)" />
         )}
-        <Panel position="top-right">
-          <div className="flex flex-col items-center gap-2">
-            <div className="flex items-center gap-1">
+        <Panel position="top-center" className="!left-0 !right-0 !translate-x-0 !mx-2">
+          <div
+            className="rounded-lg px-3 py-2 shadow-md space-y-1.5"
+            style={{
+              backgroundColor: 'var(--nv-bg-card)',
+              border: '1px solid var(--nv-border-default)',
+              backdropFilter: 'blur(8px)',
+            }}
+          >
+            {/* All controls in one horizontal strip */}
+            <div className="flex items-center gap-2 flex-wrap">
+              <TopologyFilters
+                nodes={topology.nodes} statusFilter={statusFilter} onStatusFilterChange={handleStatusFilterChange}
+                typeFilter={typeFilter} onTypeFilterChange={handleTypeFilterChange}
+                searchQuery={searchQuery} onSearchChange={handleSearchChange}
+                onReset={handleFilterReset} visibleCount={visibleCount}
+              />
+              <div
+                className="w-px h-6 flex-shrink-0"
+                style={{ backgroundColor: 'var(--nv-border-default)' }}
+              />
               <TopologyViewTabs viewMode={viewMode} onViewModeChange={handleViewModeChange} />
               <HelpIcon content="Lines between devices represent discovered network connections. Thicker lines indicate higher traffic volume. Use layout options to arrange devices by hierarchy or grouping." />
+              <div
+                className="w-px h-6 flex-shrink-0"
+                style={{ backgroundColor: 'var(--nv-border-default)' }}
+              />
+              <TopologyToolbar
+                layout={layout} onLayoutChange={handleLayoutChange}
+                direction={direction} onDirectionChange={handleDirectionChange}
+                showMinimap={showMinimap} onMinimapToggle={handleMinimapToggle} flowRef={flowRef}
+                showUtilization={showUtilization} onUtilizationToggle={handleUtilizationToggle}
+                savedLayouts={savedLayouts} onSaveLayout={handleSaveLayout}
+                onLoadLayout={handleLoadLayout} onDeleteLayout={handleDeleteLayout}
+                backgroundSettings={bgSettings} onBackgroundSettingsChange={handleBgSettingsChange}
+              />
             </div>
-            <TopologyToolbar
-              layout={layout} onLayoutChange={handleLayoutChange}
-              direction={direction} onDirectionChange={handleDirectionChange}
-              showMinimap={showMinimap} onMinimapToggle={handleMinimapToggle} flowRef={flowRef}
-              showUtilization={showUtilization} onUtilizationToggle={handleUtilizationToggle}
-              savedLayouts={savedLayouts} onSaveLayout={handleSaveLayout}
-              onLoadLayout={handleLoadLayout} onDeleteLayout={handleDeleteLayout}
-              backgroundSettings={bgSettings} onBackgroundSettingsChange={handleBgSettingsChange}
-            />
           </div>
-        </Panel>
-        <Panel position="top-left">
-          <TopologyFilters
-            nodes={topology.nodes} statusFilter={statusFilter} onStatusFilterChange={handleStatusFilterChange}
-            typeFilter={typeFilter} onTypeFilterChange={handleTypeFilterChange}
-            searchQuery={searchQuery} onSearchChange={handleSearchChange}
-            onReset={handleFilterReset} visibleCount={visibleCount}
-          />
         </Panel>
       </ReactFlow>
       {selectedNode && <NodeDetailPanel node={selectedNode} onClose={handleNodeDetailClose} />}

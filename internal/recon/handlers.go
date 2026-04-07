@@ -275,6 +275,8 @@ func (m *Module) handleTopology(w http.ResponseWriter, r *http.Request) {
 		})
 	}
 
+	// Build a set of existing link pairs so we don't duplicate.
+	existingLinks := make(map[string]bool, len(links))
 	for i := range links {
 		l := &links[i]
 		graph.Edges = append(graph.Edges, TopologyEdge{
@@ -284,9 +286,102 @@ func (m *Module) handleTopology(w http.ResponseWriter, r *http.Request) {
 			LinkType: l.LinkType,
 			Speed:    l.Speed,
 		})
+		existingLinks[l.SourceDeviceID+"|"+l.TargetDeviceID] = true
+		existingLinks[l.TargetDeviceID+"|"+l.SourceDeviceID] = true
 	}
 
+	// Infer gateway edges for devices that have no stored links.
+	inferred := inferGatewayEdges(devices, existingLinks)
+	graph.Edges = append(graph.Edges, inferred...)
+
 	writeJSON(w, http.StatusOK, graph)
+}
+
+// inferGatewayEdges generates synthetic topology edges that model the network
+// hierarchy: gateway -> switches -> devices. For each /24 subnet, the router or
+// firewall is the root. Switches/APs connect to the gateway. All other devices
+// connect to a switch if one exists, otherwise directly to the gateway.
+// Edge direction is parent -> child so dagre hierarchical layout works correctly.
+func inferGatewayEdges(devices []models.Device, existingLinks map[string]bool) []TopologyEdge {
+	type subnetInfo struct {
+		gateway  *models.Device
+		switches []*models.Device
+		others   []*models.Device
+	}
+	subnets := make(map[string]*subnetInfo)
+
+	for i := range devices {
+		d := &devices[i]
+		if len(d.IPAddresses) == 0 {
+			continue
+		}
+		ip := net.ParseIP(d.IPAddresses[0])
+		if ip == nil || ip.To4() == nil {
+			continue
+		}
+		v4 := ip.To4()
+		prefix := fmt.Sprintf("%d.%d.%d", v4[0], v4[1], v4[2])
+
+		info, ok := subnets[prefix]
+		if !ok {
+			info = &subnetInfo{}
+			subnets[prefix] = info
+		}
+
+		switch d.DeviceType {
+		case models.DeviceTypeRouter, models.DeviceTypeFirewall:
+			if info.gateway == nil {
+				info.gateway = d
+			} else {
+				info.others = append(info.others, d)
+			}
+		case models.DeviceTypeSwitch, models.DeviceTypeAccessPoint:
+			info.switches = append(info.switches, d)
+		default:
+			if v4[3] == 1 && info.gateway == nil {
+				info.gateway = d
+			} else {
+				info.others = append(info.others, d)
+			}
+		}
+	}
+
+	var edges []TopologyEdge
+	edgeNum := 0
+
+	addEdge := func(parentID, childID string) {
+		key := parentID + "|" + childID
+		reverseKey := childID + "|" + parentID
+		if existingLinks[key] || existingLinks[reverseKey] {
+			return
+		}
+		edgeNum++
+		edges = append(edges, TopologyEdge{
+			ID:       fmt.Sprintf("inferred-%d", edgeNum),
+			Source:   parentID,
+			Target:   childID,
+			LinkType: "inferred",
+		})
+	}
+
+	for _, info := range subnets {
+		if info.gateway == nil {
+			continue
+		}
+		// Switches connect to gateway.
+		for _, sw := range info.switches {
+			addEdge(info.gateway.ID, sw.ID)
+		}
+		// End devices connect to first switch, or directly to gateway.
+		parent := info.gateway.ID
+		if len(info.switches) > 0 {
+			parent = info.switches[0].ID
+		}
+		for _, d := range info.others {
+			addEdge(parent, d.ID)
+		}
+	}
+	return edges
 }
 
 // handleGetHierarchy returns the device tree organized by network layers.

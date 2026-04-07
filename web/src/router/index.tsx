@@ -3,6 +3,7 @@ import { createBrowserRouter, Navigate } from 'react-router-dom'
 import { ProtectedRoute } from './protected-route'
 import { AppLayout } from '@/layouts/app-layout'
 import { AuthLayout } from '@/layouts/auth-layout'
+import { RouteErrorBoundary } from '@/components/route-error-boundary'
 
 /* eslint-disable react-refresh/only-export-components */
 // Lazy-loaded page components for route-level code splitting
@@ -75,18 +76,21 @@ function SuspensePage({ children }: { children: React.ReactNode }) {
 
 export const router = createBrowserRouter([
   {
-    element: <AuthLayout />,
-    children: [
-      { path: '/login', element: <SuspensePage><LoginPage /></SuspensePage> },
-      { path: '/setup', element: <SuspensePage><SetupPage /></SuspensePage> },
-    ],
-  },
-  {
-    element: <ProtectedRoute />,
+    errorElement: <RouteErrorBoundary />,
     children: [
       {
-        element: <AppLayout />,
+        element: <AuthLayout />,
         children: [
+          { path: '/login', element: <SuspensePage><LoginPage /></SuspensePage> },
+          { path: '/setup', element: <SuspensePage><SetupPage /></SuspensePage> },
+        ],
+      },
+      {
+        element: <ProtectedRoute />,
+        children: [
+          {
+            element: <AppLayout />,
+            children: [
           { path: '/', element: <Navigate to="/dashboard" replace /> },
           { path: '/dashboard', element: <SuspensePage><DashboardPage /></SuspensePage> },
           { path: '/devices', element: <SuspensePage><DevicesPage /></SuspensePage> },
@@ -108,4 +112,6 @@ export const router = createBrowserRouter([
     ],
   },
   { path: '*', element: <SuspensePage><NotFoundPage /></SuspensePage> },
+    ],
+  },
 ])
