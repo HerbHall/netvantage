@@ -328,14 +328,14 @@ func inferGatewayEdges(devices []models.Device, existingLinks map[string]bool) [
 			subnets[prefix] = info
 		}
 
-		switch {
-		case d.DeviceType == models.DeviceTypeRouter || d.DeviceType == models.DeviceTypeFirewall:
+		switch d.DeviceType {
+		case models.DeviceTypeRouter, models.DeviceTypeFirewall:
 			if info.gateway == nil {
 				info.gateway = d
 			} else {
 				info.others = append(info.others, d)
 			}
-		case d.DeviceType == models.DeviceTypeSwitch || d.DeviceType == models.DeviceTypeAccessPoint:
+		case models.DeviceTypeSwitch, models.DeviceTypeAccessPoint:
 			info.switches = append(info.switches, d)
 		default:
 			if v4[3] == 1 && info.gateway == nil {
