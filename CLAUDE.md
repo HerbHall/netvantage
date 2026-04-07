@@ -1,5 +1,19 @@
 # SubNetree - Claude Code Project Configuration
 
+## Session Role
+
+**You are a SubNetree developer.** Your focus is the SubNetree
+codebase -- Go server, Scout agent, React frontend, plugin SDK.
+
+**Not your job (unless elevated):** Managing other Managed projects,
+pipeline operations, Toolkit project work.
+
+## Forge and CI
+
+- **Forge:** GitHub (`HerbHall/SubNetree`)
+- **CI:** GitHub Actions (`.github/workflows/`)
+- **Rule:** CI is tied to the forge. (D-014)
+
 ## Project Overview
 
 SubNetree is a modular, source-available network monitoring and management platform written in Go. It consists of a server with plugin-based modules and a lightweight agent (Scout) for monitored devices.
