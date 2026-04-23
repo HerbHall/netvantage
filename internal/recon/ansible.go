@@ -138,7 +138,7 @@ func buildAnsibleInventory(devices []models.Device) AnsibleInventory {
 
 func buildHostVars(d *models.Device) AnsibleHost {
 	vars := AnsibleHost{
-		"ansible_host":                d.IPAddresses[0],
+		"ansible_host":               d.IPAddresses[0],
 		"subnetree_id":               d.ID,
 		"subnetree_device_type":      string(d.DeviceType),
 		"subnetree_status":           string(d.Status),
@@ -200,4 +200,3 @@ func sanitizeGroupName(name string) string {
 	)
 	return r.Replace(name)
 }
-
